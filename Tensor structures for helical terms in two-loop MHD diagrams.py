@@ -17,27 +17,67 @@ import time
 # graf2 = str("e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|") 
 # graf3 = str("e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||")
 
-graf = input("Enter Nickel index:")
+'''
+Плохая практика. Вообще реально удобно через инпут делать?
+Обычно создают конфигурационные файлы, типа
+parametrs.init - это по сути обычный txt, где будут записаны все важные штуки
+там прописать никелевый индекс, и каждый раз оттуда считывать.
 
-# topological part of the Nickel index
+либо уж как аргумент в консоли. 
+'''
+#graf = input("Enter Nickel index:")
 
-Nickel_topology = ' '.join(graf.split(sep = ":")[0].split(sep = "|"))
+graf = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||")
 
-# line structure in the diagram corresponding to Nickel_topology
+# 11111!!!!! СОЗДАЛ ФУНКЦИЮ С ПОНЯТНЫМ НАЗВАНИЕМ
+def create_file_for_writing_Fey_graphs(graf):
+    # topological part of the Nickel index
+    Nickel_topology = ' '.join(graf.split(sep = ":")[0].split(sep = "|"))
 
-Nickel_lines = ' '.join(graf.split(sep = ":")[1].split(sep = "|"))
+    # line structure in the diagram corresponding to Nickel_topology
+    Nickel_lines = ' '.join(graf.split(sep = ":")[1].split(sep = "|"))
 
-Fey_graphs = open("Diagram_" + str((Nickel_topology + Nickel_lines).strip ()) + ".txt", 'w')
+    Fey_graphs = open(f"Diagram_{Nickel_topology.strip()}{Nickel_lines.strip()}.txt", 'w')
 
-# Windows OS does not understand the symbols ":" and "|" in the file name
-# File name example: "Diagram e12 e3 33  0B_bB_vv 0b_vV Vv_vv.txt" (all "|" are replaced by a space, ":" is removed)
+    # Windows OS does not understand the symbols ":" and "|" in the file name
+    # File name example: "Diagram e12 e3 33  0B_bB_vv 0b_vV Vv_vv.txt" (all "|" are replaced by a space, ":" is removed)
 
-Fey_graphs.write('Nickel index of feynman diagram: ' + str(graf) + "\n")
+    Fey_graphs.write(f"Nickel index of feynman diagram:  {graf} \n")
+
+    Fey_graphs.close()
+
+# 22222!!!!! ВЫЗВАЛ ФУНКЦИЮ С НУЖНЫМ АРГУМЕНТОМ!!!!
+create_file_for_writing_Fey_graphs(graf)
+
+'''
+схема должна быть такая. ты вообще всё должен оформить в функции. все блоки кода связанные
+какой-то общей логикой. какие-то операции которые повторяются и т.д.
+
+а в итоге у тебя программа должны выглядеть как последовательность вызовов функций.
+
+вот тут например функция создаёт файл и записывает туда название графа, который ты передал
+ей на входе. 
+
+ну вот я и оформляют этот кусок кода как функцию, потом вызываю. И всё. Если функция 
+правильная и я это проверил. То мне потом уже можно разгрузить свою оперативку в мозгу 
+и не думать про этот кусок. А то когда это выглядит как перечисление строчек кода,
+мозг каждый раз пытается понять что это за хуйня. А так по названию функции можно врубиться
+что происходит. 
+
+И на первом этапе оживления этого говна нужно вот так пройтись со всем. 
+
+Функции могут вызывать другие функции. Так что можно создавать маленькие логические блоки
+и потом их объединять в большие.
+'''
 
 # ---------------------------------------------------------------------------------------------------------------------------
 #                   Global variables
 # ---------------------------------------------------------------------------------------------------------------------------
-
+'''
+с этим пока что хуй знает как поступить. но первая мысля. может пускай реально остаётся,
+если это глобальные константы, которые потом везде юзаются. Хорошо, что это выделено в 
+отдельный блок, который можно пропускать и не переживать о нём. 
+'''
 # Throughout the text p always denotes an external momentum
 
 stupen = 1              # proportionality of the tensor structure to the external momentum p 
@@ -77,7 +117,10 @@ lcs = Function('lcs')                   # Levi-Civita symbol
 # ---------------------------------------------------------------------------------------------------------------------------
 #                   Auxiliary functions
 # ---------------------------------------------------------------------------------------------------------------------------
-
+'''
+ну вот челик знает про функции. но культуры того, как выглядят большие проекты нет. 
+надо чаще смотреть чужой код на гитхабе было
+'''
 def propagator(nickel):  # arranges the propagators into a list of inner and outer lines with fields
     s1 = 0
     s2 = nickel.find(":")
@@ -130,8 +173,11 @@ internal_lines = dict()
 for x in range(len(vnutorne)):
     internal_lines.update({ x : vnutorne[x]}) # dict - the keys ara the digits of the lines 
 
-
-Fey_graphs.write("\n"+'Marking the lines in the diagram: '+ str(internal_lines) + "\n")
+'''
+блять выделил функцию, сломались связи с этими глобальными переменными
+здесь он не видит фей_графс, тцука ебаный
+'''
+Fey_graphs.write(f"\n Marking the lines in the diagram: {internal_lines} \n")
 
 hybnost = dict()
 propagator_hel = [['v', 'v'], ['v', 'b'], ['b', 'v'], ['b','b']]
