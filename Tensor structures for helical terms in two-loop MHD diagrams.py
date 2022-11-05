@@ -6,37 +6,77 @@ from sympy import *
 from functools import reduce
 import time
 
-# -------------------------------------------------------------------------------------
-# A program for symbolically calculating two-loop integrals for a MHD. The program works correctly only
-# for two-loop diagrams if I am looking for a expression proportional helical term. 
-# The results are saved in a file: Diagram"nickel index of the diagram".txt
-# In the line 291 can be define A in the vertex Bbv
-# -------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------------
+#                   Creating a file with the results for the corresponding diagram
+# ---------------------------------------------------------------------------------------------------------------------------
 
-#graf = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||") 
-#graf = str("e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|") 
-graf = str("e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||")
-   
+# All diagrams is completely defined by the Nickel index
 
-stupen = 1  # proportionality of the tenzor structure to the external momentum p
+# Examples:
+# graf1 = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||") 
+# graf2 = str("e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|") 
+# graf3 = str("e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||")
 
-# ------------- Konstanty -------------------------------------------------------------
-hyb = [p, k, q] = symbols('p k q')            # oznacenie hybnosti - p beriem ako vonkajsiu
-P = Function('P')     # Transverse projection operator
-H = Function('H')     # Helical term
-kd = Function('kd')   # kronecker delta function 
-hyb = Function('hyb') # notation for momemntum: hyb(k, 1) is $k_1$
-lcs = Function('lcs')     # Levi-Civita symbol
-# -------------------------------------------------------------------------------------
-[I, A, z, nu, vo, uo, rho] = symbols('I A z nu vo uo rho')   # dalsie symboly pre MHD
+graf = input("Enter Nickel index:")
+
+# topological part of the Nickel index
+
+Nickel_topology = ' '.join(graf.split(sep = ":")[0].split(sep = "|"))
+
+# line structure in the diagram corresponding to Nickel_topology
+
+Nickel_lines = ' '.join(graf.split(sep = ":")[1].split(sep = "|"))
+
+Fey_graphs = open("Diagram_" + str((Nickel_topology + Nickel_lines).strip ()) + ".txt", 'w')
+
+# Windows OS does not understand the symbols ":" and "|" in the file name
+# File name example: "Diagram e12 e3 33  0B_bB_vv 0b_vV Vv_vv.txt" (all "|" are replaced by a space, ":" is removed)
+
+Fey_graphs.write('Nickel index of feynman diagram: ' + str(graf) + "\n")
+
+# ---------------------------------------------------------------------------------------------------------------------------
+#                   Global variables
+# ---------------------------------------------------------------------------------------------------------------------------
+
+# Throughout the text p always denotes an external momentum
+
+stupen = 1              # proportionality of the tensor structure to the external momentum p 
+
+number_int_vert = 4     # the number of internal (three-point) vertecies
+
+
+hyb = [p, k, q] = symbols('p k q')      # symbols for momentums (p denotes an external momentum)
+P = Function('P')                       # Transverse projection operator
+H = Function('H')                       # Helical term
+kd = Function('kd')                     # Kronecker delta function 
+hyb = Function('hyb')                   # "momentums" defines momentum as follows: momentums(k, 1) is $k_1$
+lcs = Function('lcs')                   # Levi-Civita symbol
+
+
+[I, A, z, nu, vo, uo, rho] = symbols('I A z nu vo uo rho')  
+
+# I is an imaginary unit
+# A is a model parameter (the model action includes a term ~ A Bbv ). 
+# z ????
+# nu ??? 
+# v_0 ???
+# u_0^(-1) is a "magnetic Prandtl number"
+# rho is a gyrotropy parameter, |rho| < 1 
+
 [go, d, eps] = symbols('go d eps')                     # coupling constant, dimenzion
-[s, b, B] = symbols('s b B') #the index of field connected to field and the external momentum p_s
-# -------------------------------------------------------------------------------------
-Fey_graphs = open("Diagram_"+str(graf)+".txt", 'w')
-Fey_graphs.write("\n"+'Nickel index of feynman diagram: '+ str(graf) + "\n")
-#--------------------------------------------------------------------------------------
-#            Auxiliary functions
-#--------------------------------------------------------------------------------------
+
+# g_0 is a bare coupling constant
+# d is a space dimension
+# eps determines a degree of model deviation from logarithmicity
+
+[s, b, B] = symbols('s b B')
+
+# the index of field connected to field and the external momentum p_s ???
+
+
+# ---------------------------------------------------------------------------------------------------------------------------
+#                   Auxiliary functions
+# ---------------------------------------------------------------------------------------------------------------------------
 
 def propagator(nickel):  # arranges the propagators into a list of inner and outer lines with fields
     s1 = 0
@@ -86,7 +126,6 @@ linie = propagator(graf)
 vnutorne = linie[0]  # notation of internal line in diagram 
 vonkajsie = linie[1]  # notation of external line in diagram 
  
-number_int_vert = 4   # The number of internal (three-point) vertecies
 internal_lines = dict()
 for x in range(len(vnutorne)):
     internal_lines.update({ x : vnutorne[x]}) # dict - the keys ara the digits of the lines 
