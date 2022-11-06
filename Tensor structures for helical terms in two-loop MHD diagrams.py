@@ -6,26 +6,6 @@ from sympy import *
 from functools import reduce
 import time
 
-# ---------------------------------------------------------------------------------------------------------------------------
-#                   Creating a file with the results for the corresponding diagram
-# ---------------------------------------------------------------------------------------------------------------------------
-
-# All diagrams is completely defined by the Nickel index
-
-# Examples:
-# graf1 = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||")
-# graf2 = str("e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|")
-# graf3 = str("e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||")
-
-"""
-Плохая практика. Вообще реально удобно через инпут делать?
-Обычно создают конфигурационные файлы, типа
-parametrs.init - это по сути обычный txt, где будут записаны все важные штуки
-там прописать никелевый индекс, и каждый раз оттуда считывать.
-
-либо уж как аргумент в консоли. 
-"""
-# graf = input("Enter Nickel index:")
 
 def get_output_file_name(graf):
     # topological part of the Nickel index
@@ -88,6 +68,26 @@ def dosad(zoznam, ind_hod, struktura, pozicia):
 
 
 def main():
+    # ---------------------------------------------------------------------------------------------------------------------------
+    #                   Creating a file with the results for the corresponding diagram
+    # ---------------------------------------------------------------------------------------------------------------------------
+
+    # All diagrams is completely defined by the Nickel index
+
+    # Examples:
+    # graf1 = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||")
+    # graf2 = str("e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|")
+    # graf3 = str("e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||")
+
+    """
+    Плохая практика. Вообще реально удобно через инпут делать?
+    Обычно создают конфигурационные файлы, типа
+    parametrs.init - это по сути обычный txt, где будут записаны все важные штуки
+    там прописать никелевый индекс, и каждый раз оттуда считывать.
+
+    либо уж как аргумент в консоли. 
+    """
+    # graf = input("Enter Nickel index:")
     graf = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||")
 
     output_file_name = get_output_file_name(graf)
@@ -227,9 +227,7 @@ def main():
     loop_pomoc = list(itertools.combinations(loop, r=2))  # made for the two-loop case
     i = 0
     loop_pomoc = sorted(loop_pomoc, key=len)
-    while i < len(
-        loop_pomoc
-    ):  # the result is a combination of loops that covers the entire graph -- the list of selected
+    while i < len(loop_pomoc):  # the result is a combination of loops that covers the entire graph -- the list of selected
         b = list(itertools.chain.from_iterable(loop_pomoc[i]))
         pocet = compare_fun(b, internal_lines.keys())
         if pocet == 0:
@@ -355,6 +353,11 @@ def main():
         in1 = indexy.index(i)
         indexy[in1] = len(internal_lines)
         in2 = indexy.index(i)
+        '''
+        если быть совсем модным и молодёжным, то это надо переписать на
+        pattern matching, но это не самая большая проблема этой программы,
+        это в самую последнюю очередь
+        '''
         if linia[1] == ["v", "v"]:
             Tenzor = Tenzor * (
                 P(hybnost[i], in1, in2) + I * rho * H(hybnost[i], in1, in2)
@@ -401,6 +404,15 @@ def main():
             integral = integral + "PvB[" + str(hybnost[i]) + "]*"
         P_structure.append([hybnost[i], in1, in2])
 
+
+    '''
+    все вот эти выводы сделаны в старом, уродливом и медленно работающем стиле
+    надо переписывать на f-строки, ну вот тут это должно выглядеть так:
+
+    Fey_graphs.write(
+        f"\n Momentum in propagators for the Wolfram Mathematica file: {integral[:-1]} \n"
+    )
+    '''
     Fey_graphs.write(
         "\n"
         + "Momentum in propagators for the Wolfram Mathematica file: "
@@ -566,9 +578,7 @@ def main():
     print("step 1:", time.time() - t)
 
     i = 0
-    while i < len(
-        P_structure
-    ):  # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
+    while i < len(P_structure):  # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
         in1 = P_structure[i]
         if Tenzor.coeff(hyb(in1[0], in1[1])) != 0:
             Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
@@ -589,9 +599,7 @@ def main():
             i += 1
 
     i = 0
-    while i < len(
-        H_structure
-    ):  # discard from the Tensor structure what is zero for the helical operator H_ij (k) * k_i = 0
+    while i < len(H_structure):  # discard from the Tensor structure what is zero for the helical operator H_ij (k) * k_i = 0
         in1 = H_structure[i]
         if Tenzor.coeff(hyb(in1[0], in1[1])) != 0:
             Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
@@ -609,9 +617,7 @@ def main():
     print("step 2:", time.time() - t)
 
     i = 0
-    while (
-        len(H_structure) > i
-    ):  # sipmplify in the Tenzor part H_{ij} (k) P_{il} (k) =  H_{il} (k)
+    while (len(H_structure) > i):  # sipmplify in the Tenzor part H_{ij} (k) P_{il} (k) =  H_{il} (k)
         in1 = H_structure[i]
         for in2 in P_structure:
             if (
@@ -650,9 +656,7 @@ def main():
     print("step 3:", time.time() - t)
 
     i = 0
-    while (
-        len(P_structure) > i
-    ):  # sipmplify in the Tenzor part  P_{ij} (k) P_{il} (k) =  P_{il} (k)
+    while (len(P_structure) > i):  # sipmplify in the Tenzor part  P_{ij} (k) P_{il} (k) =  P_{il} (k)
         in1 = P_structure[i]
         structurep = list()
         for j in range(i + 1, len(P_structure)):
@@ -703,11 +707,7 @@ def main():
 
 
     kd_structure = list()
-    for (
-        i
-    ) in (
-        P_structure
-    ):  # Define transverse projection operator P(k,i,j) = kd(i,j) - hyb(k,i)*hyb(k,j)/k^2
+    for (i) in (P_structure):  # Define transverse projection operator P(k,i,j) = kd(i,j) - hyb(k,i)*hyb(k,j)/k^2
         k_c = i[0].coeff(k)
         q_c = i[0].coeff(q)
         Tenzor = Tenzor.subs(
@@ -723,11 +723,7 @@ def main():
 
     Tenzor = expand(Tenzor)
 
-    for (
-        in1
-    ) in (
-        H_structure
-    ):  # discard from the Tensor structure what is zero for the helical operator H_{ij} (k) * k_i = 0
+    for (in1) in (H_structure):  # discard from the Tensor structure what is zero for the helical operator H_{ij} (k) * k_i = 0
         clen = Tenzor.coeff(H(in1[0], in1[1], in1[2]))
         if clen.coeff(hyb(in1[0], in1[1])) != 0:
             Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
@@ -745,9 +741,7 @@ def main():
     print("step 6:", time.time() - t)
 
     inkd = 0
-    while (
-        inkd == 0
-    ):  # calculation part connected with the kronecker delta function: kd(i,j) *hyb(k,i) = hyb(k,j)
+    while (inkd == 0):  # calculation part connected with the kronecker delta function: kd(i,j) *hyb(k,i) = hyb(k,j)
         for (
             in1
         ) in (
