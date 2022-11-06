@@ -14,16 +14,14 @@ def get_output_file_name(graf):
     # line structure in the diagram corresponding to Nickel_topology
     Nickel_lines = " ".join(graf.split(sep=":")[1].split(sep="|"))
 
-    return f"Diagram_{Nickel_topology.strip()}{Nickel_lines.strip()}.txt"
+    return f"Diagram_{Nickel_topology.strip()} {Nickel_lines.strip()}.txt"
 
+# File name example: "Diagram e12 e3 33 0B_bB_vv 0b_vV Vv_vv.txt" (all "|" are replaced by a space, ":" is removed)
 
 # ---------------------------------------------------------------------------------------------------------------------------
 #                   Auxiliary functions
 # ---------------------------------------------------------------------------------------------------------------------------
-"""
-ну вот челик знает про функции. но культуры того, как выглядят большие проекты нет. 
-надо чаще смотреть чужой код на гитхабе было
-"""
+
 def propagator(
     nickel,
 ):  # arranges the propagators into a list of inner and outer lines with fields
@@ -75,9 +73,9 @@ def main():
     # All diagrams is completely defined by the Nickel index
 
     # Examples:
-    # graf1 = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||")
-    # graf2 = str("e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|")
-    # graf3 = str("e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||")
+    # "e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||"
+    # "e12|23|3|e|:0B_bb_vB|bb_Vb|vV|0b|"
+    # "e12|e3|33||:0B_vB_bb|0b_vV|Bb_vb||"
 
     """
     Плохая практика. Вообще реально удобно через инпут делать?
@@ -87,17 +85,15 @@ def main():
 
     либо уж как аргумент в консоли. 
     """
-    # graf = input("Enter Nickel index:")
-    graf = str("e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||")
+    graf = input("Enter Nickel index:")
 
     output_file_name = get_output_file_name(graf)
 
     Fey_graphs = open(output_file_name, "w")
 
-    # Windows OS does not understand the symbols ":" and "|" in the file name
-    # File name example: "Diagram e12 e3 33  0B_bB_vv 0b_vV Vv_vv.txt" (all "|" are replaced by a space, ":" is removed)
-
-    Fey_graphs.write(f"Nickel index of feynman diagram:  {graf} \n")
+    Fey_graphs.write(
+        f"Nickel index of the Feynman diagram:  {graf} \n"
+    )
 
 
     """
@@ -184,10 +180,12 @@ def main():
     for x in range(len(vnutorne)):
         internal_lines.update(
             {x: vnutorne[x]}
-        )  # dict - the keys ara the digits of the lines
+        )  # dict - the keys are the digits of the lines
 
-  
-    Fey_graphs.write(f"\n Marking the lines in the diagram: {internal_lines} \n")
+
+    Fey_graphs.write(
+        f"\ne12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||Marking lines in the diagram:  {internal_lines} \n"
+    )
 
     hybnost = dict()
     propagator_hel = [["v", "v"], ["v", "b"], ["b", "v"], ["b", "b"]]
@@ -256,10 +254,7 @@ def main():
         print("Neexistuje moznost ako usporiadat hybnosti na rozne slucky", err)
 
     Fey_graphs.write(
-        "\n"
-        + "Loops in the diagram for a given internal momentum (digit coresponds the line): "
-        + str(loop)
-        + "\n"
+        f"\nLoops in the diagram for a given internal momentum (digit coresponds the line):  {loop} \n"
     )
 
     # The beginning of the momentum distribution. In this case, momentum flows into the diagram via field B and flows out through field b.
@@ -303,7 +298,7 @@ def main():
             hybnost.update({i: hybnost_pomoc[i]})
 
     Fey_graphs.write(
-        "\n" + "Momentum distributed among propagators (lines): " + str(hybnost) + "\n"
+        f"\nMomentum distributed among propagators (lines):  {hybnost} \n"
     )
 
     moznost = [0] * (number_int_vert * 3)
@@ -332,8 +327,9 @@ def main():
             moznost[linia[0][1] * 3 + 2] = [i, linia[1][1], hybnost[i]]
 
     Fey_graphs.write(
-        "\n" + "Momentum distribution at the vertices: " + str(moznost) + "\n"
-    )  # [[index of propagator, field, momentum]]
+        f"\nMomentum distribution at the vertices:  {moznost} \n"
+    )  
+    # [[index of propagator, field, momentum]]
     # --------------------------------------------------------------------------------------
     # The previous part is the prepartion for the writing the structure from the diagram.
 
@@ -410,14 +406,11 @@ def main():
     надо переписывать на f-строки, ну вот тут это должно выглядеть так:
 
     Fey_graphs.write(
-        f"\n Momentum in propagators for the Wolfram Mathematica file: {integral[:-1]} \n"
+        f"\n Momentums in propagators for the Wolfram Mathematica file: {integral[:-1]} \n"
     )
     '''
     Fey_graphs.write(
-        "\n"
-        + "Momentum in propagators for the Wolfram Mathematica file: "
-        + str(integral[:-1])
-        + "\n"
+        f"\nMomentums in propagators for the Wolfram Mathematica file:  {integral[:-1]}\n"
     )
 
 
@@ -484,10 +477,7 @@ def main():
     t = time.time()  # it is only used to calculate the calculation time -- can be omitted
 
     Fey_graphs.write(
-        "\n"
-        + "The tensor structure of the diagram after calculation: "
-        + str(Tenzor)
-        + "\n"
+        f"\nTensor structure of the diagram before calculation:  {Tenzor} \n"
     )
 
     print(Tenzor, "\n")
@@ -1224,11 +1214,11 @@ def main():
     result = str(Tenzor)
     result = result.replace("**", "^")
     Fey_graphs.write(
-        "\n" + "The tensor structure of the diagram after calculation: " + "\n"
+        f"\nTensor structure of the diagram after calculation: \n"
     )
-    Fey_graphs.write("\n" + result + "\n")
+    Fey_graphs.write(f"\n {result} \n")
 
-    print("The tensor structure of the diagram after calculation:", Tenzor)
+    print("Tensor structure of the diagram after calculation:", Tenzor)
 
     # print(pretty(Tenzor, use_unicode=False))
 
