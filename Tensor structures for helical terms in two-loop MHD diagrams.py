@@ -83,7 +83,7 @@ def main():
 
             output_file_name = get_output_file_name(graf)
 
-            Fey_graphs = open(output_file_name, "w")
+            Fey_graphs = open("Results/" + output_file_name, "w")
 
             Fey_graphs.write(
                 f"Nickel index of the Feynman diagram:  {graf} \n"
@@ -1210,7 +1210,7 @@ def main():
             Fey_graphs.write(
                 f"\nTensor structure of the diagram after calculation: \n"
             )
-            Fey_graphs.write(f"\n {result} \n")
+            Fey_graphs.write(f"\n{result} \n")
 
             print("Tensor structure of the diagram after calculation:", Tenzor)
 
