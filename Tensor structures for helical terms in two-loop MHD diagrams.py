@@ -4,25 +4,25 @@ import sys
 import itertools
 from sympy import *
 from functools import reduce
+from collections import Counter
 import time
 
-# ---------------------------------------------------------------------------------------------------------------------------
-#                                                      Global variables
-# ---------------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------#
+#                                                 Global variables
+# -----------------------------------------------------------------------------------------------------------------#
 
 # Throughout the text p always denotes an external momentum
 
 stupen = 1  # proportionality of the tensor structure to the external momentum p
 
-number_int_vert = 4  # the number of internal (three-point) vertecies
-
+number_int_vert = 4  # the number of internal (three-point) vertecies in diagram
 
 hyb = [p, k, q] = symbols("p k q")  # symbols for momentums (p denotes an external momentum)
-P = Function("P")  # Transverse projection operator
-H = Function("H")  # Helical term
-kd = Function("kd")  # Kronecker delta function
-hyb = Function("hyb")  # "momentums" defines momentum as follows: momentums(k, 1) is $k_1$
-lcs = Function("lcs")  # Levi-Civita symbol
+P = Function("P")                   # Transverse projection operator
+H = Function("H")                   # Helical term
+kd = Function("kd")                 # Kronecker delta function
+hyb = Function("hyb")               # "momentums" defines momentum as follows: momentums(k, 1) is $k_1$
+lcs = Function("lcs")               # Levi-Civita symbol
 
 
 [I, A, z, nu, vo, uo, rho] = symbols("I A z nu vo uo rho")
@@ -45,9 +45,21 @@ lcs = Function("lcs")  # Levi-Civita symbol
 
 # the index of field connected to field and the external momentum p_s ???
 
-# ---------------------------------------------------------------------------------------------------------------------------
-#                   Auxiliary functions
-# ---------------------------------------------------------------------------------------------------------------------------
+propagators_with_helicity = [["v", "v"], ["v", "b"], ["b", "v"], ["b", "b"]]
+
+momentums_for_helicity_propagators = [k, q]
+
+# these propagators contain the kernel D_v and will determine the loops in the diagram 
+# (for technical reasons, it is convenient for us to give these lines new momentums (k and q))
+# first loop - k, second loop - q
+
+# -----------------------------------------------------------------------------------------------------------------#
+#                                                Auxiliary functions
+# -----------------------------------------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------------------------------------------#
+#                    Create a file with a name and write the Nickel index of the diagram into it
+#------------------------------------------------------------------------------------------------------------------#
 
 def get_output_file_name(
     graf
@@ -60,38 +72,156 @@ def get_output_file_name(
     # line structure in the diagram corresponding to Nickel_topology
     return f"Diagram {Nickel_topology.strip()} {Nickel_lines.strip()}.txt"
 
-# File name example: "Diagram e12 e3 33 0B_bB_vv 0b_vV Vv_vv.txt" (all "|" are replaced by a space, ":" is removed)
+# Nickel index example: e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|
+# File name example: "Diagram e12 23 3 e 0B_bB_vv vB_bb bV 0b.txt" (all "|" are replaced by a space, ":" is removed)
 
-def propagator(
+def get_list_with_propagators_from_nickel_index(
     nickel,
-):  # arranges the propagators into a list of inner and outer lines with fields
-    s1 = 0
-    s2 = nickel.find(":")
-    propi = []
-    prope = []
+    ):  # arranges the propagators into a list of inner and outer lines with fields
+    s1 = 0                  # numbers individual blocks |...| in the topological part of the Nickel index 
+                            # (all before the symbol :), i.e. vertices of the diagram
+    s2 = nickel.find(":")   # runs through the part of the Nickel index describing the lines (after the symbol :)
+    propagator_internal = []
+    propagator_external = []
     for i in nickel[: nickel.find(":")]:
         if i == "e":
-            prope += [[(-1, s1), ["0", nickel[s2 + 2]]]]
+            propagator_external += [[(-1, s1), ["0", nickel[s2 + 2]]]]
             s2 += 3
         elif i != "|":
-            propi += [[(s1, int(i)), [nickel[s2 + 1], nickel[s2 + 2]]]]
+            propagator_internal += [[(s1, int(i)), [nickel[s2 + 1], nickel[s2 + 2]]]]
             s2 += 3
         else:
             s1 += 1
-    return [propi, prope]
+    return [propagator_internal, propagator_external]
 
-def compare_fun(
-    tup1, tup2
-):  # it gives the one that is bigger if the smaller one is found in it, or 0 if it is not found
-    g = len(set(tup1).intersection(tup2))
-    if g == len(tup1):
-        return tup2
-    elif g == len(tup2):
-        return tup1
-    else:
-        return 0
+# Function application example: 
+# propagator(e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|) = 
+# [
+# [[(0, 1), ['b', 'B']], [(0, 2), ['v', 'v']], [(1, 2), ['v', 'B']], [(1, 3), ['b', 'b']], [(2, 3), ['b', 'V']]],
+# [[(-1, 0), ['0', 'B']], [(-1, 3), ['0', 'b']]]
+# ]
+# I.e. vertex 0 is connected to vertex 1 by a line b---B, vertex 0 is connected to vertex 2 by a line v---v, etc.
 
-def dosad(zoznam, ind_hod, struktura, pozicia):
+#------------------------------------------------------------------------------------------------------------------#
+#                        Get the loop structure of the diagram (which lines form loops)
+#------------------------------------------------------------------------------------------------------------------#
+
+def get_list_as_dictionary(
+    list
+    ): # turns the list into a dictionary, keys are the numbers of the list elements
+    dictionary = dict()
+    for x in range(len(list)):
+        dictionary.update(
+            {x: list[x]}
+        ) 
+    return dictionary
+
+def list_of_all_possible_lines_combinations(
+    dict_with_internal_lines
+    ):  # give us all possible combinations of lines (propagators) 
+        # (each digit in output list = key from dict_with_internal_lines, i.e. line in diagram)
+    list_of_loops = list()
+    for i in range(len(dict_with_internal_lines) - 1):
+        ordered_list_of_r_cardinality_subsets = list(
+            itertools.combinations(dict_with_internal_lines.keys(), r = i + 2)
+            ) 
+            # returns an ordered list of ordered subsets of the given set, 
+            # starting with subsets of cardinality 2
+        [
+            list_of_loops.append(x) for x in ordered_list_of_r_cardinality_subsets
+        ]
+    return list_of_loops 
+# Function application example:
+# [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), 
+# (0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 2, 3), (0, 2, 4), (0, 3, 4), (1, 2, 3), (1, 2, 4), (1, 3, 4), (2, 3, 4), 
+# (0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 3, 4), (0, 2, 3, 4), (1, 2, 3, 4), (0, 1, 2, 3, 4)]
+
+def check_if_the_given_lines_combination_is_a_loop_in_diagram(
+    list_of_all_possible_lines_combinations, dict_with_diagram_internal_lines
+    ):  # сheck if the given lines combination from list_of_all_possible_lines_combinations() is a loop
+        # the combination of lines is a loop <==> in the list of all vertices of the given lines
+        # (line = (vertex1, vertex2)), each vertex is repeated TWICE, i.e. each vertex is the end 
+        # of the previous line and the start of the next one
+    i = 0
+    while i < len(list_of_all_possible_lines_combinations): 
+        list_of_list_of_vertices_for_ith_combination = [
+            dict_with_diagram_internal_lines[k][0] for k in list_of_all_possible_lines_combinations[i]
+            ]   # for a i-th combination from list_of_all_possible_lines_combinations we get a list of lines 
+                # (each digit from list_of_all_possible_lines_combinations is the key of the 
+                # dict_with_diagram_internal_lines, i.e. line)
+                # the output is ((vertex,vertex), (vertex,vertex), ...)
+        ordered_list_vith_all_diagram_vertices = list(
+            itertools.chain.from_iterable(list_of_list_of_vertices_for_ith_combination)
+            )  # converting a list of lists to a list of vertices
+        list_with_number_of_occurrences = list(
+            Counter(ordered_list_vith_all_diagram_vertices).values()
+            )  # counting numbers of occurrences of the vertex in a list
+        condition_to_be_a_loop = all(
+            list_with_number_of_occurrences[i] == 2 for i in range(len(list_with_number_of_occurrences))
+            )  # ith element of list_of_all_possible_lines_combinations is a loop <==>
+               # each vertex in list_with_number_of_occurrences is repeated TWICE
+
+        if condition_to_be_a_loop == True:
+            i += 1 # this configuration give us a loop for the corresponding diagram
+        else:
+            del list_of_all_possible_lines_combinations[i]
+    return list_of_all_possible_lines_combinations
+
+# Important note: for some technical reasons, we will assign new momentums (k and q, 
+# according to the list_of_momentums) to propagators containing the D_v kernel, i.e. to propagators_with_helicity.
+# Since each loop in the diagram contains such helical propagator, we can describe the entire loop structure of the
+# diagram by assigning a new momentum to it in each loop
+
+def put_momentums_to_propagators_with_helicity(
+    set_of_all_internal_propagators, set_of_propagators_with_helicity, list_of_momentums
+    ): # assigning momentum (according to the list_of_momentums) to helicity propagators in concret diagram
+    dict_with_momentums_for_propagators_with_helicity = dict()
+    # assuming that the variable set_of_all_internal_propagators is given by the function
+    # get_list_with_propagators_from_nickel_index()
+    for i in set_of_all_internal_propagators:  
+        vertices_and_fields_in_propagator = set_of_all_internal_propagators[i]
+        # selected one particular propagator from the list
+        fields_in_propagator = vertices_and_fields_in_propagator[1]
+        # selected information about which fields define the propagator
+        length = len(dict_with_momentums_for_propagators_with_helicity)
+        # sequentially fill in the empty dictionary for corresponding diagram according to 
+        # list_of_momentums and set_of_propagators_with_helicity
+        if fields_in_propagator in set_of_propagators_with_helicity:
+            for j in range(len(list_of_momentums)):
+                if  length == j:
+                    dict_with_momentums_for_propagators_with_helicity.update(
+                        {i: list_of_momentums[j]}
+                        )
+    return dict_with_momentums_for_propagators_with_helicity
+
+def get_usual_QFT_loops(
+    list_of_loops, dict_with_momentums_for_propagators_with_helicity
+    ): # selects from the list of all possible loops of the diagram only those that contain one 
+       # heicity propagator (through which the momentum k or q flow), i.e. each new loop corresponds
+       # one new momentum and no more (exclude different exotic cases)
+    i = 0
+    while i < len(list_of_loops):  
+        test_loop = list_of_loops[i]
+        number_of_helicity_propagators = list(
+            map(lambda x: test_loop.count(x), dict_with_momentums_for_propagators_with_helicity)
+            ) # calculate the number of helicity propagators in a loop
+        if number_of_helicity_propagators.count(1) != 1:
+            # delete those loops that contain two (and more) helical propagators
+            # note that each loop in the diagram contains at least one such propagator
+            del list_of_loops[i] 
+        else:
+            i += 1
+    return list_of_loops
+
+#------------------------------------------------------------------------------------------------------------------#
+#                        Do smth
+#------------------------------------------------------------------------------------------------------------------#
+
+
+
+def dosad(
+    zoznam, ind_hod, struktura, pozicia
+    ): # ?????????
     if ind_hod in zoznam:
         return zoznam
     elif ind_hod not in struktura:
@@ -103,116 +233,71 @@ def dosad(zoznam, ind_hod, struktura, pozicia):
     else:
         return zoznam[:pozicia] + [ind_hod] + zoznam[pozicia + 1 :]
 
-def get_input_data(
+#------------------------------------------------------------------------------------------------------------------#
+#                                       Define the main body of this program                                        
+#------------------------------------------------------------------------------------------------------------------#
+
+def get_output_data(
     graf
-    ): # Creating a file with the output data for the corresponding diagram
+    ): 
 
-    output_file_name = get_output_file_name(graf)
+    #--------------------------------------------------------------------------------------------------------------#
+    #                    Create a file with a name and write the Nickel index of the diagram into it
+    #--------------------------------------------------------------------------------------------------------------#
 
-    Fey_graphs = open("Results/" + output_file_name, "w")
+    output_file_name = get_output_file_name(
+        graf
+        ) # according to the given Nickel index of the diagram, create the name of the file with the results
+
+    Fey_graphs = open(
+        f"Results/{output_file_name}", "w"
+        ) # creating a file with all output data for the corresponding diagram
 
     Fey_graphs.write(
         f"Nickel index of the Feynman diagram:  {graf} \n"
-    )
+        ) # write the Nickel index to the file
 
-    # ------------------------------------------------------------------------------------
-    #      The part to solve the momentum in diagrams
-    # -------------------------------------------------------------------------------------
-    linie = propagator(graf)
-    vnutorne = linie[0]  # notation of internal line in diagram
-    vonkajsie = linie[1]  # notation of external line in diagram
+    #--------------------------------------------------------------------------------------------------------------#
+    #                Define a loop structure of the diagram (which lines form loops) and write it into file
+    #--------------------------------------------------------------------------------------------------------------#
 
-    '''
-    Если в поиск вбить эти интёрнал_лайнс, то они живут до примено 356 строчки
-    стало быть это блок кода изолированный. пускай и длиной в 200 строчек. 
-    возможно его выделить в какую-то функцию
-    '''
+    vnutorne = get_list_with_propagators_from_nickel_index(graf)[0]  # list with diagram internal lines
 
-
-    internal_lines = dict()
-    for x in range(len(vnutorne)):
-        internal_lines.update(
-            {x: vnutorne[x]}
-        )  # dict - the keys are the digits of the lines
-
+    internal_lines = get_list_as_dictionary(
+        vnutorne
+        ) # put the list of all internal lines in the diagram to a dictionary
 
     Fey_graphs.write(
         f"Marking lines in the diagram:  {internal_lines} \n"
-    )
+        ) # write the dictionary with all internal lines to the file
 
-    hybnost = dict()
-    propagator_hel = [["v", "v"], ["v", "b"], ["b", "v"], ["b", "b"]]
-    for (i) in (internal_lines):  # assigning momentum (k or q) to the propagator that contains kernel D_v - it defines the loop of the diagram later
-        linia = internal_lines[i]
-        if linia[1] in propagator_hel:
-            if len(hybnost) == 0:
-                hybnost.update({i: k})
-            elif len(hybnost) == 1:
-                hybnost.update({i: q})
-            else:
-                hybnost.update({i: "None"})
+    list_of_all_loops_in_diagram = check_if_the_given_lines_combination_is_a_loop_in_diagram(
+        list_of_all_possible_lines_combinations(internal_lines), internal_lines
+        ) # get list of all loops in the diagram (this function works for diagrams with any number of loops) 
 
-    loop = list()
-    for i in range(len(internal_lines) - 1):
-        pomoc = list(itertools.combinations(internal_lines.keys(), r=i + 2))
-        [
-            loop.append(x) for x in pomoc
-        ]  # All possible combinations of propagators for any loops
+    hybnost = put_momentums_to_propagators_with_helicity(
+        internal_lines, propagators_with_helicity, momentums_for_helicity_propagators
+        ) # create a dictionary for momentums flowing in lines containing kernel D_v, i.e. in helicity propagators
+          # (hybnost == momentum)
 
-    i = 0
-    while i < len(loop):  # Check if the given lines (propagators) combination is a loop
-        slucka = [
-            vnutorne[in1][0] for in1 in loop[i]
-        ]  # prida propagator zodpovedajuci tuple
-        hodnoty = list(
-            itertools.chain.from_iterable(slucka)
-        )  # prepise dvojice do list vertexov
-        sucet = list(
-            map(lambda x: hodnoty.count(x), range(max(hodnoty) + 1))
-        )  # srata kolko krat sa dany vertex nachadza v slucke
-        if sucet.count(2) + sucet.count(0) < len(sucet):
-            del loop[i]
-        else:
-            i += 1  # loop - I have all loops - one time
-
-    loop_pomoc = list(itertools.combinations(loop, r=2))  # made for the two-loop case
-    i = 0
-    loop_pomoc = sorted(loop_pomoc, key=len)
-    while i < len(loop_pomoc):  # the result is a combination of loops that covers the entire graph -- the list of selected
-        b = list(itertools.chain.from_iterable(loop_pomoc[i]))
-        pocet = compare_fun(b, internal_lines.keys())
-        if pocet == 0:
-            del loop_pomoc[i]
-        else:
-            i += 1
-
-    loop = loop_pomoc
-    i = 0
-    while i < len(loop):  # check momentums in loops - first loop = k and second loop = q
-        slucka1 = loop[i][0]
-        sucet = list(map(lambda x: slucka1.count(x), hybnost))
-        if sucet.count(1) != 1:
-            del loop[i]
-        else:
-            slucka2 = loop[i][1]
-            sucet = list(map(lambda x: slucka2.count(x), hybnost))
-            if sucet.count(1) != 1:
-                del loop[i]
-            else:
-                i += 1
-
-    try:  # vyhodi ak nemam moznost priradit hybnosti
-        loop = loop[0]
-    except IndexError as err:
-        print("Neexistuje moznost ako usporiadat hybnosti na rozne slucky", err)
+    loop = get_usual_QFT_loops(
+        list_of_all_loops_in_diagram, hybnost
+        ) # select only those loops that contain only one helical propagator (usual QFT loops)
 
     Fey_graphs.write(
         f"\nLoops in the diagram for a given internal momentum (digit coresponds the line):  {loop} \n"
-    )
+        ) # write the loop structure of the diagram to the file
+
+    #--------------------------------------------------------------------------------------------------------------#
+    #                        Do smth
+    #--------------------------------------------------------------------------------------------------------------#
+
+
 
     # The beginning of the momentum distribution. In this case, momentum flows into the diagram via field B and flows out through field b.
     # If the momentum flows into the vertex is with (+) if the outflow is with (-).
     # In propagator the line follows nickel index. For example line (1,2) is with (+) momentum and line (2,1) is with (-) momentum - starting point is propagators vv or propagators with kernel D_v
+
 
     hybnost_pomoc = [0] * len(internal_lines)
     for i in loop:
@@ -253,6 +338,8 @@ def get_input_data(
     Fey_graphs.write(
         f"\nMomentum distributed among propagators (lines):  {hybnost} \n"
     )
+
+    vonkajsie = get_list_with_propagators_from_nickel_index(graf)[1] # list with diagram external lines
 
     moznost = [0] * (number_int_vert * 3)
     for i in vonkajsie:  # deploy external momentum
@@ -353,15 +440,6 @@ def get_input_data(
             integral = integral + "PvB[" + str(hybnost[i]) + "]*"
         P_structure.append([hybnost[i], in1, in2])
 
-
-    '''
-    все вот эти выводы сделаны в старом, уродливом и медленно работающем стиле
-    надо переписывать на f-строки, ну вот тут это должно выглядеть так:
-
-    Fey_graphs.write(
-        f"\n Momentums in propagators for the Wolfram Mathematica file: {integral[:-1]} \n"
-    )
-    '''
     Fey_graphs.write(
         f"\nMomentums in propagators for the Wolfram Mathematica file:  {integral[:-1]}\n"
     )
@@ -442,7 +520,7 @@ def get_input_data(
     # Tenzor = Tenzor.subs(A, 1)              # It depends on which part we want to calculate from the vertex Bbv
     # print(Tenzor)
 
-    print("step 0:", time.time() - t)
+    print("step 0:", round(time.time() - t, 1), "sec")
 
 
     for in2 in kd_structure:
@@ -518,7 +596,7 @@ def get_input_data(
         H_structure = H_structure + structureh
 
 
-    print("step 1:", time.time() - t)
+    print("step 1:", round(time.time() - t, 1), "sec")
 
     i = 0
     while i < len(P_structure):  # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
@@ -557,7 +635,7 @@ def get_input_data(
         else:
             i += 1
 
-    print("step 2:", time.time() - t)
+    print("step 2:", round(time.time() - t, 1), "sec")
 
     i = 0
     while (len(H_structure) > i):  # sipmplify in the Tenzor part H_{ij} (k) P_{il} (k) =  H_{il} (k)
@@ -596,7 +674,7 @@ def get_input_data(
         else:
             i += 1
 
-    print("step 3:", time.time() - t)
+    print("step 3:", round(time.time() - t, 1), "sec")
 
     i = 0
     while (len(P_structure) > i):  # sipmplify in the Tenzor part  P_{ij} (k) P_{il} (k) =  P_{il} (k)
@@ -640,7 +718,7 @@ def get_input_data(
             P_structure + structurep
         )  # it add all newly created structures to the list
 
-    print("step 4:", time.time() - t)
+    print("step 4:", round(time.time() - t, 1), "sec")
 
     for i in hyb_structure:  # replace: hyb(-k+q, i) = -hyb(k, i) + hyb(q, i)
         k_c = i[0].coeff(k)
@@ -662,7 +740,7 @@ def get_input_data(
         )
         kd_structure.append([i[1], i[2]])
 
-    print("step 5:", time.time() - t)
+    print("step 5:", round(time.time() - t, 1), "sec")
 
     Tenzor = expand(Tenzor)
 
@@ -681,7 +759,7 @@ def get_input_data(
                 H(in1[0], in1[1], in1[2]) * hyb(k, in1[1]) * hyb(k, in1[2]), 0
             )
 
-    print("step 6:", time.time() - t)
+    print("step 6:", round(time.time() - t, 1), "sec")
 
     inkd = 0
     while (inkd == 0):  # calculation part connected with the kronecker delta function: kd(i,j) *hyb(k,i) = hyb(k,j)
@@ -711,7 +789,7 @@ def get_input_data(
         else:
             inkd = 1
 
-    print("step 7:", time.time() - t)
+    print("step 7:", round(time.time() - t, 1), "sec")
 
     i = 0
     while len(H_structure) > i:  # calculation for helical term
@@ -772,7 +850,7 @@ def get_input_data(
                 kd_structure.remove(in2)
         i += 1
 
-    print("step 8:", time.time() - t)
+    print("step 8:", round(time.time() - t, 1), "sec")
 
     p_structure = list()  # list of indeces for momentum p in Tenzor
     k_structure = list()  # list of indeces for momentum k in Tenzor
@@ -802,7 +880,7 @@ def get_input_data(
     Tenzor = Tenzor.subs(hyb(k, indexb) * hyb(k, indexB), 0)
 
 
-    print("step 9:", time.time() - t)
+    print("step 9:", round(time.time() - t, 1), "sec")
 
     # calculation of H structure - For this particular case, one of the external indices (p_s, b_i or B_j) is paired with a helicity term.
     # we will therefore use the information that, in addition to the helicity term H( , i,j), they can be multiplied by a maximum of three internal momenta.
@@ -1075,7 +1153,7 @@ def get_input_data(
         i += 1
 
 
-    print("step 10:", time.time() - t)
+    print("step 10:", round(time.time() - t, 1), "sec")
 
     for (in1) in (H_structure):  # calculate the structure where there are two external momentums: H(momentum, i, indexB)* p(i) hyb( , indexb) and other combinations except H(momentum, indexB, indexb) hyb(p, i) hyb(k, i)
         if Tenzor.coeff(H(in1[0], in1[1], in1[2])) != 0:
@@ -1162,7 +1240,7 @@ def get_input_data(
 
     Tenzor = simplify(Tenzor)
 
-    print("step 11:", time.time() - t)
+    print("step 11:", round(time.time() - t, 1), "sec")
 
     result = str(Tenzor)
     result = result.replace("**", "^")
@@ -1185,4 +1263,4 @@ with open('Two-loop MHD diagrams.txt') as MHD_diagrams_file:
 
     for graf in MHD_diagrams_file.readlines():
 
-        get_input_data(graf)
+        get_output_data(graf)
