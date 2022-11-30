@@ -577,8 +577,10 @@ def adding_vertex_factors_to_product_of_propagators(
             momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
         elif sorted_vertex_triple == ["V", "v", "v"]:
             in1 = 3 * vertex_number + vertex_triple.index("V")
-            in2 = 3 * vertex_number + vertex_triple.index("v")
-            in3 = 1 + in2
+            index_set = [3*vertex_number, 3*vertex_number + 1, 3*vertex_number + 2]
+            index_set.remove(in1)
+            in2 = index_set[0]
+            in3 = index_set[1]
             vertex_factor_Vvv = I * (
                 hyb(distribution_of_momentums_over_vertices[in1][2], in2) * kd(in1, in3)
                 + hyb(distribution_of_momentums_over_vertices[in1][2], in3) * kd(in1, in2))
@@ -589,8 +591,10 @@ def adding_vertex_factors_to_product_of_propagators(
             momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3])
         elif sorted_vertex_triple == ["V", "b", "b"]:
             in1 = 3 * vertex_number + vertex_triple.index("V")
-            in2 = 3 * vertex_number + vertex_triple.index("b")
-            in3 = 1 + in2
+            index_set = [3*vertex_number, 3*vertex_number + 1, 3*vertex_number + 2]
+            index_set.remove(in1)
+            in2 = index_set[0]
+            in3 = index_set[1]
             vertex_factor_Vbb = I * (
                 hyb(distribution_of_momentums_over_vertices[in1][2], in2) * kd(in1, in3)
                 + hyb(distribution_of_momentums_over_vertices[in1][2], in3) * kd(in1, in2)) 
