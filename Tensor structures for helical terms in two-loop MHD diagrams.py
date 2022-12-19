@@ -5,105 +5,674 @@ import sys
 import copy
 import itertools
 import sympy as sym
-# from sympy import re, im, I, E, symbols
+from sympy import Number
+from sympy import I, E, pi
+from sympy import re, im, conjugate, Add, factorial
 from sympy import *
+from sympy import symbols, solve_linear
 from functools import reduce
 from collections import Counter
 import time
 
+
+# A detailed description of most of the notation introduced in this program can be found in the articles:
+
+# 1. Adzhemyan, L.T., Vasil'ev, A.N. & Gnatich, M. Turbulent dynamo as spontaneous symmetry breaking. 
+# Theor Math Phys 72, 940–950 (1987). https://doi.org/10.1007/BF01018300
+
+# 2. Hnatič, M.; Honkonen, J.; Lučivjanský, T. Symmetry Breaking in Stochastic Dynamics and Turbulence. 
+# Symmetry 2019, 11, 1193. https://doi.org/10.3390/sym11101193 
+
+# 3. D. Batkovich, Y. Kirienko, M. Kompaniets, and S. Novikov, GraphState - A tool for graph identification
+# and labelling, arXiv:1409.8227, program repository: https://bitbucket.org/mkompan/graph_state/downloads
+
+
+if not os.path.isdir("Results"):
+    os.mkdir("Results") # create the Results folder if it doesn't already exist
+
+# ATTENTION!!! Already existing names of variables and functions should NOT be changed!
+
 # -----------------------------------------------------------------------------------------------------------------#
-#                                                 Global variables
+#                                               Global variables and symbols
 # -----------------------------------------------------------------------------------------------------------------#
 
-stupen = 1  # proportionality of the tensor structure to the external momentum p
+[p, k, q] = symbols("p k q", real = True)
+"""
+p denotes an external (inflowing) momentum
+k and q denote momentums flowing through loops
+"""     
 
-number_int_vert = 4  # the number of internal (three-point) vertecies in diagram
+[w, w_k, w_q] = symbols("w, w_k, w_q", real = True) 
+"""
+w denotes an external (inflowing) frequency
+w_k and w_q denote frequencies flowing through loops
+"""
 
-vertex_begin = 0     # 
-vertex_end = 3       # 
+[A, s, d] = symbols("A s d", integer = True)
+"""
+A parametrizes the model type: model of linearized NavierStokes equation (A = -1), 
+kinematic MHD turbulence (A = 1), model of a passive vector field advected by a given turbulent 
+environment (A = 0)
 
-hyb = [p, k, q] = symbols("p k q")      # symbols for momentums (p denotes an external momentum)
-[w, w_k, w_q] = symbols("w, w_k, w_q")  # symbols for frequencies (w denotes an external frequency)
-P = Function("P")                       # Transverse projection operator
-H = Function("H")                       # Helical term
-kd = Function("kd")                     # Kronecker delta function
-hyb = Function("hyb")                   # defines momentum (hybnost = momentum) as follows: hyb(k, 1) is $k_1$
-lcs = Function("lcs")                   # Levi-Civita symbol
+s reserved to denote the component of the external momentum p 
+d the spatial dimension of the system, its physical value is equal to 3
+"""
 
-[I, A, z, nu, vo, uo, rho] = symbols("I A z nu vo uo rho")
+[z, theta] = symbols("z theta", real = True)
+"""
+z = cos(angle between k and q) = dot_product(k, q)/ (abs(k) * abs(q))
+theta is proportional to the magnetic induction vector
+"""
 
-# I is an imaginary unit
-# A is a model parameter (the model action includes a term ~ A Bbv ).
-# z ????
-# nu ???
-# v_0 ???
-# u_0^(-1) is a "magnetic Prandtl number"
-# rho is a gyrotropy parameter, |rho| < 1
+[nu, mu, u, rho] = symbols("nu vo uo rho", positive = True)
+"""
+nu is a renormalized kinematic viscosity,  mu is a renormalization mass, 
+u is a renormalized reciprocal magnetic Prandtl number, and  rho is a gyrotropy parameter (abs(rho) < 1)
+"""
 
-[go, d, eps] = symbols("go d eps")  # coupling constant, dimension
+[g, eps] = symbols("g eps", real = True) 
+"""
+g is a coupling constant, eps determines a degree of model deviation from logarithmicity (0 < eps =< 2)
+"""
 
-# g_0 is a bare coupling constant
-# d is a space dimension
-# eps determines a degree of model deviation from logarithmicity
-
-[s, b, B] = symbols("s b B")
-
-# the index of field connected to field and the external momentum p_s ???
-
+all_nonzero_propagators = [
+    ["v", "v"], ["v", "V"], ["V", "v"], ["b", "B"], ["B", "b"], ["v", "b"], 
+    ["b", "v"], ["b", "b"], ["V", "b"], ["b", "V"], ["B", "v"], ["v", "B"]
+] 
 propagators_with_helicity = [["v", "v"], ["v", "b"], ["b", "v"], ["b", "b"]]
-
 momentums_for_helicity_propagators = [k, q]
 frequencies_for_helicity_propagators = [w_k, w_q]
+"""
+The set all_nonzero_propagators contains all possible nonzero propagators.
+The set propagators_with_helicity consists of propagators containing the core D_v (see below). 
+In this program, this set is used to define the loop structure of the diagram.
 
-# these propagators contain the kernel D_v and will determine the loops in the diagram 
-# (for technical reasons, it is convenient for us to give these lines new momentums and frequencies
-# (k, q and w_k, w_q)) first loop - (k, w_k), second loop - (q, w_q)
+For technical reasons, it is convenient for us to give to propagators from propagators_with_helicity 
+new momentums (momentums_for_helicity_propagators) and frequencies (frequencies_for_helicity_propagators). 
+The first loop corresponds to the pair (k, w_k) and the second to the pair (q, w_q).
+"""
+
+number_int_vert = 4 
+""" Parametr number_int_vert is a total number of internal (three-point) vertecies in diagram """
+stupen = 1  
+""" 
+Parameter stupen denotes the desired degree of rho.  
+"""
+
+# -----------------------------------------------------------------------------------------------------------------#
+#                                       Custom functions in subclass Function in SymPy
+# -----------------------------------------------------------------------------------------------------------------#
+
+# All functions here are given in momentum-frequency representation
+
+class D_v(Function):
+    """ 
+    D_v(k) = g*mu**(2*eps)*nu**3*k**(4 - d - 2*eps)
+
+    ARGUMENTS:
+
+    k -- absolute value of momentum
+
+    PARAMETERS:
+
+    g -- coupling constant, nu -- renormalized kinematic viscosity, d -- space dimension, 
+    mu -- renormalization mass, eps -- determines a degree of model deviation from logarithmicity
+
+    PROPERTIES:
+
+    D_v(k) = D_v(-k)
+    """
+    @classmethod
+    def eval(cls, k):
+        if k.could_extract_minus_sign():
+            return cls(-k) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k = self.args[0]
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+        return g*mu**(2*eps)*nu**3*k**(4 - d - 2*eps)
+
+class alpha(Function):
+    """ 
+    alpha(k, w) = I*w + nu*k**2 
+    
+    ARGUMENTS:
+
+    k -- momentum, w - frequency
+
+    PARAMETERS:
+
+    nu -- renormalized kinematic viscosity
+
+    PROPERTIES:
+
+    alpha(k, w) = alpha(-k, w)
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return I*w + nu*k**2
+
+class alpha_star(Function):
+    """ 
+    alpha_star(k, w) = conjugate(alpha(k, w)) = -I*w + nu*k**2 
+
+    ARGUMENTS:
+
+    k -- momentum, w - frequency
+
+    PARAMETERS:
+
+    nu -- renormalized kinematic viscosity
+
+    PROPERTIES:
+
+    alpha_star(k, w) = alpha_star(-k, w),
+
+    alpha_star(k, w) = alpha(k, -w)
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+        if w.could_extract_minus_sign():
+            return alpha(k, -w)
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return -I*w + nu*k**2
+
+class beta(Function):
+    """ 
+    beta(k, w) = I*w + uo*nu*k**2
+
+    ARGUMENTS:
+
+    k -- momentum, w - frequency
+
+    PARAMETERS:
+
+    u -- renormalized reciprocal magnetic Prandtl number, nu -- renormalized kinematic viscosity
+
+    PROPERTIES:
+
+    beta(k, w) = beta(-k, w)
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return I*w + u*nu*k**2
+
+class beta_star(Function):
+    """ 
+    beta_star(k, w) = conjugate(beta(k, w)) = -I*w + uo*nu*k**2
+
+    ARGUMENTS:
+
+    k -- momentum, w - frequency
+
+    PARAMETERS:
+
+    u -- renormalized reciprocal magnetic Prandtl number, nu -- renormalized kinematic viscosity
+
+    PROPERTIES:
+
+    beta_star(k, w) = beta_star(-k, w),
+
+    beta_star(k, w) = beta(k, -w)    
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+        if w.could_extract_minus_sign():
+            return beta(k, -w)
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return -I*w + u*nu*k**2
+
+class sc_prod(Function):
+    """ 
+    This auxiliary function denotes the standard dot product of vectors in R**3
+
+    ARGUMENTS:
+
+    theta -- external magnetic field, k -- momentum
+
+    PROPERTIES:
+
+    sc_prod(theta, k) = beta_star(theta, -k)   
+    """
+    @classmethod
+    def eval(cls, theta, k):
+        if k.could_extract_minus_sign():
+            return -cls(theta, -k) # function is even with respect to k by definition
+
+class Discriminant(Function):
+    """ 
+    This auxiliary function is introduced for the convenience of the subsequent calculation of 
+    integrals over frequencies (using the residue theorem). It defines the discriminant 
+    that occurs when solving the quadratic equation xi(k, w) = 0 with respect to w (see below)
+
+    under_root_expression(k, A) = 4*A*sc_prod(theta, k)**2 - k**4*nu**2*(uo - 1)**2
+
+    ARGUMENTS:
+    A - digit parameter of the model, k -- momentum
+
+    PARAMETERS:
+
+    u -- renormalized reciprocal magnetic Prandtl number, nu -- renormalized kinematic viscosity
+    sc_prod(theta, k) -- dot product of external magnetic field theta and momentum k, 
+
+    PROPERTIES:
+
+    under_root_expression(k, A) = under_root_expression(-k, A)   
+    """
+
+    @classmethod
+    def eval(cls, k, A):
+        if k.could_extract_minus_sign():
+            return cls(-k, A) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, A = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            A = A.doit(deep = deep, **hints)
+        return 4*A*sc_prod(theta, k)**2 - k**4*nu**2*(u - 1)**2
+
+class f_1(Function):
+    """ 
+    This auxiliary function is introduced for the convenience of the subsequent calculation of 
+    integrals over frequencies (using the residue theorem). It returns the first root of the equation
+    xi(k, w) = 0 with respect to w (see below).
+
+    f_1(k, A) = (sqrt(under_root_expression(k, A)) + I*k**2*nu*uo + I*k**2*nu)/2
+
+    ARGUMENTS:
+    A - digit parameter of the model, k -- momentum
+
+    PARAMETERS:
+
+    u -- renormalized reciprocal magnetic Prandtl number, nu -- renormalized kinematic viscosity
+    sc_prod(theta, k) -- dot product of external magnetic field theta and momentum k, 
+
+    PROPERTIES:
+
+    f_1(k, A) = f_1(-k, A)   
+    """
+    @classmethod
+    def eval(cls, k, A):
+        if k.could_extract_minus_sign():
+            return cls(-k, A) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, A = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            A = A.doit(deep = deep, **hints)
+        return (sqrt(Discriminant(k, A)) + I*k**2*nu*u + I*k**2*nu)/2
+
+class f_2(Function):
+    """ 
+    This auxiliary function is introduced for the convenience of the subsequent calculation of 
+    integrals over frequencies (using the residue theorem). It returns the second root of the equation
+    xi(k, w) = 0 with respect to w (see below). 
+
+    f_2(k, A) = (- sqrt(under_root_expression(k, A)) + I*k**2*nu*uo + I*k**2*nu)/2
+
+    Note:
+    f_2(k, A) differs from f_1(k, A) by sign before the square root
+
+    ARGUMENTS:
+    A - digit parameter of the model, k -- momentum
+
+    PARAMETERS:
+
+    u -- renormalized reciprocal magnetic Prandtl number, nu -- renormalized kinematic viscosity
+    sc_prod(theta, k) -- dot product of external magnetic field theta and momentum k, 
+
+    PROPERTIES:
+
+    f_2(k, A) = f_2(-k, A),   
+
+    conjugate(f_2(k, A)) = - f_1(k, A)  ==>  conjugate(f_1(k, A)) = - f_2(k, A)
+    """
+    @classmethod
+    def eval(cls, k, A):
+        if k.could_extract_minus_sign():
+            return cls(-k, A) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, A = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            A = A.doit(deep = deep, **hints)
+        return (-sqrt(Discriminant(k, A)) + I*k**2*nu*u + I*k**2*nu)/2
+
+class chi_1(Function):
+    """ 
+    This auxiliary function is introduced for the convenience of the subsequent calculation of 
+    integrals over frequencies (using the residue theorem). It defines the first monomial in the 
+    decomposition of the square polynomial xi(k, w) (with respect to w) into irreducible factors (see below). 
+
+    chi_1(k, w) = (w - f_1(k, A))
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    chi_1(k, w) = chi_1(-k, w)   
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return (w - f_1(k, A))
+
+class chi_2(Function):
+    """ 
+    This auxiliary function is introduced for the convenience of the subsequent calculation of 
+    integrals over frequencies (using the residue theorem). It defines the second monomial in the 
+    decomposition of the square polynomial xi(k, w) (with respect to w) into irreducible factors (see below). 
+
+    chi_2(k, w) = (w - f_2(k, A))
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    chi_2(k, w) = chi_2(-k, w),  
+
+    conjugate(chi_2(k, w)) = w - conjugate(f_2(k, A)) = w + f_1(k, A) = -(- w - f_1(k, A)) = -chi_1(k, -w),
+
+    chi_2(k, -w) = (- w - f_2(k, A)) = -(w + f_2(k, A)) = -w + conjugate(f_1(k, A)) = -conjugate(chi_1(k, w))
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return (w - f_2(k, A))
+
+class xi(Function):
+    """ 
+    The function xi(k, w) is defined by the equality
+
+    xi(k, w) = A*sc_prod(theta, k)**2 + alpha(k, w)*beta(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PARAMETERS:
+
+    A - digit parameter of the model
+
+    Representations for xi(k, w) (decomposition into irreducible ones):
+
+    xi(k, w) = -chi_1(k, w)*chi_2(k, w) = -(w - f_1(k, A))*(w - f_2(k, A)) (see definitions above)
+
+    PROPERTIES:
+
+    xi(k, w) = xi(-k, w)  
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return -chi_1(k, w)*chi_2(k, w)
+
+class xi_star(Function):
+    """ 
+    The function xi_star(k, w) is defined by the equality
+
+    xi_star(k, w) = conjugate(xi(k, w)) = A*sc_prod(theta, k)**2 + alpha_star(k, w)*beta_star(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PARAMETERS:
+
+    A - digit parameter of the model
+
+    Representations for xi_star(k, w) (decomposition into irreducible ones):
+
+    xi_star(k, w) = -conjugate(chi_2(k, w))*conjugate(chi_1(k, w)) = -chi_2(k, -w)*chi_1(k, -w)
+
+    PROPERTIES:
+
+    xi(k, w) = xi(-k, w),
+
+    xi_star(k, w) =  -(w + f_1(k, A))*(w + f_2(k, A)) = -(- w - f_1(k, A))*(- w - f_2(k, A)) = xi(k, -w),
+
+    i.e. using the symmetry properties xi_star(k, w) is also expressed in terms of chi_1 and chi_2  
+    """
+    @classmethod
+    def eval(cls, k, w):
+        if k.could_extract_minus_sign():
+            return cls(-k, w) # function is even with respect to k by definition
+        if w.could_extract_minus_sign():
+            return xi(k, -w) # xi_star(k, w) = xi(k, -w)
+    def doit(self, deep = True, **hints):
+        k, w = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            w = w.doit(deep = deep, **hints)
+        return -chi_2(k, -w)*chi_1(k, -w) # express the result in terms of the functions chi_1 and chi_2
+
+class kd(Function):
+    """ 
+    kd(index1, index2) defines the Kronecker delta function
+
+    ARGUMENTS:
+    index1 and index2 -- positive integers
+    """
+
+class hyb(Function):
+    """ 
+    hyb(k, index) returns the momentum index-th component
+
+    ARGUMENTS:
+    k -- momentum, index -- positive integer enumerates the components k
+    """
+
+class lcs(Function):
+    """ 
+    lcs(index1, index2, index3) defines the Levi-Civita symbol
+
+    ARGUMENTS:
+    index1, index2, index3 -- positive integers
+    """
+
+class vertex_factor_Bbv(Function):
+    """ 
+    The vertex_factor_Bbv(k, index_B, index_b, index_v) function determines the corresponding 
+    vertex multiplier (Bbv) of the diagram.
+
+    vertex_factor_Bbv(k, index_B, index_b, index_v) = I * (hyb(k, index_v) * kd(index_B, index_b) - 
+    A * hyb(k, index_b) * kd(index_B, index_v))
+
+    ARGUMENTS:
+    k -- momentum, index_B, index_b, index_v -- positive integers
+    """
+    @classmethod
+    def eval(cls, k, index_B, index_b, index_v):
+        if isinstance(k, Number) and all(isinstance(m, Integer) for m in [index_B, index_b, index_v]): 
+            return I * (hyb(k, index_v) * kd(index_B, index_b) - A * hyb(k, index_b) * kd(index_B, index_v))
+
+    def doit(self, deep = True, **hints):
+        k, index_B, index_b, index_v = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            index_B = index_B.doit(deep = deep, **hints)
+            index_b = index_b.doit(deep = deep, **hints)
+            index_v = index_v.doit(deep = deep, **hints)   
+
+        return I * (hyb(k, index_v) * kd(index_B, index_b) - A * hyb(k, index_b) * kd(index_B, index_v))
+
+class vertex_factor_Vvv(Function):
+    """ 
+    The vertex_factor_Vvv(k, index_V, index1_v, index2_v) function determines the corresponding 
+    vertex multiplier (Vvv) of the diagram.
+
+    vertex_factor_Vvv(k, index_V, index1_v, index2_v) = I * (hyb(k, index1_v) * kd(index_V, index2_v) + 
+    hyb(k, index2_v) * kd(index_V, index1_v))
+
+    ARGUMENTS:
+    k -- momentum, index_V, index1_v, index2_v -- positive integers
+    """
+    @classmethod
+    def eval(cls, k, index_V, index1_v, index2_v):
+        if isinstance(k, Number) and all(isinstance(m, Integer) for m in [index_V, index1_v, index2_v]):
+            return I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
+
+    def doit(self, deep = True, **hints):
+        k, index_V, index1_v, index2_v = self.args
+
+        if deep:
+            k = k.doit(deep = deep, **hints)
+            index_V = index_V.doit(deep = deep, **hints)
+            index1_v = index1_v.doit(deep = deep, **hints)
+            index2_v = index2_v.doit(deep = deep, **hints)   
+
+        return I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
+
+class P(Function):
+    """ 
+    Transverse projection operator
+    """
+
+class H(Function):
+    """ 
+    Helical term
+    """
 
 # -----------------------------------------------------------------------------------------------------------------#
 #                                                Auxiliary functions
 # -----------------------------------------------------------------------------------------------------------------#
 
+# The diagram e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b| is considered as an example of calculating the output data 
+# for all functions below.
+
 #------------------------------------------------------------------------------------------------------------------#
-#                    Create a file with a name and write the Nickel index of the diagram into it
+#                      We create a file and start write the information about diagram into it
 #------------------------------------------------------------------------------------------------------------------#
 
 def get_information_from_Nickel_index(
     graf
-    ): # given Nickel index (graf) creates a file name with the output data
+    ): 
+    """
+    Generates a file name with results for each particular diagram
+    using the data from the file "Two-loop MHD diagramms".
+
+    ARGUMENTS:
+
+    graf -- Nickel index of the diagram + symmetry factor
+
+    OUTPUT DATA EXAMPLE:
+
+    File name example: "Diagram__e12-23-3-e+0B_bB_vv-vB_bb-bV-0b.txt" 
+    (all "|" are replaced by -, ":" is replaced by +)
+
+    Nickel index example: e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|
+
+    Symmetry factor example: 1
+    """
 
     Nickel_index = "".join(graf.split(sep = 'SC = ')[0])
-
     Symmetry_factor = " ".join(graf.split(sep = 'SC = ')[1])
+    # separating the Nickel index from the symmetry factor of the diagram
 
-    Nickel_topology = " ".join(graf.split(sep = 'SC = ')[0].split(sep = ":")[0].split(sep = "|"))
+    Nickel_topology = "-".join(graf.split(sep = 'SC = ')[0].rstrip()
+    .split(sep = ":")[0].split(sep = "|"))[:-1]
     # topological part of the Nickel index
 
-    Nickel_lines = " ".join(graf.split(sep = 'SC = ')[0].split(sep = ":")[1].split(sep = "|"))
+    Nickel_lines = "-".join(graf.split(sep = 'SC = ')[0].rstrip()
+    .split(sep = ":")[1].split(sep = "|"))[:-1]
     # line structure in the diagram corresponding to Nickel_topology
 
-    return [f"Diagram {Nickel_topology.strip()} {Nickel_lines.strip()}.txt", Nickel_index.strip(), Symmetry_factor.strip()]
-
-# Nickel index example: e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|
-# File name example: "Diagram e12 23 3 e 0B_bB_vv vB_bb bV 0b.txt" (all "|" are replaced by a space, ":" is removed)
-
-def get_helical_propagators(
-    fields_for_propagators_with_helicity
-    ): # glues separate fields into propagators according to the propagators_with_helicity
-    dimension = len(fields_for_propagators_with_helicity) 
-    list_of_propagators_with_helicity = [0] * dimension
-    for i in range(dimension):
-        list_of_propagators_with_helicity[i] = (
-            fields_for_propagators_with_helicity[i][0] + fields_for_propagators_with_helicity[i][1])
-    return list_of_propagators_with_helicity
-# Function application example: 
-# list_of_propagators_with_helicity = ['vv', 'vb', 'bv', 'bb']
+    return [f"Diagram__{Nickel_topology.strip()}+{Nickel_lines.strip()}.txt", 
+    Nickel_index.strip(), Symmetry_factor.strip()]
 
 def get_list_with_propagators_from_nickel_index(
     nickel,
-    ):  # arranges the propagators into a list of inner and outer lines with fields
-    s1 = 0                  # numbers individual blocks |...| in the topological part of the Nickel index 
-                            # (all before the symbol :), i.e. vertices of the diagram
-    s2 = nickel.find(":")   # runs through the part of the Nickel index describing the lines (after the symbol :)
+    ):  
+    """
+    Arranges the propagators into a list of inner and outer lines with fields. The list is constructed as follows:
+    vertex 0 is connected to vertex 1 by a line b---B, vertex 0 is connected to vertex 2 by a line v---v, etc.
+
+    ARGUMENTS:
+
+    nickel -- Nickel index of the diagram. 
+    It is defined by the function get_information_from_Nickel_index()
+
+    Note:
+
+    Works only for diagrams with triplet vertices
+
+    OUTPUT DATA EXAMPLE:
+
+    propagator(e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|) = 
+    [
+    [[(0, 1), ['b', 'B']], [(0, 2), ['v', 'v']], [(1, 2), ['v', 'B']], [(1, 3), ['b', 'b']], [(2, 3), ['b', 'V']]],
+    [[(-1, 0), ['0', 'B']], [(-1, 3), ['0', 'b']]]
+    ]
+
+    """
+    
+    
+    s1 = 0
+    """
+    numbers individual blocks |...| in the topological part of the Nickel index 
+    (all before the symbol :), i.e. vertices of the diagram
+    """
+    s2 = nickel.find(":")
+    """
+    runs through the part of the Nickel index describing the lines (after the symbol :)
+    """ 
     propagator_internal = []
     propagator_external = []
     for i in nickel[: nickel.find(":")]:
@@ -117,21 +686,20 @@ def get_list_with_propagators_from_nickel_index(
             s1 += 1
     return [propagator_internal, propagator_external]
 
-# Function application example: 
-# propagator(e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|) = 
-# [
-# [[(0, 1), ['b', 'B']], [(0, 2), ['v', 'v']], [(1, 2), ['v', 'B']], [(1, 3), ['b', 'b']], [(2, 3), ['b', 'V']]],
-# [[(-1, 0), ['0', 'B']], [(-1, 3), ['0', 'b']]]
-# ]
-# I.e. vertex 0 is connected to vertex 1 by a line b---B, vertex 0 is connected to vertex 2 by a line v---v, etc.
-
 #------------------------------------------------------------------------------------------------------------------#
-#                        Get a loop structure of the diagram (which lines form loops)
+#                       We get  a loop structure of the diagram (which lines form loops)
 #------------------------------------------------------------------------------------------------------------------#
 
 def get_list_as_dictionary(
     list
-    ): # turns the list into a dictionary, keys are the numbers of the list elements
+    ): 
+    """
+    Turns the list into a dictionary, keys are digits
+
+    ARGUMENTS:
+
+    Some list
+    """
     dictionary = dict()
     for x in range(len(list)):
         dictionary.update(
@@ -139,10 +707,47 @@ def get_list_as_dictionary(
         ) 
     return dictionary
 
+def get_line_keywards_to_dictionary(
+    some_dictionary
+    ):
+    """
+    Turns the dictionary with digits keys to dictionary which string keys
+
+    ARGUMENTS:
+
+    some_dictionary -- dictionary with information about lines structure
+
+    OUTPUT DATA EXAMPLE:
+
+    {'line 0': [(0, 1), ['b', 'B']], 'line 1': [(0, 2), ['v', 'v']], 'line 2': [(1, 2), ['v', 'B']], 
+    'line 3': [(1, 3), ['b', 'b']], 'line 4': [(2, 3), ['b', 'V']]} 
+    """
+    new_some_dictionary = copy.copy(some_dictionary)
+    dim = len(new_some_dictionary)
+    for i in range(dim):
+        new_some_dictionary[f"line {i}"] = new_some_dictionary.pop(i)
+    return new_some_dictionary
+
 def list_of_all_possible_lines_combinations(
     dict_with_internal_lines
-    ):  # give us all possible combinations of lines (propagators) 
-        # (each digit in output list = key from dict_with_internal_lines, i.e. line in diagram)
+    ):  
+    """
+    Return all possible (in principle) combinations of lines (propagators).
+    Each digit in output list = key from dict_with_internal_lines, i.e. line in diagram.
+
+    ARGUMENTS:
+
+    dict_with_internal_lines is defined by the functions get_list_with_propagators_from_nickel_index()
+    and get_list_as_dictionary()
+
+    OUTPUT DATA EXAMPLE: (digit corresponds to the line from dict_with_internal_lines):
+
+    [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), (0, 1, 2), 
+    (0, 1, 3), (0, 1, 4), (0, 2, 3), (0, 2, 4), (0, 3, 4), (1, 2, 3), (1, 2, 4), (1, 3, 4), (2, 3, 4), 
+    (0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 3, 4), (0, 2, 3, 4), (1, 2, 3, 4), (0, 1, 2, 3, 4)]
+
+    """
+
     list_of_loops = list()
     for i in range(len(dict_with_internal_lines) - 1):
         ordered_list_of_r_cardinality_subsets = list(
@@ -154,17 +759,33 @@ def list_of_all_possible_lines_combinations(
             list_of_loops.append(x) for x in ordered_list_of_r_cardinality_subsets
         ]
     return list_of_loops 
-# Function application example (digit corresponds to the line):
-# list_of_loops = [(0, 1), (0, 2), (0, 3), (0, 4), (1, 2), (1, 3), (1, 4), (2, 3), (2, 4), (3, 4), 
-# (0, 1, 2), (0, 1, 3), (0, 1, 4), (0, 2, 3), (0, 2, 4), (0, 3, 4), (1, 2, 3), (1, 2, 4), (1, 3, 4), (2, 3, 4), 
-# (0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 3, 4), (0, 2, 3, 4), (1, 2, 3, 4), (0, 1, 2, 3, 4)]
 
 def check_if_the_given_lines_combination_is_a_loop_in_diagram(
     list_of_all_possible_lines_combinations, dict_with_diagram_internal_lines
-    ):  # сheck if the given lines combination from list_of_all_possible_lines_combinations() is a loop
-        # the combination of lines is a loop <==> in the list of all vertices of the given lines
-        # (line = (vertex1, vertex2)), each vertex is repeated TWICE, i.e. each vertex is the end 
-        # of the previous line and the start of the next one
+    ):  
+    """
+    It checks if the given lines combination from list_of_all_possible_lines_combinations is a loop.
+    The combination of lines is a loop <==> in the list of all vertices of the given lines
+    (line = (vertex1, vertex2)), each vertex is repeated TWICE, i.e. each vertex is the end 
+    of the previous line and the start of the next one.
+
+    ARGUMENTS:
+
+    list_of_all_possible_lines_combinations is given by the function list_of_all_possible_lines_combinations(),
+
+    dict_with_diagram_internal_lines is given by the functions get_list_with_propagators_from_nickel_index()
+    and get_list_as_dictionary()
+
+    Note: for some technical reasons, we will assign new momentums (k and q, according to the list_of_momentums) 
+    to propagators containing the D_v kernel, i.e. to propagators_with_helicity. Since each loop in the diagram 
+    contains such helical propagator, we can describe the entire loop structure of the diagram by assigning a 
+    new momentum to it in each loop.
+
+    OUTPUT DATA EXAMPLE: (digit corresponds to the line from dict_with_diagram_internal_lines):
+
+    [(0, 1, 2), (2, 3, 4), (0, 1, 3, 4)]
+    """
+    
     i = 0
     while i < len(list_of_all_possible_lines_combinations): 
         list_of_list_of_vertices_for_ith_combination = [
@@ -189,21 +810,27 @@ def check_if_the_given_lines_combination_is_a_loop_in_diagram(
         else:
             del list_of_all_possible_lines_combinations[i]
     return list_of_all_possible_lines_combinations
-# Function application example (digit corresponds to the line):
-# [(0, 1, 2), (2, 3, 4), (0, 1, 3, 4)]
-
-# Important note: for some technical reasons, we will assign new momentums (k and q, 
-# according to the list_of_momentums) to propagators containing the D_v kernel, i.e. to propagators_with_helicity.
-# Since each loop in the diagram contains such helical propagator, we can describe the entire loop structure of the
-# diagram by assigning a new momentum to it in each loop
 
 def put_momentums_and_frequencies_to_propagators_with_helicity(
     set_of_all_internal_propagators, set_of_propagators_with_helicity, list_of_momentums, list_of_frequencies
-    ): # assigning momentum (according to the list_of_momentums) to helicity propagators in concret diagram
-       # this function uses the information that there can only be one helical propagator in each loop
+    ):  
+    """
+    It assigning momentum (according to the list_of_momentums) to helicity propagators in the concret diagram.
+    This function uses the information that there can only be one helical propagator in each loop.
+
+    ARGUMENTS:
+
+    set_of_all_internal_propagators (is given by the function get_list_with_propagators_from_nickel_index()),
+
+    set_of_propagators_with_helicity, list_of_momentums, list_of_frequencies (see global variables)
+
+    OUTPUT DATA EXAMPLE:
+
+    dict_with_momentums_for_propagators_with_helicity = {1: k, 3: q}
+    
+    dict_with_frequencies_for_propagators_with_helicity = {1: w_k, 3: w_q}
+    """
     dict_with_momentums_for_propagators_with_helicity = dict()
-    # assuming that the variable set_of_all_internal_propagators is given by the function
-    # get_list_with_propagators_from_nickel_index()
     dict_with_frequencies_for_propagators_with_helicity = dict()
     for i in set_of_all_internal_propagators:  
         vertices_and_fields_in_propagator = set_of_all_internal_propagators[i]
@@ -226,15 +853,28 @@ def put_momentums_and_frequencies_to_propagators_with_helicity(
 
     return [dict_with_momentums_for_propagators_with_helicity,
             dict_with_frequencies_for_propagators_with_helicity]
-# Function application example:
-# dict_with_momentums_for_propagators_with_helicity = {1: k, 3: q}
-# dict_with_frequencies_for_propagators_with_helicity = {1: w_k, 3: w_q}
 
 def get_usual_QFT_loops(
     list_of_loops, dict_with_momentums_for_propagators_with_helicity
-    ): # selects from the list of all possible loops of the diagram only those that contain one 
-       # heicity propagator (through which the momentum k or q flow), i.e. each new loop corresponds
-       # one new momentum and no more (exclude different exotic cases)
+    ): 
+    """
+    It selects from the list_of_loops only those that contain one heicity propagator 
+    (through which the momentum k or q flows), i.e. each new loop corresponds one new 
+    momentum and no more (we exclude loops in which the law of conservation of momentum does not hold)
+
+    ARGUMENTS:
+
+    list_of_loops is given by the function list_of_all_possible_lines_combinations()), 
+
+    dict_with_momentums_for_propagators_with_helicity (is given by the function 
+
+    put_momentums_and_frequencies_to_propagators_with_helicity())
+
+    OUTPUT DATA EXAMPLE: (digit corresponds to the line):
+
+    list_of_usual_QFT_loops = [(0, 1, 2), (2, 3, 4)]
+    """
+    
     i = 0 
     list_of_usual_QFT_loops = copy.copy(list_of_loops) 
     while i < len(list_of_usual_QFT_loops): 
@@ -249,25 +889,44 @@ def get_usual_QFT_loops(
         else:
             i += 1
     return list_of_usual_QFT_loops
-# Function application example (digit corresponds to the line):
-# list_of_usual_QFT_loops = [(0, 1, 2), (2, 3, 4)]
 
 #------------------------------------------------------------------------------------------------------------------#
-#                       Get a distribution over momentums and frequencies flowing over lines
+#                      We get a distribution over momentums and frequencies flowing over lines
 #------------------------------------------------------------------------------------------------------------------#
 
 def get_momentum_and_frequency_distribution(internal_lines, momentums_in_helical_propagators, 
-    frequencies_in_helical_propagators, external_momentum, external_frequency, begin_vertex, end_vertex
+    frequencies_in_helical_propagators, external_momentum, external_frequency, begin_vertex, 
+    end_vertex, number_int_vert
     ):
+    """
+    It assigns momentums and frequencies to the internal lines of the diagram.
+
+    ARGUMENTS:
+
+    list internal_lines is given by the function get_list_with_propagators_from_nickel_index(), 
+
+    for momentums_in_helical_propagators, frequencies_in_helical_propagators, external_momentum = p,
+    external_frequency = w see global variables, 
+
+    begin_vertex = 0 -- vertex through which the field B flows into and 
+    end_vertex = 3 -- vertex through which the field b flows out
+
+    OUTPUT DATA EXAMPLE:
+
+    [{0: -k + p, 1: k, 2: -k + p - q, 3: q, 4: p - q}, {0: w - w_k, 1: w_k, 2: w - w_k - w_q, 3: w_q, 4: w - w_q}]
+    """
 
     length = len(internal_lines)
 
+    # creating unknown momentums and frequencies for each line
     momentums_for_all_propagators = [symbols(f'k_{i}') for i in range(length)]
     frequencies_for_all_propagators = [symbols(f'w_{i}') for i in range(length)]
 
     distribution_of_arbitrary_momentums = dict()
     distribution_of_arbitrary_frequencies = dict()
 
+    # we assign arbitrary momentums and frequencies to propogators, excluding those 
+    # that contain helical terms, since they are already assigned arguments
     for i in range(length):
         if i not in momentums_in_helical_propagators:
             distribution_of_arbitrary_momentums[i] = momentums_for_all_propagators[i]
@@ -281,24 +940,41 @@ def get_momentum_and_frequency_distribution(internal_lines, momentums_in_helical
     momentum_conservation_law = [0] * number_int_vert
     frequency_conservation_law = [0] * number_int_vert
 
+    """
+    The unknown momentums and frequencies are determined using the appropriate conservation
+    law at each vertex: the sum of the inflowing and outflowing arguments must equal to 0 
+    for each vertex.
+
+    In our case, momentum and frequency flows into the diagram via field B and flows out 
+    through field b. We assume that the arguments flowing into the vertex are positive, and
+    the arguments flowing out it are negative.
+    """
     for vertex in range(number_int_vert):
-        if vertex == begin_vertex:
+        if vertex == begin_vertex: 
+            # external argument flows out from this vertex to the diagram
             momentum_conservation_law[vertex] += -external_momentum
             frequency_conservation_law[vertex] += -external_frequency
         elif vertex == end_vertex:
+            # external argument flows into this vertex from the diagram
             momentum_conservation_law[vertex] += external_momentum
             frequency_conservation_law[vertex] += external_frequency
+
         for line_number in range(length):
             momentum = distribution_of_arbitrary_momentums[line_number]
             frequency = distribution_of_arbitrary_frequencies[line_number]
             line = internal_lines[line_number][0]
+
             if vertex in line:
-                if line.index(vertex) % 2 == 0:
+                if line.index(vertex) % 2 == 0: # condition that vertex is the starting point of the line
+                    # if the vertex is the end point of the line, then the argument flows into it (with (+)), 
+                    # otherwise, it flows out (with (-))
                     momentum_conservation_law[vertex] += momentum
                     frequency_conservation_law[vertex] += frequency
                 else: 
                     momentum_conservation_law[vertex] += -momentum
                     frequency_conservation_law[vertex] += -frequency
+
+    # there are 1 more conservation laws than unknown variables ==> one equation must hold identically
 
     list_of_momentum_conservation_laws = [momentum_conservation_law[i] for i in range(number_int_vert)]
     list_of_arbitrary_momentums = [
@@ -309,15 +985,16 @@ def get_momentum_and_frequency_distribution(internal_lines, momentums_in_helical
         frequencies_for_all_propagators[i] for i in range(length) if i not in frequencies_in_helical_propagators
         ]
 
-    list_of_arbitrary_momentums = list(filter(lambda x: x != 0, list_of_arbitrary_momentums))
-    list_of_arbitrary_frequencies = list(filter(lambda x: x != 0, list_of_arbitrary_frequencies))
-
-    define_arbitrary_momentums = sym.solve((list_of_momentum_conservation_laws), (list_of_arbitrary_momentums))
-    define_arbitrary_frequencies = sym.solve((list_of_frequency_conservation_laws), (list_of_arbitrary_frequencies))
+    define_arbitrary_momentums = sym.solve(
+        list_of_momentum_conservation_laws, list_of_arbitrary_momentums
+        ) # overcrowded system solved
+    define_arbitrary_frequencies = sym.solve(
+        list_of_frequency_conservation_laws, list_of_arbitrary_frequencies
+        ) # overcrowded system solved
 
     momentum_distribution = dict()
     frequency_distribution = dict()
-
+    # dictionaries with momentums and frequencies flowing along the corresponding line are created
     for i in range(length):
         if i not in momentums_in_helical_propagators:
             momentum_distribution[i] = define_arbitrary_momentums[momentums_for_all_propagators[i]]
@@ -329,13 +1006,28 @@ def get_momentum_and_frequency_distribution(internal_lines, momentums_in_helical
             frequency_distribution[i] = frequencies_in_helical_propagators[i]
 
     return [momentum_distribution, frequency_distribution]
-# Function application example:
-# [{0: -k + p, 1: k, 2: -k + p - q, 3: q, 4: p - q}, {0: w - w_k, 1: w_k, 2: w - w_k - w_q, 3: w_q, 4: w - w_q}]
 
 def get_momentum_and_frequency_distribution_at_zero_p_and_w(
     internal_lines, momentum_distribution, frequency_distribution, external_momentum, external_frequency,
     momentums_in_helical_propagators, frequencies_in_helical_propagators
     ):
+    """
+    Gives the distribution along the lines of momentums and frequencies in the diagram at zero
+    inflowing paremeters
+
+    ARGUMENTS:
+
+    internal_lines is given by get_list_with_propagators_from_nickel_index(), 
+
+    momentum_distribution and frequency_distribution are given by get_momentum_and_frequency_distribution()
+
+    for external_momentum = p, external_frequency = w,  momentums_in_helical_propagators, and 
+    frequencies_in_helical_propagators see global variables
+
+    OUTPUT DATA EXAMPLE:
+
+    [{0: -k, 1: k, 2: -k - q, 3: q, 4: -q}, {0: -w_k, 1: w_k, 2: -w_k - w_q, 3: w_q, 4: -w_q}]
+    """
 
     momentum_distribution_at_zero_external_momentum = dict()
     frequency_distribution_at_zero_external_frequency = dict()
@@ -346,11 +1038,13 @@ def get_momentum_and_frequency_distribution_at_zero_p_and_w(
     list_with_frequencies = [0] * length
 
     for i in range(length):
+        # momentum distribution at zero external momentum
         if i not in momentums_in_helical_propagators:
             list_with_momentums[i] += momentum_distribution[i].subs(external_momentum, 0)
             momentum_distribution_at_zero_external_momentum.update({i: list_with_momentums[i]})
         else:
             momentum_distribution_at_zero_external_momentum.update({i: momentums_in_helical_propagators[i]})
+        # frequency distribution at zero external frequency
         if i not in frequencies_in_helical_propagators:
             list_with_frequencies[i] += frequency_distribution[i].subs(external_frequency, 0)
             frequency_distribution_at_zero_external_frequency.update({i: list_with_frequencies[i]})
@@ -358,16 +1052,60 @@ def get_momentum_and_frequency_distribution_at_zero_p_and_w(
             frequency_distribution_at_zero_external_frequency.update({i: frequencies_in_helical_propagators[i]})
 
     return [momentum_distribution_at_zero_external_momentum, frequency_distribution_at_zero_external_frequency]
-# Function application example:
-# [{0: -k, 1: k, 2: -k - q, 3: q, 4: -q}, {0: -w_k, 1: w_k, 2: -w_k - w_q, 3: w_q, 4: -w_q}]
 
 def momentum_and_frequency_distribution_at_vertexes(
     external_lines, internal_lines, number_of_all_vertices, external_momentum, external_frequency,
     momentum_distribution_at_zero_external_momentum, frequency_distribution_at_zero_external_frequency
     ):
+    """
+    Gives the distribution  of momentums and frequencies at the three-point vertices in the diagram at zero
+    inflowing paremeters
 
+    ARGUMENTS:
+
+    external_lines and internal_lines are given by get_list_with_propagators_from_nickel_index(), 
+
+    for external_momentum = p, external_frequency = w, and number_of_all_vertices see global variables,
+
+    momentum_distribution_at_zero_external_momentum, frequency_distribution_at_zero_external_frequency are 
+    given by get_momentum_and_frequency_distribution_at_zero_p_and_w()
+
+    Note:
+
+    The numeric indexes here are the indexes of the corresponding field resulting from the given vertex. 
+    This field can pair with another (to form a line in diagram) only if it has exactly the same index
+    (there is only one such field!).
+
+    OUTPUT DATA EXAMPLE:
+
+    indexB = 0
+
+    indexb = 9
+
+    data_for_vertexes_distribution = [
+    [-1, 'B', p, w], [0, 'b', k, w_k], [1, 'v', -k, -w_k], [0, 'B', -k, -w_k], [2, 'v', k + q, w_k + w_q], 
+    [3, 'b', -q, -w_q], [1, 'v', k, w_k], [2, 'B', -k - q, -w_k - w_q], [4, 'b', q, w_q], [-1, 'b', -p, -w], 
+    [3, 'b', q, w_q], [4, 'V', -q, -w_q]]
+    ]
+
+    frequency_and_momentum_distribution_at_vertexes = {
+    ('vertex', 0): [[-1, 'B', p, w], [0, 'b', k, w_k], [1, 'v', -k, -w_k]], ('vertex', 1): [[0, 'B', -k, -w_k],
+    [2, 'v', k + q, w_k + w_q], [3, 'b', -q, -w_q]], ('vertex', 2): [[1, 'v', k, w_k], [2, 'B', -k - q, -w_k - w_q],
+    [4, 'b', q, w_q]], ('vertex', 3): [[-1, 'b', -p, -w], [3, 'b', q, w_q], [4, 'V', -q, -w_q]]
+    }
+
+    data_for_vertexes_momentum_distribution = [
+    [-1, 'B', p], [0, 'b', k], [1, 'v', -k], [0, 'B', -k], [2, 'v', k + q], [3, 'b', -q], [1, 'v', k], 
+    [2, 'B', -k - q], [4, 'b', q], [-1, 'b', -p], [3, 'b', q], [4, 'V', -q]
+    ]   
+    """
+
+    # each vertex has three tails. We create an array to store information about each tail of each vertex.
     data_for_vertexes_distribution = [0] * (number_of_all_vertices * 3)
-    for line in external_lines:  # deploy external momentum
+
+    # here we deploy external momentum and frequency 
+    # (out of 12 available tails in the two-loop diagram, 2 are external)
+    for line in external_lines:  
         end_vertex = line[0][1]
         outflowing_field = line[1][1]
         if outflowing_field == "B":
@@ -378,34 +1116,40 @@ def momentum_and_frequency_distribution_at_vertexes(
             data_for_vertexes_distribution[3 * end_vertex] = [
                 -1, outflowing_field, -external_momentum, -external_frequency]
             indexb = 3 * end_vertex  # save the index of the outer field b
-
+    """
+    If the momentum flows into the vertex (= end_vertex), we assign to it a sign (+).
+    If it flows out (from begin_vertex), we give it a sign (-).    
+    """
     for propagator_key in internal_lines:  
         line = internal_lines[propagator_key]
         begin_vertex = line[0][0]
         end_vertex = line[0][1]
-        inflowing_field = line[1][0]
-        outflowing_field = line[1][1]
-        inflowing_data = [
-            propagator_key, inflowing_field, -momentum_distribution_at_zero_external_momentum[propagator_key],
+        outflowing_field = line[1][0]
+        inflowing_field = line[1][1]
+        outflowing_data = [
+            propagator_key, outflowing_field, -momentum_distribution_at_zero_external_momentum[propagator_key],
             -frequency_distribution_at_zero_external_frequency[propagator_key]
             ]
-        outflowing_data = [
-            propagator_key, outflowing_field, momentum_distribution_at_zero_external_momentum[propagator_key],
+        inflowing_data = [
+            propagator_key, inflowing_field, momentum_distribution_at_zero_external_momentum[propagator_key],
             frequency_distribution_at_zero_external_frequency[propagator_key]
             ]
-        if data_for_vertexes_distribution[begin_vertex * 3] == 0:
-            data_for_vertexes_distribution[begin_vertex * 3] = inflowing_data
-        elif data_for_vertexes_distribution[begin_vertex * 3 + 1] == 0:
-            data_for_vertexes_distribution[begin_vertex * 3 + 1] = inflowing_data
-        else:
-            data_for_vertexes_distribution[begin_vertex * 3 + 2] = inflowing_data
-        if data_for_vertexes_distribution[end_vertex * 3] == 0:
-            data_for_vertexes_distribution[end_vertex * 3] = outflowing_data
-        elif data_for_vertexes_distribution[end_vertex * 3 + 1] == 0:
-            data_for_vertexes_distribution[end_vertex * 3 + 1] = outflowing_data
-        else:
-            data_for_vertexes_distribution[end_vertex * 3 + 2] = outflowing_data
 
+        if data_for_vertexes_distribution[begin_vertex * 3] == 0:
+            data_for_vertexes_distribution[begin_vertex * 3] = outflowing_data
+        elif data_for_vertexes_distribution[begin_vertex * 3 + 1] == 0:
+            data_for_vertexes_distribution[begin_vertex * 3 + 1] = outflowing_data
+        else:
+            data_for_vertexes_distribution[begin_vertex * 3 + 2] = outflowing_data
+            
+        if data_for_vertexes_distribution[end_vertex * 3] == 0:
+            data_for_vertexes_distribution[end_vertex * 3] = inflowing_data
+        elif data_for_vertexes_distribution[end_vertex * 3 + 1] == 0:
+            data_for_vertexes_distribution[end_vertex * 3 + 1] = inflowing_data
+        else:
+            data_for_vertexes_distribution[end_vertex * 3 + 2] = inflowing_data
+
+    # change the keywords in the dictionary from numeric to string (for convenience)
     frequency_and_momentum_distribution_at_vertexes = dict()
     for i in range(number_of_all_vertices):
         frequency_and_momentum_distribution_at_vertexes['vertex', i] = data_for_vertexes_distribution[3*i:3*(i + 1)]
@@ -416,35 +1160,47 @@ def momentum_and_frequency_distribution_at_vertexes(
 
     return [indexB, indexb, data_for_vertexes_distribution, 
     frequency_and_momentum_distribution_at_vertexes, data_for_vertexes_momentum_distribution]
-# Function application example:
-# indexB = 0
-# indexb = 9
-# data_for_vertexes_distribution = [
-# [-1, 'B', p, w], [0, 'b', k, w_k], [1, 'v', -k, -w_k], [0, 'B', -k, -w_k], [2, 'v', k + q, w_k + w_q], 
-# [3, 'b', -q, -w_q], [1, 'v', k, w_k], [2, 'B', -k - q, -w_k - w_q], [4, 'b', q, w_q], [-1, 'b', -p, -w], 
-# [3, 'b', q, w_q], [4, 'V', -q, -w_q]]
-# ]
-# frequency_and_momentum_distribution_at_vertexes = {
-# ('vertex', 0): [[-1, 'B', p, w], [0, 'b', k, w_k], [1, 'v', -k, -w_k]], ('vertex', 1): [[0, 'B', -k, -w_k],
-# [2, 'v', k + q, w_k + w_q], [3, 'b', -q, -w_q]], ('vertex', 2): [[1, 'v', k, w_k], [2, 'B', -k - q, -w_k - w_q],
-#  [4, 'b', q, w_q]], ('vertex', 3): [[-1, 'b', -p, -w], [3, 'b', q, w_q], [4, 'V', -q, -w_q]]
-# }
-# data_for_vertexes_momentum_distribution = [
-# [-1, 'B', p], [0, 'b', k], [1, 'v', -k], [0, 'B', -k], [2, 'v', k + q], [3, 'b', -q], [1, 'v', k], 
-# [2, 'B', -k - q], [4, 'b', q], [-1, 'b', -p], [3, 'b', q], [4, 'V', -q]
-# ]
 
 #------------------------------------------------------------------------------------------------------------------#
-#                                       Do smth                                       
+#                    Obtaining the integrand for the diagram (rational function and tensor part)                                       
 #------------------------------------------------------------------------------------------------------------------#
 
-def define_propagator_product_numerator(
-    P_data, H_data, numerator, space, fields_in_propagator, momentum_arg, frequency_arg, in1, in2
+def define_propagator_product(
+    empty_P_data, empty_H_data, empty_numerator, empty_space, empty_propagator_data, 
+    fields_in_propagator, momentum_arg, frequency_arg, in1, in2
     ):
-    projector_argument_list = P_data
-    helical_argument_list = H_data
-    product_of_tensor_operators = numerator
-    interspace = space
+    """
+    The function contains all the information about the propagators of the model.
+    It is supposed to apply it to the list of propagators of each specific diagram 
+    to obtain the corresponding integrand.
+
+    ARGUMENTS:
+
+    empty_P_data = ([]) -- list where information (momentum, frequency, indices) about
+    projectors is stored,
+
+    empty_H_data = ([]) -- list where information (momentum, frequency, indices) about 
+    Helical terms is stored,
+
+    empty_numerator = 1 -- factor by which the corresponding index structure of the propagator 
+    is multiplied, 
+
+    empty_space = "" -- empty string space where momentum and frequency arguments are stored,
+    
+    empty_propagator_data = 1 -- factor by which the corresponding propagator is multiplied 
+    (without index structure),
+
+    fields_in_propagator -- argument(["field1", "field2"]) passed to the function,
+
+    momentum_arg, frequency_arg -- propagator arguments,
+
+    in1, in2 -- indices of the propagator tensor structure
+    """
+    projector_argument_list = empty_P_data
+    helical_argument_list = empty_H_data
+    product_of_tensor_operators = empty_numerator
+    interspace = empty_space
+    product_of_propagators = empty_propagator_data
 
     match fields_in_propagator:
         case ["v", "v"]:
@@ -453,162 +1209,517 @@ def define_propagator_product_numerator(
             interspace = (interspace + f"Pvv[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
             helical_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                beta(momentum_arg, frequency_arg)*beta_star(momentum_arg, frequency_arg)*
+                D_v(momentum_arg)/(xi(momentum_arg, frequency_arg)*
+                xi_star(momentum_arg, frequency_arg))
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["v", "V"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PvV[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                beta_star(momentum_arg, frequency_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["V", "v"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PbB[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                beta_star(momentum_arg, frequency_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["b", "B"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PbB[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                alpha_star(momentum_arg, frequency_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["B", "b"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PBb[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                alpha_star(momentum_arg, frequency_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["v", "b"]:
             product_of_tensor_operators *= (P(momentum_arg, in1, in2)
             + I * rho * H(momentum_arg, in1, in2))
             interspace = (interspace + f"Pvb[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg,  in1, in2]]
             helical_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                I*A*beta(momentum_arg, frequency_arg)*sc_prod(theta, momentum_arg)*
+                D_v(momentum_arg)/(xi(momentum_arg, frequency_arg)*
+                xi_star(momentum_arg, frequency_arg))
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["b", "v"]:
             product_of_tensor_operators *= (P(momentum_arg, in1, in2)
             + I * rho * H(momentum_arg, in1, in2))
             interspace = (interspace + f"Pbv[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
             helical_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                I*A*beta(momentum_arg, frequency_arg)*sc_prod(theta, momentum_arg)*
+                D_v(momentum_arg)/(xi(momentum_arg, frequency_arg)*
+                xi_star(momentum_arg, frequency_arg))
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["b", "b"]:
             product_of_tensor_operators *= (P(momentum_arg, in1, in2)
             + I * rho * H(momentum_arg, in1, in2))
             interspace = (interspace + f"Pbb[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
             helical_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                A**2*sc_prod(theta, momentum_arg)**2*D_v(momentum_arg)/
+                (xi(momentum_arg, frequency_arg)*xi_star(momentum_arg, frequency_arg))
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["V", "b"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + "PVb[{momentum_arg}, {frequency_arg}]*") 
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                I*A*sc_prod(theta, momentum_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["b", "V"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PbV[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                I*A*sc_prod(theta, momentum_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["B", "v"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PBv[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                I*sc_prod(theta, momentum_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case ["v", "B"]:
             product_of_tensor_operators *= P(momentum_arg, in1, in2)
             interspace = (interspace + f"PvB[{momentum_arg}, {frequency_arg}]*")
             projector_argument_list += [[momentum_arg, in1, in2]]
-            return product_of_tensor_operators, projector_argument_list, helical_argument_list, interspace
+            product_of_propagators *= (
+                I*sc_prod(theta, momentum_arg)/
+                xi_star(momentum_arg, frequency_arg)
+                )
+            
+            return [product_of_tensor_operators, projector_argument_list, 
+            helical_argument_list, interspace, product_of_propagators ]
         case _:
             return sys.exit("Nickel index contains unknown propagator type")
 
-def get_propagator_product_numerator(
-    product_of_tensor_operators, projector_argument_list, helical_argument_list, 
-    propagator_product_for_Wolphram_Mathematica, distribution_of_momentums_over_vertices, 
-    set_with_internal_lines, momentum_distribution_with_zero_p, frequency_distribution_with_zero_w, 
-    define_propagator_product_numerator
+def get_propagator_product(
+    distribution_of_momentums_over_vertices, set_with_internal_lines, 
+    empty_P_data, empty_H_data, empty_numerator,
+    empty_space, empty_propagator_data, 
+    momentum_distribution_with_zero_p, frequency_distribution_with_zero_w
     ):
+    """
+    This function applies the function define_propagator_product() to the list 
+    with propagators of a particular diagram.
+
+    ARGUMENTS:
+
+    distribution_of_momentums_over_vertices is given by the function 
+    momentum_and_frequency_distribution_at_vertexes(),
+
+    set_with_internal_lines is given by the function get_list_with_propagators_from_nickel_index()
+
+    empty_P_data = ([]) -- list where information (momentum, frequency, indices) about
+    projectors is stored (this argument is passed to the function define_propagator_product()),
+
+    empty_H_data = ([]) -- list where information (momentum, frequency, indices) about 
+    Helical terms is stored (this argument is passed to the function define_propagator_product()),
+
+    empty_numerator = 1 -- factor by which the corresponding index structure of the propagator 
+    is multiplied (this argument is passed to the function define_propagator_product()), 
+
+    empty_space = "" -- empty string space where momentum and frequency arguments are stored 
+    (this argument is passed to the function define_propagator_product()),
+
+    empty_propagator_data = 1 -- factor by which the corresponding propagator is multiplied 
+    (without index structure) (this argument is passed to the function define_propagator_product()),
+
+    momentum_distribution_with_zero_p, frequency_distribution_with_zero_w are given by the function
+    get_momentum_and_frequency_distribution_at_zero_p_and_w()
+
+    OUTPUT DATA EXAMPLE:
+
+    product_of_tensor_operators = (I*rho*H(k, w_k, 2, 6) + P(k, w_k, 2, 6))*(I*rho*H(q, w_q, 5, 10) + 
+    P(q, w_q, 5, 10))*P(-k, -w_k, 1, 3)*P(-q, -w_q, 8, 11)*P(-k - q, -w_k - w_q, 4, 7)
+
+    projector_argument_list = [
+    [-k, -w_k, 1, 3], [k, w_k, 2, 6], [-k - q, -w_k - w_q, 4, 7], [q, w_q, 5, 10], [-q, -w_q, 8, 11]
+    ]
+
+    helical_argument_list = [[k, w_k, 2, 6], [q, w_q, 5, 10]]
+
+    propagator_product_for_Wolphram_Mathematica[:-1] = PbB[-k, -w_k]*Pvv[k, w_k]*PvB[-k - q, -w_k - w_q]*
+    Pbb[q, w_q]*PbV[-q, -w_q]
+    """
+
+    # according to list distribution_of_momentums_over_vertices (vertices ordered) returns a list of indices
+    # (see note in the description of momentum_and_frequency_distribution_at_vertexes())
     indexy = list(map(lambda x: x[0], distribution_of_momentums_over_vertices))
+    
+
     for i in set_with_internal_lines:
         line = set_with_internal_lines[i]
-        in1 = indexy.index(i)
+        """
+        lines are numbered by digits 
+        the indexes in the indexy list are also digits, each of which occurs twice, 
+        i.e. forms a line between the corresponding vertices 
+        (each three indices in indexy belong to one vertex)
+        """   
+        # .index(i) function returns the position of the first encountered element in the list
+        in1 = indexy.index(i) 
+        # select the first (of two) index corresponding to line i (i encodes line in set_with_internal_lines)
         indexy[in1] = len(set_with_internal_lines)
+        # rewrite in1 with a large enough number
         in2 = indexy.index(i)
+        # select the secondgt (of two) index corresponding to line i (i encodes line in set_with_internal_lines)
         fields_in_propagator = line[1]
-        all_structures_in_numerator = define_propagator_product_numerator(
-            projector_argument_list, helical_argument_list, product_of_tensor_operators, 
-            propagator_product_for_Wolphram_Mathematica, fields_in_propagator, 
-            momentum_distribution_with_zero_p[i],
-            frequency_distribution_with_zero_w[i], in1, in2
+        momentum_arg = momentum_distribution_with_zero_p[i]
+        frequency_arg = frequency_distribution_with_zero_w[i]
+
+        all_structures_in_numerator = define_propagator_product(
+            empty_P_data, empty_H_data, empty_numerator, 
+            empty_space, empty_propagator_data, fields_in_propagator, 
+            momentum_arg, frequency_arg, in1, in2
             )
-        product_of_tensor_operators = all_structures_in_numerator[0]
-        projector_argument_list = all_structures_in_numerator[1]
-        helical_argument_list = all_structures_in_numerator[2]
-        propagator_product_for_Wolphram_Mathematica = all_structures_in_numerator[3]
-    return [product_of_tensor_operators, projector_argument_list, 
-    helical_argument_list, propagator_product_for_Wolphram_Mathematica[:-1]]
-# Function application example:
-# product_of_tensor_operators = (I*rho*H(k, w_k, 2, 6) + P(k, w_k, 2, 6))*(I*rho*H(q, w_q, 5, 10) + 
-# P(q, w_q, 5, 10))*P(-k, -w_k, 1, 3)*P(-q, -w_q, 8, 11)*P(-k - q, -w_k - w_q, 4, 7)
-# projector_argument_list = [
-# [-k, -w_k, 1, 3], [k, w_k, 2, 6], [-k - q, -w_k - w_q, 4, 7], [q, w_q, 5, 10], [-q, -w_q, 8, 11]
-# ]
-# helical_argument_list = [[k, w_k, 2, 6], [q, w_q, 5, 10]]
-# propagator_product_for_Wolphram_Mathematica[:-1] = PbB[-k, -w_k]*Pvv[k, w_k]*PvB[-k - q, -w_k - w_q]*
-# Pbb[q, w_q]*PbV[-q, -w_q]
+
+        empty_numerator = all_structures_in_numerator[0]
+        empty_P_data = all_structures_in_numerator[1]
+        empty_H_data = all_structures_in_numerator[2]
+        empty_space = all_structures_in_numerator[3]
+        empty_propagator_data = all_structures_in_numerator[4]
+
+    return [empty_numerator, empty_P_data, 
+    empty_H_data, empty_space[:-1], # delete last symbol "*"
+    empty_propagator_data]
 
 def adding_vertex_factors_to_product_of_propagators(
-    product_of_tensor_operators, Kronecker_delta_structure, momentum_structure, number_of_vertices, distribution_of_momentums_over_vertices
+    product_of_tensor_operators, Kronecker_delta_structure, momentum_structure, 
+    number_of_vertices, distribution_of_momentums_over_vertices
     ):
+    """
+    This function adds tensor vertex factors to the product of the tensor parts of the propagators. 
+    Thus, this function completes the definition of the tensor part of the integrand of the corresponding diagram
 
-    ordered_list_of_fields_flowing_from_vertices = list(map(lambda x: x[1], distribution_of_momentums_over_vertices))  
+    ARGUMENTS:
+
+    product_of_tensor_operators is given by the function get_propagator_product(),
+
+    Kronecker_delta_structure = ([]) -- list where information (indices) about
+    vertex factors is stored,
+
+    momentum_structure = ([]) -- list where information (momentums) about
+    vertex factors is stored,
+
+    number_of_vertices = 4 -- see global variables,
+
+    distribution_of_momentums_over_vertices is given by the function 
+    momentum_and_frequency_distribution_at_vertexes()
+    """    
+    # according to list distribution_of_momentums_over_vertices (vertices ordered) returns a list of fields
+    ordered_list_of_fields_flowing_from_vertices = list(
+        map(lambda x: x[1], distribution_of_momentums_over_vertices))  
 
     for vertex_number in range(number_of_vertices):  
+
         vertex_triple = ordered_list_of_fields_flowing_from_vertices[
-            3 * vertex_number : 3 * (vertex_number + 1)]  # triple for vertex
-        sorted_vertex_triple = sorted(vertex_triple, reverse=False) # ascending sort
-        if sorted_vertex_triple == ["B", "b", "v",]:  
-            in1 = 3 * vertex_number + vertex_triple.index("B")
-            in2 = 3 * vertex_number + vertex_triple.index("b")
-            in3 = 3 * vertex_number + vertex_triple.index("v")
-            vertex_factor_Bbv = I * (
-                hyb(distribution_of_momentums_over_vertices[in1][2], in3) * kd(in1, in2)
-                - A * hyb(distribution_of_momentums_over_vertices[in1][2], in2) * kd(in1, in3))
-            product_of_tensor_operators = product_of_tensor_operators * vertex_factor_Bbv
-            Kronecker_delta_structure.append([in1, in2]) 
-            Kronecker_delta_structure.append([in1, in3])
-            momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3]) 
-            momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
-        elif sorted_vertex_triple == ["V", "v", "v"]:
-            in1 = 3 * vertex_number + vertex_triple.index("V")
-            index_set = [3*vertex_number, 3*vertex_number + 1, 3*vertex_number + 2]
-            index_set.remove(in1)
-            in2 = index_set[0]
-            in3 = index_set[1]
-            vertex_factor_Vvv = I * (
-                hyb(distribution_of_momentums_over_vertices[in1][2], in2) * kd(in1, in3)
-                + hyb(distribution_of_momentums_over_vertices[in1][2], in3) * kd(in1, in2))
-            product_of_tensor_operators = product_of_tensor_operators * vertex_factor_Vvv
-            Kronecker_delta_structure.append([in1, in3])
-            Kronecker_delta_structure.append([in1, in2])
-            momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
-            momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3])
-        elif sorted_vertex_triple == ["V", "b", "b"]:
-            in1 = 3 * vertex_number + vertex_triple.index("V")
-            index_set = [3*vertex_number, 3*vertex_number + 1, 3*vertex_number + 2]
-            index_set.remove(in1)
-            in2 = index_set[0]
-            in3 = index_set[1]
-            vertex_factor_Vbb = I * (
-                hyb(distribution_of_momentums_over_vertices[in1][2], in2) * kd(in1, in3)
-                + hyb(distribution_of_momentums_over_vertices[in1][2], in3) * kd(in1, in2)) 
-            product_of_tensor_operators = product_of_tensor_operators * vertex_factor_Vbb
-            Kronecker_delta_structure.append([in1, in3])
-            Kronecker_delta_structure.append([in1, in2])
-            momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
-            momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3])
-        else:
-            sys.exit("Unknown vertex type")
+            3 * vertex_number : 3 * (vertex_number + 1)]  # field triple for corresponding vertex
+        sorted_vertex_triple = sorted(vertex_triple, reverse = False) # ascending sort
+
+        match sorted_vertex_triple:
+            case ["B", "b", "v",]:  
+                in1 = 3 * vertex_number + vertex_triple.index("B")
+                in2 = 3 * vertex_number + vertex_triple.index("b")
+                in3 = 3 * vertex_number + vertex_triple.index("v")
+                Bbv = vertex_factor_Bbv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3).doit()
+
+                product_of_tensor_operators = product_of_tensor_operators * Bbv
+                Kronecker_delta_structure.append([in1, in2]) 
+                Kronecker_delta_structure.append([in1, in3])
+                momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3]) 
+                momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
+
+            case ["V", "v", "v"]:
+                in1 = 3 * vertex_number + vertex_triple.index("V")
+                # since the two fields are the same, we don't know in advance what position in2 is in
+                index_set = [3*vertex_number, 3*vertex_number + 1, 3*vertex_number + 2]
+                index_set.remove(in1)
+                in2 = index_set[0]
+                in3 = index_set[1]
+                Vvv = vertex_factor_Vvv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3).doit()
+
+                product_of_tensor_operators = product_of_tensor_operators * Vvv
+                Kronecker_delta_structure.append([in1, in3])
+                Kronecker_delta_structure.append([in1, in2])
+                momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
+                momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3])
+
+            case ["V", "b", "b"]:
+                in1 = 3 * vertex_number + vertex_triple.index("V")
+                # since the two fields are the same, we don't know in advance what position in2 is in
+                index_set = [3*vertex_number, 3*vertex_number + 1, 3*vertex_number + 2]
+                index_set.remove(in1)
+                in2 = index_set[0]
+                in3 = index_set[1]
+                Vbb = vertex_factor_Vvv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3
+                    ).doit() # vertex_factor_Vvv = vertex_factor_Vbb by definiton
+
+                product_of_tensor_operators = product_of_tensor_operators * Vbb
+                Kronecker_delta_structure.append([in1, in3])
+                Kronecker_delta_structure.append([in1, in2])
+                momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
+                momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3])
+            case _:
+                sys.exit("Unknown vertex type")
     return product_of_tensor_operators, Kronecker_delta_structure, momentum_structure
 
 #------------------------------------------------------------------------------------------------------------------#
-#                                       Do smth                                       
+#                                       Calculation of integrals over frequencies                                       
+#------------------------------------------------------------------------------------------------------------------#
+
+# Integrals over frequency are calculated using the residue theorem
+
+def get_info_how_to_close_contour(
+    rational_function, variable1
+    ):
+    """
+    This function evaluates the complexity of calculating integrals of two variables using residues. 
+    The estimation is made on the basis of counting the number of poles lying in the upper/lower
+    complex half-plane for each variable, respectively. To do this, for each variable, 
+    two counters corresponding to the closing of the loop up down are created. 
+    Their minimum gives the desired criterion.
+
+    ARGUMENTS:
+
+    rational_function -- a rational function whose denominator consists of the product of the powers
+    of the functions chi_1 and chi_2,
+
+    variable1 -- variable over which the integral is first calculated
+
+    Note:
+
+    This function uses information about the structure of the singularities of the functions 1/chi_1(k, w) 
+    and 1/chi_2(k, w) with respect to the variable w. Under the condition that u is positive, 
+    it can be shown that the position of the pole is determined only by the sign of w in chi_1, chi_2
+    (the functions f_1, f_2 do not change the sign of the im(w) for any k)
+
+    OUTPUT DATA EXAMPLE:
+
+    computational_complexity_when_closing_UP_contour_in_plane_of_variable1 = 6
+
+    computational_complexity_when_closing_DOWN_contour_in_plane_of_variable1 = 2
+
+    computational_complexity_when_closing_UP_contour_in_plane_of_variable2 = 4
+
+    computational_complexity_when_closing_DOWN_contour_in_plane_of_variable2 = 2
+    """
+
+    denominator = fraction(rational_function)[1]
+    denominator_structure = factor_list(denominator)[1]
+    number_of_multipliers = len(denominator_structure)
+
+    computational_complexity_when_closing_UP_contour_in_plane_of_variable1 = 0
+    computational_complexity_when_closing_DOWN_contour_in_plane_of_variable1 = 0
+
+    computational_complexity_when_closing_UP_contour_in_plane_of_variable2 = 0
+    computational_complexity_when_closing_DOWN_contour_in_plane_of_variable2 = 0
+
+    for pole in range(number_of_multipliers):
+        pole_equation = denominator_structure[pole][0] 
+        multiplicity = denominator_structure[pole][1]
+        frequency = pole_equation.args[1]
+        if frequency.has(variable1) == True:
+            if frequency.could_extract_minus_sign() == True:
+                # if this condition is fit, then the pole lies in the lower half-plane 
+                # (see note in the function description)
+                computational_complexity_when_closing_DOWN_contour_in_plane_of_variable1 += multiplicity
+            else:
+                computational_complexity_when_closing_UP_contour_in_plane_of_variable1 += multiplicity
+        else:
+            if frequency.could_extract_minus_sign() == True:
+                # if this condition is fit, then the pole lies in the lower half-plane 
+                # (see note in the function description)
+                computational_complexity_when_closing_DOWN_contour_in_plane_of_variable2 += multiplicity
+            else:
+                computational_complexity_when_closing_UP_contour_in_plane_of_variable2 += multiplicity
+
+    return [[computational_complexity_when_closing_UP_contour_in_plane_of_variable1, 
+            computational_complexity_when_closing_DOWN_contour_in_plane_of_variable1], 
+            [computational_complexity_when_closing_UP_contour_in_plane_of_variable2, 
+            computational_complexity_when_closing_DOWN_contour_in_plane_of_variable2]]
+
+def calculate_residues_sum(
+    rational_function, main_variable, parameter):
+    """
+    This function calculates the sum of the residues (symbolically, at the level of functions f_1, f_2)
+    of a rational function (without 2*pi*I factor) with respect to one given variable.
+
+    GENERAL REQUIREMENTS FOR A RATIONAL FUNCTION:
+
+    The denominator of rational_function must be the product of the powers of the chi_1.doit() and chi_2.doit(), 
+    i.e. be expressed in terms of functions f_1, f_2. 
+    The result of calculating the residues sum is also expressed in terms of f_1 and f_2.
+
+    ARGUMENTS:
+
+    rational_function -- a rational function whose denominator consists of the product of the powers
+    of the functions chi_1 and chi_2,
+
+    main_variable -- variable over which the integral is first calculated
+
+    parameter -- other variables (which may not be, then this argument does not affect anything)
+
+    Note:
+
+
+    OUTPUT DATA EXAMPLE:
+
+    As an example, here is represented the result for a simpler function than the characteristic diagram integrand. 
+    Nevertheless, the reduced function contains all the characteristic features of the corresponding integrands.
+
+    rational_function = (w_k - 2)/(chi_1(k, w_k)**2*chi_1(q, -w_q-w_k)**2*chi_2(k, -w_k))).doit()
+
+    sum_of_residues_in_upper_half_plane = 
+    2*(f_1(k, A) - 2)/((-f_1(k, A) - f_2(k, A))*(-w_q - f_1(k, A) - f_1(q, A))**3) + 
+    1/((-f_1(k, A) - f_2(k, A))*(-w_q - f_1(k, A) - f_1(q, A))**2) + 
+    (f_1(k, A) - 2)/((-f_1(k, A) - f_2(k, A))**2*(-w_q - f_1(k, A) - f_1(q, A))**2)
+
+    sum_of_residues_in_lower_half_plane = 
+    (-w_q - f_1(q, A) - 2)/((-w_q - f_1(k, A) - f_1(q, A))**2*(w_q + f_1(q, A) - f_2(k, A))**2)
+    + 1/((-w_q - f_1(k, A) - f_1(q, A))**2*(w_q + f_1(q, A) - f_2(k, A))) - 
+    2*(-w_q - f_1(q, A) - 2)/((-w_q - f_1(k, A) - f_1(q, A))**3*(w_q + f_1(q, A) - f_2(k, A))) - 
+    (-f_2(k, A) - 2)/((-f_1(k, A) - f_2(k, A))**2*(-w_q - f_1(q, A) + f_2(k, A))**2)
+
+    sum_of_residues_in_upper_half_plane + sum_of_residues_in_lower_half_plane = 0, 
+    since the residue of the corresponding function at infinity is 0
+    """
+    numerator = fraction(rational_function)[0]
+    denominator = fraction(rational_function)[1]
+    denominator_structure = factor_list(denominator)[1]
+    number_of_multipliers = len(denominator_structure)
+
+    residues_in_upper_half_plane = list()
+    residues_in_lower_half_plane = list()
+
+    for pole in range(number_of_multipliers):
+        pole_equation = denominator_structure[pole][0]
+        multiplicity = denominator_structure[pole][1]
+
+        if pole_equation.has(main_variable) == True:
+            # we solve a linear equation of the form w - smth = 0
+            # solve_linear() function, unlike solve(), is less sensitive to the type of input data
+            solution_of_pole_equation = solve_linear(pole_equation, symbols = [main_variable])[1]
+
+            if denominator.has(main_variable - solution_of_pole_equation) == True:
+                calcullable_function = (
+                    (numerator*(main_variable - solution_of_pole_equation)**multiplicity)/denominator).diff(
+                    main_variable, multiplicity - 1)
+                residue_by_variable = calcullable_function.subs(
+                    main_variable, solution_of_pole_equation)
+  
+            elif denominator.has(main_variable - solution_of_pole_equation) == False:
+                calcullable_function = (
+                    (numerator*(-main_variable + solution_of_pole_equation)**multiplicity)/denominator).diff(
+                    main_variable, multiplicity - 1)
+                residue_by_variable = (-1)**multiplicity*calcullable_function.subs(
+                    main_variable, solution_of_pole_equation)
+
+            if solution_of_pole_equation.subs(parameter, 0).could_extract_minus_sign() == True:
+                residues_in_lower_half_plane.append(residue_by_variable)
+            else:
+                residues_in_upper_half_plane.append(residue_by_variable)
+
+    sum_of_residues_in_upper_half_plane = sum(residues_in_upper_half_plane)
+    sum_of_residues_in_lower_half_plane = sum(residues_in_lower_half_plane)
+
+    return sum_of_residues_in_upper_half_plane, sum_of_residues_in_lower_half_plane
+
+def calculating_frequency_integrals_in_two_loop_diagrams(
+    integrand_with_denominator_from_xi_functions, frequency1, frequency2
+    ):
+
+    integrand_with_denominator_from_chi_functions = integrand_with_denominator_from_xi_functions.doit()
+
+    computational_complexity_estimation = get_info_how_to_close_contour(
+        integrand_with_denominator_from_chi_functions, frequency1)
+
+    integrand_with_denominator_from_f12_functions = integrand_with_denominator_from_chi_functions.doit()
+
+    first_residues_sum_in_all_situations = calculate_residues_sum(
+        integrand_with_denominator_from_f12_functions, frequency1, frequency2)
+    
+    if computational_complexity_estimation[0][0] >= computational_complexity_estimation[0][1]:
+        residues_sum_without_2piI = first_residues_sum_in_all_situations[1]
+    else:
+        residues_sum_without_2piI = first_residues_sum_in_all_situations[0]
+
+    number_of_terms_in_sum = len(residues_sum_without_2piI.args)
+
+    list_with_residues_sum_for_frequency2 = [0] * number_of_terms_in_sum
+    if computational_complexity_estimation[1][0] >= computational_complexity_estimation[1][1]:
+        for i in range(number_of_terms_in_sum):
+            term = residues_sum_without_2piI.args[i]
+            list_with_residues_sum_for_frequency2[i] = calculate_residues_sum(
+                term, frequency2, frequency1)[1]
+    else:
+        for i in range(number_of_terms_in_sum):
+            term = residues_sum_without_2piI.args[i]
+            list_with_residues_sum_for_frequency2[i] = calculate_residues_sum(
+                term, frequency2, frequency1)[0]        
+    
+    total_sum_of_residues_for_both_frequencies = sum(list_with_residues_sum_for_frequency2)
+
+    return total_sum_of_residues_for_both_frequencies
+
+
+#------------------------------------------------------------------------------------------------------------------#
+#                             Calculation of the tensor part of the integrand for a diagram                                       
 #------------------------------------------------------------------------------------------------------------------#
 
 def dosad(
@@ -626,15 +1737,94 @@ def dosad(
         return zoznam[:pozicia] + [ind_hod] + zoznam[pozicia + 1 :]
 
 #------------------------------------------------------------------------------------------------------------------#
-#                                       Define the main body of this program                                        
+#                               Create a file with general notation and information
 #------------------------------------------------------------------------------------------------------------------#
 
-def get_output_data(
-    graf
+def get_propagators_from_list_of_fields(
+    fields_for_propagators
     ): 
+    """
+    Glues separate fields indexes from propagators_with_helicity into the list of propagators
+
+    Output data example: 
+
+    list_of_propagators_with_helicity = ['vv', 'vb', 'bv', 'bb']
+    """
+    dimension = len(fields_for_propagators) 
+    list_of_propagators = [0] * dimension
+    for i in range(dimension):
+        list_of_propagators[i] = (
+            fields_for_propagators[i][0] + fields_for_propagators[i][1])
+    return list_of_propagators
+
+def create_file_with_info_and_supplementary_matherials():
+    """
+    Creates a file with general information and supplementary matherials
+    """
+    with open('Results/General_notation.txt', 'w+') as Notation_file:
+        
+        """
+
+        
+        """
+
+
+
+        Notation_file.write(
+            f"A detailed description of most of the notation introduced in this program can be found in the articles: \n"
+            f"[1] Adzhemyan, L.T., Vasil'ev, A.N., Gnatich, M. Turbulent dynamo as spontaneous symmetry breaking. \n"
+            f"Theor Math Phys 72, 940-950 (1987). https://doi.org/10.1007/BF01018300 \n"
+            f"[2] Hnatic, M., Honkonen, J., Lucivjansky, T. Symmetry Breaking in Stochastic Dynamics and Turbulence. \n"
+            f"Symmetry 2019, 11, 1193. https://doi.org/10.3390/sym11101193 \n"
+            f"[3] D. Batkovich, Y. Kirienko, M. Kompaniets, and S. Novikov, GraphState - A tool for graph identification \n"
+            f"and labelling, arXiv:1409.8227, program repository: https://bitbucket.org/mkompan/graph_state/downloads.\n"
+            )
+
+        Notation_file.write(
+            f"\nGeneral remarks: \n"
+            )
+
+
+        Notation_file.write(
+            f"\nNotation: \n"
+            f"1. Fields: v is a random vector velocity field, b is a vector magnetic field, "
+            f"B and V are auxiliary vector fields (according to Janssen - De Dominicis approach)\n"
+            f"2. Propagators: vv = <vv>, vB = <vB>, etc.\n"
+            f"3. Momentums and frequencies: {p, w} denotes external momentum and frequency, "
+            f"{k, q} and {w_k, w_q} denote momentums and frequencies flowing along the loops in the diagram.\n"
+            f"4. Loop structure: arguments {k, q} and {w_k, w_q} are always assigned to propagators containing" 
+            f"the D_v kernel (so-called helical propagators): {get_propagators_from_list_of_fields(propagators_with_helicity)}\n"
+            ) # write the list of used notation
+
+        Notation_file.write(
+            f"\nNonzero elements of the propagator matrix in the momentum-frequency representation: \n")
+
+        [i, j] = symbols("i j", integer = True)
+
+        all_fields_glued_into_propagators = get_propagators_from_list_of_fields(all_nonzero_propagators)
+
+        info_about_propagators = list()
+        for m in range(len(all_nonzero_propagators)):
+            info_about_propagators.append(define_propagator_product(
+                ([]), ([]), 1, '', 1, all_nonzero_propagators[m], k, w_k, i, j))
+            propagator_without_tensor_structure = info_about_propagators[m][4]
+            tensor_structure_of_propagator = info_about_propagators[m][0]
+            Notation_file.write(
+            f"\n{all_fields_glued_into_propagators[m]}{k, q, i, j} = "
+            f"{propagator_without_tensor_structure*tensor_structure_of_propagator}\n"
+            ) # write the propagator definition into file
+
+    Notation_file.close()
+
+
+#------------------------------------------------------------------------------------------------------------------#
+#                                        Define the main body of the program                                        
+#------------------------------------------------------------------------------------------------------------------#
+
+def get_output_data(graf): 
 
     #--------------------------------------------------------------------------------------------------------------#
-    #                    Create a file with a name and write the Nickel index of the diagram into it
+    #                     Create a file and start write the information about diagram into it
     #--------------------------------------------------------------------------------------------------------------#
 
     output_file_name = get_information_from_Nickel_index(
@@ -646,9 +1836,6 @@ def get_output_data(
     symmetry_coefficient = get_information_from_Nickel_index(
         graf
         )[2] # get symmetry factor from the line with the data
-    
-    if not os.path.isdir("Results"):
-        os.mkdir("Results") # create the Results folder if it doesn't already exist
 
     Fey_graphs = open(
         f"Results/{output_file_name}", "w"
@@ -660,18 +1847,7 @@ def get_output_data(
 
     Fey_graphs.write(
         f"\nDiagram symmetry factor: {symmetry_coefficient} \n"
-        ) # write the symmetry coefficient to the file
-    
-    Fey_graphs.write(
-        f"\nNotation: \n"
-        f"1. Fields: v is a random vector velocity field, b is a vector magnetic field, "
-        "B and V are auxiliary vector fields (according to Janssen - De Dominicis approach)\n"
-        f"2. Propagators: vv = <vv>, vB = <vB>, etc.\n"
-        f"3. Momentums and frequencies: {p, w} denotes external momentum and frequency, "
-        "{k, q} and {w_k, w_q} denote momentums and frequencies flowing along the loops in the diagram.\n"
-        f"4. Loop structure: arguments {k, q} and {w_k, w_q} are always assigned to propagators containing" 
-        f"the D_v kernel (so-called helical propagators): {get_helical_propagators(propagators_with_helicity)}\n"
-        ) # write the list of used notation   
+        ) # write the symmetry coefficient to the file   
 
     #--------------------------------------------------------------------------------------------------------------#
     #                Define a loop structure of the diagram (which lines form loops) and write it into file
@@ -684,7 +1860,8 @@ def get_output_data(
         ) # put the list of all internal lines in the diagram to a dictionary
 
     Fey_graphs.write(
-        f"\nPropagators in the diagram (digit key corresponds to the line): \n{dict_with_internal_lines} \n"
+        f"\nPropagators in the diagram: \n"
+        f"{get_line_keywards_to_dictionary(dict_with_internal_lines)} \n"
         ) # write the dictionary with all internal lines to the file
 
     list_of_all_loops_in_diagram = check_if_the_given_lines_combination_is_a_loop_in_diagram(
@@ -720,9 +1897,12 @@ def get_output_data(
         momentums_for_helicity_propagators, frequencies_for_helicity_propagators
         )[1]
     
+    vertex_begin = 0     # 
+    vertex_end = 3       # 
+
     momentum_and_frequency_distribution = get_momentum_and_frequency_distribution(
         dict_with_internal_lines, momentums_in_helical_propagators, frequencies_in_helical_propagators, 
-        p, w, vertex_begin, vertex_end
+        p, w, vertex_begin, vertex_end, number_int_vert
     )
 
     momentum_distribution = momentum_and_frequency_distribution[0]
@@ -739,11 +1919,13 @@ def get_output_data(
     frequency_distribution_at_zero_external_frequency = propagator_args_distribution_at_zero_p_and_w[1]
 
     Fey_graphs.write(
-        f"\nMomentum propagating along the lines (digit key coresponds to the line): \n{momentum_distribution}\n"
+        f"\nMomentum propagating along the lines: "
+        f"\n{get_line_keywards_to_dictionary(momentum_distribution)}\n"
     )
 
     Fey_graphs.write(
-        f"\nFrequency propagating along the lines (digit key coresponds to the line): \n{frequency_distribution}\n"
+        f"\nFrequency propagating along the lines (digit key coresponds to the line): "
+        f"\n{get_line_keywards_to_dictionary(frequency_distribution)}\n"
     )
 
     external_lines = get_list_with_propagators_from_nickel_index(graf)[1] # list with diagram external lines
@@ -794,22 +1976,30 @@ def get_output_data(
 
     propagator_product_for_WfMath = ''
 
-    tensor_structure_of_propagator_product_numerator = get_propagator_product_numerator(
-        Tenzor, P_structure, H_structure, propagator_product_for_WfMath, moznost, dict_with_internal_lines, 
-        momentum_distribution_at_zero_external_momentum, frequency_distribution_at_zero_external_frequency, 
-        define_propagator_product_numerator)
+    Product = 1
 
-    Tenzor = tensor_structure_of_propagator_product_numerator[0]
+    structure_of_propagator_product = get_propagator_product(
+        moznost, dict_with_internal_lines, P_structure, H_structure, Tenzor, 
+        propagator_product_for_WfMath, Product, momentum_distribution_at_zero_external_momentum, 
+        frequency_distribution_at_zero_external_frequency)
 
-    P_structure = tensor_structure_of_propagator_product_numerator[1]
+    Tenzor = structure_of_propagator_product[0]
 
-    H_structure = tensor_structure_of_propagator_product_numerator[2]
+    P_structure = structure_of_propagator_product[1]
 
-    propagator_product_for_WfMath = tensor_structure_of_propagator_product_numerator[3]
+    H_structure = structure_of_propagator_product[2]
+
+    propagator_product_for_WfMath = structure_of_propagator_product[3]
+
+    Product = structure_of_propagator_product[4]
 
     Fey_graphs.write(
-        f"\nPropagator product for the Wolfram Mathematica file: \n{propagator_product_for_WfMath}\n"
+        f"\nArgument structure in the propagator product: \n{propagator_product_for_WfMath}\n"
     )
+    Fey_graphs.write(
+        f"\nProduct of propagators without tensor structure: \n{Product}\n"
+    )
+
 
     # I save the kronecker delta so that I don't have to guess through all possible combinations (faster running of the program) [ [index 1, index 2]] ... kd(index 1, index 2)
     # I save the momemntum and their index (faster running of the program) [ [ k, i] ] ... k_i = hyb(k, i) 
@@ -830,15 +2020,27 @@ def get_output_data(
     
     hyb_structure = whole_tensor_structure_of_integrand_numerator[2]
     
-    # ----------------------------------------------------------------------------------------------
-    # The program start here. The previous part is only for the reason that I don't have to write the whole structure from the diagram.
-    t = time.time()  # it is only used to calculate the calculation time -- can be omitted
-
     Fey_graphs.write(
         f"\nTensor structure of the diagram before calculation: \n{Tenzor} \n"
     )
 
-    print(f"{Tenzor}\n")
+    #--------------------------------------------------------------------------------------------------------------#
+    #                      Do smth
+    #--------------------------------------------------------------------------------------------------------------#
+
+    total_sum_of_residues_for_both_frequencies = calculating_frequency_integrals_in_two_loop_diagrams(
+        Product, w_k, w_q)
+
+    Fey_graphs.write(
+        f"\nSmth: \n{total_sum_of_residues_for_both_frequencies} \n"
+    )
+    exit()
+    # ----------------------------------------------------------------------------------------------
+    # The program start here. The previous part is only for the reason that I don't have to write the whole structure from the diagram.
+    t = time.time()  # it is only used to calculate the calculation time -- can be omitted
+
+    print(f"\n{Tenzor}\n")
+    print(f"\n{Product}\n")
 
     Tenzor = expand(Tenzor)  # The final tesor structure from the diagram.
 
@@ -846,7 +2048,7 @@ def get_output_data(
     Tenzor = expand(Tenzor.subs(I**5, I))  # calculate the imaginary unit
     # Tenzor = Tenzor.subs(A, 1)              # It depends on which part we want to calculate from the vertex Bbv
     # print(Tenzor)
-
+    # We are interested in the leading (proportional to p) contribution to the diagram asymptotic, when p --> 0.
     print("step 0:", round(time.time() - t, 1), "sec")
 
 
@@ -1572,9 +2774,9 @@ def get_output_data(
     result = str(Tenzor)
     result = result.replace("**", "^")
     Fey_graphs.write(
-        f"\nTensor structure of the diagram after calculation: \n"
+        f"\nTensor structure of the diagram after calculation: "
+        f"\n{result} \n"
     )
-    Fey_graphs.write(f"\n{result} \n")
 
     print("Tensor structure of the diagram after calculation:", Tenzor)
 
@@ -1586,7 +2788,9 @@ def get_output_data(
 
     Fey_graphs.close()
 
-with open('Two-loop MHD diagrams.txt') as MHD_diagrams_file:
+create_file_with_info_and_supplementary_matherials()
+
+with open('Two-loop MHD diagrams.txt', 'r') as MHD_diagrams_file:
 
     for graf in MHD_diagrams_file.readlines():
 

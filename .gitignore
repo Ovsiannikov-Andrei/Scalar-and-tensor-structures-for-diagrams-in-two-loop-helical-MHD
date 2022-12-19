@@ -1,3 +1,4 @@
 Results/**/*.txt
 !Two-loop MHD diagrams.txt
 Sandbox.ipynb
+.vscode
