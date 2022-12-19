@@ -64,7 +64,7 @@ z = cos(angle between k and q) = dot_product(k, q)/ (abs(k) * abs(q))
 theta is proportional to the magnetic induction vector
 """
 
-[nu, mu, u, rho] = symbols("nu vo uo rho", positive = True)
+[nu, mu, u, rho] = symbols("nu mu u rho", positive = True)
 """
 nu is a renormalized kinematic viscosity,  mu is a renormalization mass, 
 u is a renormalized reciprocal magnetic Prandtl number, and  rho is a gyrotropy parameter (abs(rho) < 1)
@@ -93,7 +93,9 @@ The first loop corresponds to the pair (k, w_k) and the second to the pair (q, w
 """
 
 number_int_vert = 4 
-""" Parametr number_int_vert is a total number of internal (three-point) vertecies in diagram """
+""" 
+Parametr number_int_vert is a total number of internal (three-point) vertecies in diagram
+"""
 stupen = 1  
 """ 
 Parameter stupen denotes the desired degree of rho.  
@@ -255,7 +257,7 @@ class beta_star(Function):
 
 class sc_prod(Function):
     """ 
-    This auxiliary function denotes the standard dot product of vectors in R**3
+    This auxiliary function denotes the standard dot product of vectors in R**d
 
     ARGUMENTS:
 
@@ -1609,14 +1611,19 @@ def calculate_residues_sum(
     ARGUMENTS:
 
     rational_function -- a rational function whose denominator consists of the product of the powers
-    of the functions chi_1 and chi_2,
+    of the functions chi_1.doit() and chi_2.doit(),
 
-    main_variable -- variable over which the integral is first calculated
+    main_variable -- variable over which the residues are calculated
 
     parameter -- other variables (which may not be, then this argument does not affect anything)
 
     Note:
 
+    Calculating the residue from a standard formula requires a pole reduction operation 
+    by multiplying the fraction by the corresponding expression. Here raises a problem:
+    ((x-a)/(-x + a)).subs(x, a) = 0. In order not to use the simplify() function 
+    (it takes a very long time), you need to bring the expression exactly to the form
+    (x-a) /(-x + a) = -(x-a)/(-x + a), then -((x-a)/(x - a)).subs(x, a) = -1
 
     OUTPUT DATA EXAMPLE:
 
@@ -1655,25 +1662,37 @@ def calculate_residues_sum(
             # we solve a linear equation of the form w - smth = 0
             # solve_linear() function, unlike solve(), is less sensitive to the type of input data
             solution_of_pole_equation = solve_linear(pole_equation, symbols = [main_variable])[1]
-
+            # see note in description
             if denominator.has(main_variable - solution_of_pole_equation) == True:
                 calcullable_function = (
                     (numerator*(main_variable - solution_of_pole_equation)**multiplicity)/denominator).diff(
                     main_variable, multiplicity - 1)
                 residue_by_variable = calcullable_function.subs(
                     main_variable, solution_of_pole_equation)
+                # residue cannot be zero
+                if residue_by_variable == 0:
+                    sys.exit("An error has been detected. The residue turned out to be zero.")
   
-            elif denominator.has(main_variable - solution_of_pole_equation) == False:
+            else:
                 calcullable_function = (
                     (numerator*(-main_variable + solution_of_pole_equation)**multiplicity)/denominator).diff(
                     main_variable, multiplicity - 1)
                 residue_by_variable = (-1)**multiplicity*calcullable_function.subs(
                     main_variable, solution_of_pole_equation)
+                # residue cannot be zero
+                if residue_by_variable == 0:
+                    sys.exit("An error has been detected. The residue turned out to be zero.")
 
             if solution_of_pole_equation.subs(parameter, 0).could_extract_minus_sign() == True:
                 residues_in_lower_half_plane.append(residue_by_variable)
             else:
                 residues_in_upper_half_plane.append(residue_by_variable)
+        # Error handling in this function takes several orders of magnitude longer than the 
+        # execution of the program itself
+
+        # if simplify(sum(residues_in_upper_half_plane) + sum(residues_in_lower_half_plane)) != 0:
+            # the residue at infinity is usually 0
+        #     sys.exit("Error when calculating residues")
 
     sum_of_residues_in_upper_half_plane = sum(residues_in_upper_half_plane)
     sum_of_residues_in_lower_half_plane = sum(residues_in_lower_half_plane)
@@ -1683,6 +1702,24 @@ def calculate_residues_sum(
 def calculating_frequency_integrals_in_two_loop_diagrams(
     integrand_with_denominator_from_xi_functions, frequency1, frequency2
     ):
+    """
+    This function calculates integrals over frequencies using the residue theorem
+
+    GENERAL REQUIREMENTS FOR A INTEGRAND:
+
+    The denominator of integrand_with_denominator_from_xi_functions must be the product of the powers of the 
+    xi_1 and xi_2. (Further, the .doit() operation is applied to integrand_with_denominator_from_xi_functions)
+
+    ARGUMENTS:
+
+    integrand_with_denominator_from_xi_functions -- a rational function whose denominator consists of the 
+    product of the powers of the functions xi_1 and xi_2,
+
+    frequency1 -- variable over which the integral is calculated a first time 
+
+    frequency2 -- variable over which the integral is calculated a second time 
+    """
+
 
     integrand_with_denominator_from_chi_functions = integrand_with_denominator_from_xi_functions.doit()
 
@@ -1691,29 +1728,48 @@ def calculating_frequency_integrals_in_two_loop_diagrams(
 
     integrand_with_denominator_from_f12_functions = integrand_with_denominator_from_chi_functions.doit()
 
-    first_residues_sum_in_all_situations = calculate_residues_sum(
-        integrand_with_denominator_from_f12_functions, frequency1, frequency2)
-    
+    first_factor_2piI = 1
+    second_factor_2piI = 1
+
+    # calculate the residues for frequency1
     if computational_complexity_estimation[0][0] >= computational_complexity_estimation[0][1]:
-        residues_sum_without_2piI = first_residues_sum_in_all_situations[1]
+        # computational complexity when closing the contour up >= 
+        # computational complexity when closing the contour down
+        # i.e. it is advantageous to close the contour down
+        residues_sum_without_2piI = calculate_residues_sum(
+            integrand_with_denominator_from_f12_functions, frequency1, frequency2
+            )[1]
+        first_factor_2piI = -2*pi*I
     else:
-        residues_sum_without_2piI = first_residues_sum_in_all_situations[0]
+        # it is advantageous to close the contour up
+        residues_sum_without_2piI = calculate_residues_sum(
+            integrand_with_denominator_from_f12_functions, frequency1, frequency2
+            )[0]
+        first_factor_2piI = 2*pi*I
 
     number_of_terms_in_sum = len(residues_sum_without_2piI.args)
 
+    # calculate the residues for frequency2
     list_with_residues_sum_for_frequency2 = [0] * number_of_terms_in_sum
     if computational_complexity_estimation[1][0] >= computational_complexity_estimation[1][1]:
+        # computational complexity when closing the contour up >= 
+        # computational complexity when closing the contour down
+        # i.e. it is advantageous to close the contour down
         for i in range(number_of_terms_in_sum):
             term = residues_sum_without_2piI.args[i]
             list_with_residues_sum_for_frequency2[i] = calculate_residues_sum(
                 term, frequency2, frequency1)[1]
+        second_factor_2piI = -2*pi*I
     else:
+        # it is advantageous to close the contour up
         for i in range(number_of_terms_in_sum):
             term = residues_sum_without_2piI.args[i]
             list_with_residues_sum_for_frequency2[i] = calculate_residues_sum(
                 term, frequency2, frequency1)[0]        
-    
-    total_sum_of_residues_for_both_frequencies = sum(list_with_residues_sum_for_frequency2)
+        second_factor_2piI = 2*pi*I
+
+    total_sum_of_residues_for_both_frequencies = first_factor_2piI*second_factor_2piI*sum(
+        list_with_residues_sum_for_frequency2)
 
     return total_sum_of_residues_for_both_frequencies
 
@@ -1763,43 +1819,40 @@ def create_file_with_info_and_supplementary_matherials():
     """
     with open('Results/General_notation.txt', 'w+') as Notation_file:
         
-        """
-
-        
-        """
-
-
-
         Notation_file.write(
-            f"A detailed description of most of the notation introduced in this program can be found in the articles: \n"
-            f"[1] Adzhemyan, L.T., Vasil'ev, A.N., Gnatich, M. Turbulent dynamo as spontaneous symmetry breaking. \n"
-            f"Theor Math Phys 72, 940-950 (1987). https://doi.org/10.1007/BF01018300 \n"
-            f"[2] Hnatic, M., Honkonen, J., Lucivjansky, T. Symmetry Breaking in Stochastic Dynamics and Turbulence. \n"
-            f"Symmetry 2019, 11, 1193. https://doi.org/10.3390/sym11101193 \n"
-            f"[3] D. Batkovich, Y. Kirienko, M. Kompaniets, and S. Novikov, GraphState - A tool for graph identification \n"
-            f"and labelling, arXiv:1409.8227, program repository: https://bitbucket.org/mkompan/graph_state/downloads.\n"
-            )
+        f"A detailed description of most of the notation introduced in this program can be found in the articles:\n"
+        f"[1] Adzhemyan, L.T., Vasil'ev, A.N., Gnatich, M. Turbulent dynamo as spontaneous symmetry breaking. \n"
+        f"Theor Math Phys 72, 940-950 (1987). https://doi.org/10.1007/BF01018300 \n"
+        f"[2] Hnatic, M., Honkonen, J., Lucivjansky, T. Symmetry Breaking in Stochastic Dynamics and Turbulence. \n"
+        f"Symmetry 2019, 11, 1193. https://doi.org/10.3390/sym11101193 \n"
+        f"[3] D. Batkovich, Y. Kirienko, M. Kompaniets S. Novikov, GraphState - A tool for graph identification\n"
+        f"and labelling, arXiv:1409.8227, program repository: https://bitbucket.org/mkompan/graph_state/downloads\n"
+        )
 
         Notation_file.write(
             f"\nGeneral remarks: \n"
+            f"0. Detailed information regarding the definition of the Nickel index can be found in [3]. \n"
+            f"1. Fields: v is a random vector velocity field, b is a vector magnetic field, "
+            f"B and V are auxiliary vector fields \n"
+            f"(according to Janssen - De Dominicis approach).\n"
+            f"2. List of non-zero propagators: {get_propagators_from_list_of_fields(all_nonzero_propagators)}\n"
+            f"3. Momentums and frequencies: {p, w} denotes external (inflowing) momentum and frequency, "
+            f"{momentums_for_helicity_propagators} and {frequencies_for_helicity_propagators} \n"
+            f"denotes momentums and frequencies flowing along the loops in the diagram.\n"
+            f"4. Vertices in the diagram are numbered in ascending order from 0 to {number_int_vert - 1}.\n"
+            f"5. Loop structure: for technical reasons, it is convenient to give new momentums "
+            f"{momentums_for_helicity_propagators} and frequencies {frequencies_for_helicity_propagators} \n"
+            f"to propagators containing D_v kernel (see definition below): "
+            f"{get_propagators_from_list_of_fields(propagators_with_helicity)} \n"          
+            f"The first loop corresponds to the pair {k, w_k} and the second to the pair {q, w_q}.\n"
+            ) # write some notes
+
+        Notation_file.write(
+            f"\nDefinitions of non-zero elements of the propagator matrix in the "
+            f"momentum-frequency representation:\n"
             )
 
-
-        Notation_file.write(
-            f"\nNotation: \n"
-            f"1. Fields: v is a random vector velocity field, b is a vector magnetic field, "
-            f"B and V are auxiliary vector fields (according to Janssen - De Dominicis approach)\n"
-            f"2. Propagators: vv = <vv>, vB = <vB>, etc.\n"
-            f"3. Momentums and frequencies: {p, w} denotes external momentum and frequency, "
-            f"{k, q} and {w_k, w_q} denote momentums and frequencies flowing along the loops in the diagram.\n"
-            f"4. Loop structure: arguments {k, q} and {w_k, w_q} are always assigned to propagators containing" 
-            f"the D_v kernel (so-called helical propagators): {get_propagators_from_list_of_fields(propagators_with_helicity)}\n"
-            ) # write the list of used notation
-
-        Notation_file.write(
-            f"\nNonzero elements of the propagator matrix in the momentum-frequency representation: \n")
-
-        [i, j] = symbols("i j", integer = True)
+        [i, j, l] = symbols("i j l", integer = True)
 
         all_fields_glued_into_propagators = get_propagators_from_list_of_fields(all_nonzero_propagators)
 
@@ -1813,6 +1866,46 @@ def create_file_with_info_and_supplementary_matherials():
             f"\n{all_fields_glued_into_propagators[m]}{k, q, i, j} = "
             f"{propagator_without_tensor_structure*tensor_structure_of_propagator}\n"
             ) # write the propagator definition into file
+
+        Notation_file.write(
+            f"\nVertex factors: \n"
+            f"\nvertex_factor_Bbv(k, i, j, l) = {vertex_factor_Bbv(k, i, j, l).doit()}\n"
+            f"\nvertex_factor_Vvv(k, i, j, l) = {vertex_factor_Vvv(k, i, j, l).doit()}\n"
+            f"\nvertex_factor_Vbb(k, i, j, l) = {vertex_factor_Vvv(k, i, j, l).doit()}\n"
+            f"\nHere arguments i, j, l are indices of corresonding fields in corresponding vertex \n"
+            f"(for example, in the Bbv-vertex i denotes index of B, i - index of b, and l - index ob v).\n"
+            ) # write vertex factors
+
+        Notation_file.write(
+            f"\nUsed notation: \n"
+            f"\nHereinafter, unless otherwise stated, the symbol {k} denotes the vector modulus.\n"
+            f"{A} parametrizes the model type: model of linearized NavierStokes equation ({A} = -1), " 
+            f"kinematic MHD turbulence ({A} = 1), \n"
+            f"model of a passive vector field advected by a given turbulent environment ({A} = 0).\n"
+            f"Index {s} reserved to denote the component of the external momentum {p}, " 
+            f"{d} the spatial dimension of the system \n"
+            f"(its physical value is equal to 3), \n"
+            f"function sc_prod(. , .) denotes the standard dot product of vectors in R**d "
+            f"(its arguments are always vector!), \n"
+            f"function hyb(k, i) denotes i-th component of vector {k} (i = 1, ... d),\n"
+            f"{z} = cos(angle between k and q) = sc_prod(k, q)/ (abs(k) * abs(q)), \n"
+            f"vector {theta} is proportional to the magnetic induction, {nu} is a renormalized kinematic viscosity, \n"
+            f"{mu} is a renormalization mass, {u} is a renormalized reciprocal magnetic Prandtl number, \n"
+            f"{rho} is a gyrotropy parameter (abs(rho) < 1), g is a coupling constant, \n"
+            f"{eps} determines a degree of model deviation from logarithmicity "
+            f"(0 < eps =< 2).\n"
+            f"\nD_v(k) = {D_v(k).doit()}\n"
+            f"\nalpha(k, w) = {alpha(k, w).doit()}\n"
+            f"\nalpha_star(k, w) = alpha*(k, w) = {alpha_star(k, w).doit()}\n"
+            f"\nbeta(k, w) = {beta(k, w).doit()}\n"
+            f"\nbeta_star(k, w) = beta*(k, w) = {beta_star(k, w).doit()}\n"
+            f"\nf_1(k, w) = {f_1(k, A).doit().doit()}\n"
+            f"\nf_2(k, w) = {f_2(k, A).doit().doit()}\n"
+            f"\nchi_1(k, w) = {chi_1(k, w).doit()}\n"
+            f"\nchi_2(k, w) = {chi_2(k, w).doit()}\n"
+            f"\nxi(k, w) = {xi(k, w).doit()}\n"
+            f"\nxi_star(k, w) = xi*(k, w) = {xi_star(k, w).doit()}\n"
+            ) 
 
     Notation_file.close()
 
@@ -1871,52 +1964,50 @@ def get_output_data(graf):
     momentums_in_helical_propagators = put_momentums_and_frequencies_to_propagators_with_helicity(
         dict_with_internal_lines, propagators_with_helicity, 
         momentums_for_helicity_propagators, frequencies_for_helicity_propagators
-        )[0] # create a dictionary for momentums flowing in lines containing kernel D_v, i.e. in 
-             # helicity propagators (hybnost == momentum)
+        )[0] # create a dictionary for momentums flowing in lines containing kernel D_v
 
     loop = get_usual_QFT_loops(
         list_of_all_loops_in_diagram, momentums_in_helical_propagators
         ) # select only those loops that contain only one helical propagator (usual QFT loops)
 
     Fey_graphs.write(
-        f"\nLoops in the diagram for a given internal momentum (digit coresponds to the line): \n{loop} \n"
+        f"\nLoops in the diagram for a given internal momentum "
+        f"(digit corresponds to the line from previous dictionary): \n{loop} \n"
         ) # write the loop structure of the diagram to the file
 
     #--------------------------------------------------------------------------------------------------------------#
     #                      Get a distribution over momentums and frequencies flowing over lines
     #--------------------------------------------------------------------------------------------------------------#
 
-
-
-    # The beginning of the momentum distribution. In this case, momentum flows into the diagram via field B and flows out through field b.
-    # If the momentum flows into the vertex is with (+) if the outflow is with (-).
-    # In propagator the line follows nickel index. For example line (1,2) is with (+) momentum and line (2,1) is with (-) momentum - starting point is propagators vv or propagators with kernel D_v
-
     frequencies_in_helical_propagators = put_momentums_and_frequencies_to_propagators_with_helicity(
         dict_with_internal_lines, propagators_with_helicity, 
         momentums_for_helicity_propagators, frequencies_for_helicity_propagators
-        )[1]
+        )[1] # create a dictionary with frequency arguments for propagators defining loops
     
-    vertex_begin = 0     # 
-    vertex_end = 3       # 
+    # determine the start and end vertices in the diagram
+    vertex_begin = 0      
+    vertex_end = number_int_vert - 1       
 
     momentum_and_frequency_distribution = get_momentum_and_frequency_distribution(
         dict_with_internal_lines, momentums_in_helical_propagators, frequencies_in_helical_propagators, 
         p, w, vertex_begin, vertex_end, number_int_vert
-    )
+    ) # assign momentums and frequencies to the corresponding lines of the diagram
 
-    momentum_distribution = momentum_and_frequency_distribution[0]
-
+    momentum_distribution = momentum_and_frequency_distribution[0] 
+    # dictionary with momentums distributed along lines
     frequency_distribution = momentum_and_frequency_distribution[1]
+    # dictionary with frequencies distributed along lines
 
     propagator_args_distribution_at_zero_p_and_w = get_momentum_and_frequency_distribution_at_zero_p_and_w(
     dict_with_internal_lines, momentum_distribution, frequency_distribution, p, w,
     momentums_for_helicity_propagators, frequencies_for_helicity_propagators
-    )
+    ) # obtain the distribution of momentums and frequencies along the lines in the diagram 
+      # at zero external arguments
 
     momentum_distribution_at_zero_external_momentum = propagator_args_distribution_at_zero_p_and_w[0]
-
+    # dictionary with momentums distributed along lines (at zero p)
     frequency_distribution_at_zero_external_frequency = propagator_args_distribution_at_zero_p_and_w[1]
+    # dictionary with frequencies distributed along lines (at zero w)
 
     Fey_graphs.write(
         f"\nMomentum propagating along the lines: "
@@ -1924,7 +2015,7 @@ def get_output_data(graf):
     )
 
     Fey_graphs.write(
-        f"\nFrequency propagating along the lines (digit key coresponds to the line): "
+        f"\nFrequency propagating along the lines: "
         f"\n{get_line_keywards_to_dictionary(frequency_distribution)}\n"
     )
 
@@ -1933,7 +2024,8 @@ def get_output_data(graf):
     distribution_of_diagram_parameters_over_vertices = momentum_and_frequency_distribution_at_vertexes(
     external_lines, dict_with_internal_lines, number_int_vert, p, w,
     momentum_distribution_at_zero_external_momentum, frequency_distribution_at_zero_external_frequency
-    )
+    ) # all information about the diagram is collected and summarized 
+      # (which fields and with which arguments form pairs (lines in the diagram))
 
     indexB =  distribution_of_diagram_parameters_over_vertices[0]
 
@@ -1948,35 +2040,19 @@ def get_output_data(graf):
         f" \n{frequency_and_momentum_distribution_at_vertexes} \n"
     )  
 
-    # [[index of propagator, field, momentum]]
-
     #--------------------------------------------------------------------------------------------------------------#
-    #                      Do smth
+    #                   Obtaining the integrand for the diagram (rational function and tensor part)
     #--------------------------------------------------------------------------------------------------------------#
-
-
-    # --------------------------------------------------------------------------------------
-    # The previous part is the prepartion for the writing the structure from the diagram.
-
-    # Tenzor = 1  # writing the tensor structure - this is the quantity where the tensor structure is constructed
-    # I write into the Tenzor, the projection part of the propagators (vv, Vv = v'v, Bb = b'b )
-    # indexy = list(map(lambda x: x[0], moznost))
-    # P_structure = ([])  
-    # I save the structures so that I don't have to guess through all possible combinations (faster running of the program) [ [momentum, index 1, index 2]]
-    # H_structure = ([])  
-    # I save the helical structures so that I don't have to guess through all possible combinations (faster running of the program) [ [momentum, index 1, index 2]]
-    # H_{ij} (k) = \epsilon_{i, j, l} k_l/ k = H(k, i, j) - it is part with levi-civita symbol and momentum
-    # P_{i, j} (k) = P(k, i, j)
     
-    Tenzor = 1
+    Tenzor = 1 # here we save the tensor structure
 
-    P_structure = ([])
+    P_structure = ([]) # here we save all indices of the projctors in the form [[momentum, index1, index2]]
 
-    H_structure = ([])
+    H_structure = ([]) # here we save all indices of the helical structures in the form [[momentum, index1, index2]]
 
     propagator_product_for_WfMath = ''
 
-    Product = 1
+    Product = 1 # here we save the product of propagators (without tenso structure)
 
     structure_of_propagator_product = get_propagator_product(
         moznost, dict_with_internal_lines, P_structure, H_structure, Tenzor, 
@@ -2000,16 +2076,8 @@ def get_output_data(graf):
         f"\nProduct of propagators without tensor structure: \n{Product}\n"
     )
 
-
-    # I save the kronecker delta so that I don't have to guess through all possible combinations (faster running of the program) [ [index 1, index 2]] ... kd(index 1, index 2)
-    # I save the momemntum and their index (faster running of the program) [ [ k, i] ] ... k_i = hyb(k, i) 
-    # polia - the ordered list: [ V, v, v, b, V, v,... ] - the first three fields corespond the 0 vertex
-    # part to add vertices - all vertieces have
-    # B_i*v_j*Bbv_{ijl}b_l, Bbv_{ijl} = I*(k_j*delta_{ij} - A*k_l*delta_{ij})  
-    # Vvv = Vbb
-
-    kd_structure = ([])
-    hyb_structure = ([])
+    kd_structure = ([]) # here we save all indices in Kronecker delta in the form [ [index 1, index 2]]
+    hyb_structure = ([]) # here we save all momentums and their components in the form [ [ k, i] ]
 
     whole_tensor_structure_of_integrand_numerator = adding_vertex_factors_to_product_of_propagators(
         Tenzor, kd_structure, hyb_structure, number_int_vert, moznost)
@@ -2025,16 +2093,21 @@ def get_output_data(graf):
     )
 
     #--------------------------------------------------------------------------------------------------------------#
-    #                      Do smth
+    #                                      Calculation of integrals over frequencies
     #--------------------------------------------------------------------------------------------------------------#
 
     total_sum_of_residues_for_both_frequencies = calculating_frequency_integrals_in_two_loop_diagrams(
         Product, w_k, w_q)
 
     Fey_graphs.write(
-        f"\nSmth: \n{total_sum_of_residues_for_both_frequencies} \n"
+        f"\nThe integrand after calculating the integrals over frequencies: "
+        f"\n{total_sum_of_residues_for_both_frequencies} \n"
     )
-    exit()
+    # exit()
+
+
+
+
     # ----------------------------------------------------------------------------------------------
     # The program start here. The previous part is only for the reason that I don't have to write the whole structure from the diagram.
     t = time.time()  # it is only used to calculate the calculation time -- can be omitted
