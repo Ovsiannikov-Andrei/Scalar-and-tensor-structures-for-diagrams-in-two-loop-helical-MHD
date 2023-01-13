@@ -4,4 +4,4 @@ Results/**/*.txt
 Sandbox.ipynb
 .*
 !/.gitignore
-.vscode/**/*.json
+\.vscode
