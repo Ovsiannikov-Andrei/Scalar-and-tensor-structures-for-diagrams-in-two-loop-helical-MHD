@@ -645,9 +645,7 @@ class H(Function):
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def get_information_from_Nickel_index(
-    graf
-):
+def get_information_from_Nickel_index(graf, counter):
     """
     Generates a file name with results for each particular diagram
     using the data from the file "Two-loop MHD diagramms".
@@ -678,13 +676,10 @@ def get_information_from_Nickel_index(
                             .split(sep=":")[1].split(sep="|"))[:-1]
     # line structure in the diagram corresponding to Nickel_topology
 
-    return [f"Diagram__{Nickel_topology.strip()}__{Nickel_lines.strip()}.txt",
+    return [f"{counter}. Diagram__{Nickel_topology.strip()}__{Nickel_lines.strip()}.txt",
             Nickel_index.strip(), Symmetry_factor.strip()]
 
-
-def get_list_with_propagators_from_nickel_index(
-    nickel,
-):
+def get_list_with_propagators_from_nickel_index(nickel):
     """
     Arranges the propagators into a list of inner and outer lines with fields. The list is constructed as follows:
     vertex 0 is connected to vertex 1 by a line b---B, vertex 0 is connected to vertex 2 by a line v---v, etc.
@@ -736,9 +731,7 @@ def get_list_with_propagators_from_nickel_index(
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def get_list_as_dictionary(
-    list
-):
+def get_list_as_dictionary(list):
     """
     Turns the list into a dictionary, keys are digits
 
@@ -754,9 +747,7 @@ def get_list_as_dictionary(
     return dictionary
 
 
-def get_line_keywards_to_dictionary(
-    some_dictionary
-):
+def get_line_keywards_to_dictionary(some_dictionary):
     """
     Turns the dictionary with digits keys to dictionary which string keys
 
@@ -776,9 +767,7 @@ def get_line_keywards_to_dictionary(
     return new_some_dictionary
 
 
-def list_of_all_possible_lines_combinations(
-    dict_with_internal_lines
-):
+def list_of_all_possible_lines_combinations(dict_with_internal_lines):
     """
     Return all possible (in principle) combinations of lines (propagators).
     Each digit in output list = key from dict_with_internal_lines, i.e. line in diagram.
@@ -1623,9 +1612,7 @@ def adding_vertex_factors_to_product_of_propagators(
 # Integrals over frequency are calculated using the residue theorem
 
 
-def get_info_how_to_close_contour(
-    rational_function, variable1
-):
+def get_info_how_to_close_contour(rational_function, variable1):
     """
     This function evaluates the complexity of calculating integrals of two variables using residues. 
     The estimation is made on the basis of counting the number of poles lying in the upper/lower
@@ -1878,9 +1865,7 @@ def calculating_frequency_integrals_in_two_loop_diagrams(
 #                             Calculation of the tensor part of the integrand for a diagram
 # ------------------------------------------------------------------------------------------------------------------#
 
-def dosad(
-    zoznam, ind_hod, struktura, pozicia
-):  # ?????????
+def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
     if ind_hod in zoznam:
         return zoznam
     elif ind_hod not in struktura:
@@ -1897,9 +1882,7 @@ def dosad(
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def get_propagators_from_list_of_fields(
-    fields_for_propagators
-):
+def get_propagators_from_list_of_fields(fields_for_propagators):
     """
     Glues separate fields indexes from propagators_with_helicity into the list of propagators
 
@@ -2021,56 +2004,51 @@ and tensor_structure is a corresponding product of tensor operators. \n"""
 #                                Computing the diagram (the major part of the program)
 # ------------------------------------------------------------------------------------------------------------------#
 
-def get_info_about_diagram(graf):
+def get_info_about_diagram(graf, counter):
 
     # --------------------------------------------------------------------------------------------------------------#
     #                     Create a file and start write the information about diagram into it
     # --------------------------------------------------------------------------------------------------------------#
 
-    output_file_name = get_information_from_Nickel_index(
-        graf
-    )[0]  # according to the given Nickel index of the diagram, create the name of the file with the results
-    nickel_index = get_information_from_Nickel_index(
-        graf
-    )[1]  # get Nickel index from the line with the data
-    symmetry_coefficient = get_information_from_Nickel_index(
-        graf
-    )[2]  # get symmetry factor from the line with the data
+    information_from_Nickel_index = get_information_from_Nickel_index(graf, counter)
 
-    Fey_graphs = open(
-        f"Results/{output_file_name}", "a"
-    )  # creating a file with all output data for the corresponding diagram
+    output_file_name = information_from_Nickel_index[0] 
+    # according to the given Nickel index of the diagram, create the name of the file with the results   
 
-    print(
-        f"\nNickel index of the Feynman diagram: {nickel_index}"
-        ) # display the Nickel index of the diagram
+    nickel_index = information_from_Nickel_index[1]
+    # get Nickel index from the line with the data
 
-    Fey_graphs.write(
-        f"Nickel index of the Feynman diagram: {nickel_index} \n"
-    )  # write the Nickel index to the file
+    symmetry_coefficient = information_from_Nickel_index[2]
+    # get symmetry factor from the line with the data
 
-    Fey_graphs.write(
-        f"\nDiagram symmetry factor: {symmetry_coefficient} \n"
-    )  # write the symmetry coefficient to the file
+    Fey_graphs = open(f"Results/{output_file_name}", "w")  
+    # creating a file with all output data for the corresponding diagram
+
+    print(f"\nNickel index of the Feynman diagram: {nickel_index}") 
+    # display the Nickel index of the diagram
+
+    Fey_graphs.write(f"Nickel index of the Feynman diagram: {nickel_index} \n")  
+    # write the Nickel index to the file
+
+    Fey_graphs.write(f"\nDiagram symmetry factor: {symmetry_coefficient} \n")  
+    # write the symmetry coefficient to the file
 
     # --------------------------------------------------------------------------------------------------------------#
     #                         Part 1: Geting the diagram description (lines, vertices, etc.)
     # --------------------------------------------------------------------------------------------------------------#
 
-    Fey_graphs.write(
-        f"\nSupporting information begin:\n"
-    )  # start filling the supporting information (topology, momentum and frequency distribution) to file
+    Fey_graphs.write(f"\nSupporting information begin:\n")  
+    # start filling the supporting information (topology, momentum and frequency distribution) to file
 
     # --------------------------------------------------------------------------------------------------------------#
     #                Define a loop structure of the diagram (which lines form loops) and write it into file
     # --------------------------------------------------------------------------------------------------------------#
 
-    internal_lines = get_list_with_propagators_from_nickel_index(
-        graf)[0]  # list with diagram internal lines
+    internal_lines = get_list_with_propagators_from_nickel_index(graf)[0] 
+    # list with diagram internal lines
 
-    dict_with_internal_lines = get_list_as_dictionary(
-        internal_lines
-    )  # put the list of all internal lines in the diagram to a dictionary
+    dict_with_internal_lines = get_list_as_dictionary(internal_lines) 
+    # put the list of all internal lines in the diagram to a dictionary
 
     Fey_graphs.write(
         f"\nPropagators in the diagram: \n"
@@ -2087,9 +2065,8 @@ def get_info_about_diagram(graf):
         momentums_for_helicity_propagators, frequencies_for_helicity_propagators
     )[0]  # create a dictionary for momentums flowing in lines containing kernel D_v
 
-    loop = get_usual_QFT_loops(
-        list_of_all_loops_in_diagram, momentums_in_helical_propagators
-    )  # select only those loops that contain only one helical propagator (usual QFT loops)
+    loop = get_usual_QFT_loops(list_of_all_loops_in_diagram, momentums_in_helical_propagators)  
+    # select only those loops that contain only one helical propagator (usual QFT loops)
 
     Fey_graphs.write(
         f"\nLoops in the diagram for a given internal momentum "
@@ -2125,11 +2102,9 @@ def get_info_about_diagram(graf):
     )  # obtain the distribution of momentums and frequencies along the lines in the diagram
     # at zero external arguments
 
-    momentum_distribution_at_zero_external_momentum = propagator_args_distribution_at_zero_p_and_w[
-        0]
+    momentum_distribution_at_zero_external_momentum = propagator_args_distribution_at_zero_p_and_w[0]
     # dictionary with momentums distributed along lines (at zero p)
-    frequency_distribution_at_zero_external_frequency = propagator_args_distribution_at_zero_p_and_w[
-        1]
+    frequency_distribution_at_zero_external_frequency = propagator_args_distribution_at_zero_p_and_w[1]
     # dictionary with frequencies distributed along lines (at zero w)
 
     Fey_graphs.write(
@@ -2142,8 +2117,8 @@ def get_info_about_diagram(graf):
         f"\n{get_line_keywards_to_dictionary(frequency_distribution)}\n"
     )
 
-    external_lines = get_list_with_propagators_from_nickel_index(
-        graf)[1]  # list with diagram external lines
+    external_lines = get_list_with_propagators_from_nickel_index(graf)[1]  
+    # list with diagram external lines
 
     distribution_of_diagram_parameters_over_vertices = momentum_and_frequency_distribution_at_vertexes(
         external_lines, dict_with_internal_lines, number_int_vert, p, w,
@@ -2155,8 +2130,7 @@ def get_info_about_diagram(graf):
 
     indexb = distribution_of_diagram_parameters_over_vertices[1]
 
-    frequency_and_momentum_distribution_at_vertexes = distribution_of_diagram_parameters_over_vertices[
-        3]
+    frequency_and_momentum_distribution_at_vertexes = distribution_of_diagram_parameters_over_vertices[3]
 
     moznost = distribution_of_diagram_parameters_over_vertices[4]
 
@@ -2169,20 +2143,20 @@ def get_info_about_diagram(graf):
     #                   Obtaining the integrand for the diagram (rational function and tensor part)
     # --------------------------------------------------------------------------------------------------------------#
 
-    # here we save the tensor structure
     Tenzor = 1 
+    # here we save the tensor structure
 
-    # here we save the product of propagators (without tensor structure)
     Product = 1
+    # here we save the product of propagators (without tensor structure)
 
-    # here we save all indices of the projctors in the form [[momentum, index1, index2]]
     P_structure = ([])
+    # here we save all indices of the projctors in the form [[momentum, index1, index2]]
 
-    # here we save all indices of the helical structures in the form [[momentum, index1, index2]]
     H_structure = ([])
+    # here we save all indices of the helical structures in the form [[momentum, index1, index2]]
 
-    # here we save the propagator product argument structure (for Wolfram Mathematica file)
     propagator_product_for_WfMath = ''
+    # here we save the propagator product argument structure (for Wolfram Mathematica file)
 
     structure_of_propagator_product = get_propagator_product(
         moznost, dict_with_internal_lines, P_structure, H_structure, Tenzor,
@@ -2199,17 +2173,11 @@ def get_info_about_diagram(graf):
 
     Product = structure_of_propagator_product[4]
 
-    Fey_graphs.write(
-        f"\nArgument structure in the propagator product: \n{propagator_product_for_WfMath}\n"
-    )
+    Fey_graphs.write(f"\nArgument structure in the propagator product: \n{propagator_product_for_WfMath}\n")
 
-    print(
-        f"\nProduct of propagators without tensor structure: \n{Product}"
-        )
+    print(f"\nProduct of propagators without tensor structure: \n{Product}")
 
-    Fey_graphs.write(
-        f"\nProduct of propagators without tensor structure: \n{Product}\n"
-    )
+    Fey_graphs.write(f"\nProduct of propagators without tensor structure: \n{Product}\n")
 
     # here we save all indices in Kronecker delta in the form [ [index 1, index 2]]
     kd_structure = ([])
@@ -2225,25 +2193,18 @@ def get_info_about_diagram(graf):
 
     hyb_structure = whole_tensor_structure_of_integrand_numerator[2]
 
-    print(
-        f"\nDiagram tensor structure before computing tensor convolutions: \n{Tenzor}"
-        )
+    print(f"\nDiagram tensor structure before computing tensor convolutions: \n{Tenzor}")
 
-    Fey_graphs.write(
-        f"\nDiagram tensor structure before computing tensor convolutions: \n{Tenzor}\n"
-    )
+    Fey_graphs.write(f"\nDiagram tensor structure before computing tensor convolutions: \n{Tenzor}\n")
 
-    Fey_graphs.write(
-        f"\nSupporting information end.\n"
-    )  # finish filling the supporting information to file
+    Fey_graphs.write(f"\nSupporting information end.\n")  # finish filling the supporting information to file
 
     # --------------------------------------------------------------------------------------------------------------#
     #                Part 2. Diagram calculation (integrals over frequencies, tensor convolutions, etc.)
     # --------------------------------------------------------------------------------------------------------------#
 
-    Fey_graphs.write(
-        f"\nDiagram calculation begin:\n"
-    )  # starts filling the results of calculations (integrals over frequencies, tensor convolutions) to file
+    Fey_graphs.write(f"\nDiagram calculation begin:\n")  
+    # starts filling the results of calculations (integrals over frequencies, tensor convolutions) to file
 
     # --------------------------------------------------------------------------------------------------------------#
     #                                        Сomputing integrals over frequencies
@@ -2261,9 +2222,7 @@ def get_info_about_diagram(graf):
     #                                        Сomputing diagram tensor structure
     # --------------------------------------------------------------------------------------------------------------#
 
-    print(
-        f"\nBeginning the tensor convolutions calculation: \n"
-        )
+    print(f"\nBeginning the tensor convolutions calculation: \n")
 
     t = time.time()  # it is only used to calculate the calculation time -- can be omitted
 
@@ -3017,20 +2976,14 @@ def get_info_about_diagram(graf):
 
     print(f"step 11: {round(time.time() - t, 1)} sec")
 
-    print(
-        f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor}"
-        )
+    print(f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor}")
 
-    Fey_graphs.write(
-        f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor} \n"
-    )
+    Fey_graphs.write(f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor} \n")
 
     # result = str(Tenzor)
     # result = result.replace("**", "^")
 
-    Fey_graphs.write(
-        f"\nDiagram calculation end.\n"
-    )  # finish  filling the results of calculation to file
+    Fey_graphs.write(f"\nDiagram calculation end.\n")  # finish  filling the results of calculation to file
     
     # print(pretty(Tenzor, use_unicode=False))
 
@@ -3069,7 +3022,7 @@ def main():
         
             print(f"CALCULATION {number_of_counted_diagrams} BEGIN")
 
-            get_info_about_diagram(graf)
+            get_info_about_diagram(graf, number_of_counted_diagrams + 1)
 
             print(f"\nCALCULATION {number_of_counted_diagrams} END \n")
 
