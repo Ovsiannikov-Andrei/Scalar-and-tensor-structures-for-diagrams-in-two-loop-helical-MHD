@@ -1,0 +1,101 @@
+A detailed description of most of the notation introduced in this program can be found in the articles:
+[1] Adzhemyan, L.T., Vasil'ev, A.N., Gnatich, M. Turbulent dynamo as spontaneous symmetry breaking. 
+Theor Math Phys 72, 940-950 (1987). https://doi.org/10.1007/BF01018300 
+[2] Hnatic, M., Honkonen, J., Lucivjansky, T. Symmetry Breaking in Stochastic Dynamics and Turbulence. 
+Symmetry 2019, 11, 1193. https://doi.org/10.3390/sym11101193 
+[3] D. Batkovich, Y. Kirienko, M. Kompaniets S. Novikov, GraphState - A tool for graph identification
+and labelling, arXiv:1409.8227, program repository: https://bitbucket.org/mkompan/graph_state/downloads
+
+General remarks: 
+0. Detailed information regarding the definition of the Nickel index can be found in [3]. 
+1. Fields: v is a random vector velocity field, b is a vector magnetic field, B and V are auxiliary vector fields 
+(according to Janssen - De Dominicis approach).
+2. List of non-zero propagators: ['vv', 'vV', 'Vv', 'bB', 'Bb', 'vb', 'bv', 'bb', 'Vb', 'bV', 'Bv', 'vB']
+3. Momentums and frequencies: (p, w) denotes external (inflowing) momentum and frequency, [k, q] and [w_k, w_q] 
+denotes momentums and frequencies flowing along the loops in the diagram.
+4. Vertices in the diagram are numbered in ascending order from 0 to 3.
+5. Loop structure: for technical reasons, it is convenient to give new momentums [k, q] and frequencies [w_k, w_q] 
+to propagators containing D_v kernel (see definition below): ['vv', 'vb', 'bv', 'bb'] 
+The first loop corresponds to the pair (k, w_k) and the second to the pair (q, w_q).
+
+Definitions of non-zero elements of the propagator matrix in the momentum-frequency representation:
+
+vv(k, q, i, j) = (I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(k, w_k)*beta_star(k, w_k)/(xi(k, w_k)*xi_star(k, w_k))
+
+vV(k, q, i, j) = P(k, i, j)*beta_star(k, w_k)/xi_star(k, w_k)
+
+Vv(k, q, i, j) = P(k, i, j)*beta_star(k, w_k)/xi_star(k, w_k)
+
+bB(k, q, i, j) = P(k, i, j)*alpha_star(k, w_k)/xi_star(k, w_k)
+
+Bb(k, q, i, j) = P(k, i, j)*alpha_star(k, w_k)/xi_star(k, w_k)
+
+vb(k, q, i, j) = I*A*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(k, w_k)*sc_prod(theta, k)/(xi(k, w_k)*xi_star(k, w_k))
+
+bv(k, q, i, j) = I*A*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(k, w_k)*sc_prod(theta, k)/(xi(k, w_k)*xi_star(k, w_k))
+
+bb(k, q, i, j) = A**2*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*sc_prod(theta, k)**2/(xi(k, w_k)*xi_star(k, w_k))
+
+Vb(k, q, i, j) = I*A*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+
+bV(k, q, i, j) = I*A*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+
+Bv(k, q, i, j) = I*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+
+vB(k, q, i, j) = I*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+
+Vertex factors: 
+
+vertex_factor_Bbv(k, i, j, l) = I*(-A*hyb(k, j)*kd(i, l) + hyb(k, l)*kd(i, j))
+
+vertex_factor_Vvv(k, i, j, l) = I*(hyb(k, j)*kd(i, l) + hyb(k, l)*kd(i, j))
+
+vertex_factor_Vbb(k, i, j, l) = I*(hyb(k, j)*kd(i, l) + hyb(k, l)*kd(i, j))
+
+Here arguments i, j, l are indices of corresonding fields in corresponding vertex 
+(for example, in the Bbv-vertex i denotes index of B, i - index of b, and l - index ob v).
+
+Used notation: 
+
+Hereinafter, unless otherwise stated, the symbol k denotes the vector modulus. 
+A parametrizes the model type: model of linearized NavierStokes equation (A = -1), kinematic MHD turbulence 
+(A = 1), model of a passive vector field advected by a given turbulent environment (A = 0). 
+Index s reserved to denote the component of the external momentum p, d the spatial dimension of the system 
+(its physical value is equal to 3), function sc_prod(. , .) denotes the standard dot product of vectors in R**d
+(its arguments are always vectors!). 
+function hyb(k, i) denotes i-th component of vector k (i = 1, ..., d), functions kd(i, j) and lcs(i, j, l) 
+denotes the Kronecker delta and Levi-Civita symbols. 
+z = cos(angle between k and q) = sc_prod(k, q)/ (abs(k) * abs(q)), vector theta is proportional to the 
+magnetic induction, nu is a renormalized kinematic viscosity, mu is a renormalization mass, 
+u is a renormalized reciprocal magnetic Prandtl number, rho is a gyrotropy parameter (abs(rho) < 1), 
+g is a coupling constant, eps determines a degree of model deviation from logarithmicity (0 < eps =< 2). 
+
+
+D_v(k) = g*k**(-d - 2*eps + 4)*mu**(2*eps)*nu**3
+
+alpha(k, w) = k**2*nu + I*w
+
+alpha_star(k, w) = alpha*(k, w) = k**2*nu - I*w
+
+beta(k, w) = k**2*nu*u + I*w
+
+beta_star(k, w) = beta*(k, w) = k**2*nu*u - I*w
+
+f_1(k, w) = I*k**2*nu*u/2 + I*k**2*nu/2 + sqrt(4*A*sc_prod(theta, k)**2 - k**4*nu**2*(u - 1)**2)/2
+
+f_2(k, w) = I*k**2*nu*u/2 + I*k**2*nu/2 - sqrt(4*A*sc_prod(theta, k)**2 - k**4*nu**2*(u - 1)**2)/2
+
+chi_1(k, w) = w - f_1(k, A)
+
+chi_2(k, w) = w - f_2(k, A)
+
+xi(k, w) = -chi_1(k, w)*chi_2(k, w)
+
+xi_star(k, w) = xi*(k, w) = -chi_1(k, -w)*chi_2(k, -w)
+
+Each diagram in the corresponding file is defined by a formula of the following form: 
+
+Diagram = symmetry_factor*integral_with_measure*integrand*tensor_structure, 
+
+where integrand is a part of the product of propagators (no tensor operators in the numerator) 
+and tensor_structure is a corresponding product of tensor operators. 

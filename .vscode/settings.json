@@ -1,10 +1,9 @@
 {
     "doki.background.enabled": true,
     "doki.wallpaper.enabled": true,
-    "doki.wallpaper.path": "C:\\Users\\Andrei\\Pictures\\VScode themes\\Soviet theme\\USSR coat of arms.png",
-    "doki.sticker.path": "C:\\Users\\Andrei\\Pictures\\VScode themes\\Soviet theme\\kazhdoj_rabochej_minute_naivysshuju_otdachu_plakat_sssr.png",
-    "doki.sticker.css": "z-index:100;background-position:100% 95%",
+    "doki.wallpaper.path": "C:\\Users\\Andrei\\Pictures\\VScode themes\\Soviet theme\\USSR coat of arms 3.0.png",
+    "doki.sticker.css": "",
     "doki.statusbar.name": "БЕРЕГИ РАБОЧУЮ МИНУТУ!",
-    "doki.background.path": "C:\\Users\\Andrei\\Pictures\\VScode themes\\Soviet theme\\USSR.png",
+    "doki.background.path": "C:\\Users\\Andrei\\Pictures\\VScode themes\\Soviet theme\\Lenin mosaic 8.0.png",
     "doki.background.anchor": ""
 }

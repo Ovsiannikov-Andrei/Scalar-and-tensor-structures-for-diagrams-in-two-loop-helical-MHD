@@ -1,4 +1,5 @@
 Results/**/*.txt
 !Two-loop MHD diagrams.txt
+!General_notation.txt
 Sandbox.ipynb
 .vscode

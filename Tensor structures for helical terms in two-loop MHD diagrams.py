@@ -26,11 +26,6 @@ import time
 # 3. D. Batkovich, Y. Kirienko, M. Kompaniets, and S. Novikov, GraphState - A tool for graph identification
 # and labelling, arXiv:1409.8227, program repository: https://bitbucket.org/mkompan/graph_state/downloads
 
-
-if not os.path.isdir("Results"):
-    # create the Results folder if it doesn't already exist
-    os.mkdir("Results")
-
 # ATTENTION!!! Already existing names of variables and functions should NOT be changed!
 
 # -----------------------------------------------------------------------------------------------------------------#
@@ -666,7 +661,7 @@ def get_information_from_Nickel_index(
     File name example: "Diagram__e12-23-3-e+0B_bB_vv-vB_bb-bV-0b.txt" 
     (all "|" are replaced by -, ":" is replaced by +)
 
-    Nickel index example: e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|
+    Nickel index examples: e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|, e12|e3|33||:0B_bV_vb|0b_bV|Bv_vv||
 
     Symmetry factor example: 1
     """
@@ -675,15 +670,15 @@ def get_information_from_Nickel_index(
     Symmetry_factor = " ".join(graf.split(sep='SC = ')[1])
     # separating the Nickel index from the symmetry factor of the diagram
 
-    Nickel_topology = "-".join(graf.split(sep='SC = ')[0].rstrip()
+    Nickel_topology = "_".join(graf.split(sep='SC = ')[0].rstrip()
                                .split(sep=":")[0].split(sep="|"))[:-1]
     # topological part of the Nickel index
 
-    Nickel_lines = "-".join(graf.split(sep='SC = ')[0].rstrip()
+    Nickel_lines = "__".join(graf.split(sep='SC = ')[0].rstrip()
                             .split(sep=":")[1].split(sep="|"))[:-1]
     # line structure in the diagram corresponding to Nickel_topology
 
-    return [f"Diagram__{Nickel_topology.strip()}+{Nickel_lines.strip()}.txt",
+    return [f"Diagram__{Nickel_topology.strip()}__{Nickel_lines.strip()}.txt",
             Nickel_index.strip(), Symmetry_factor.strip()]
 
 
@@ -1924,7 +1919,7 @@ def create_file_with_info_and_supplementary_matherials():
     """
     Creates a file with general information and supplementary matherials
     """
-    with open('Results/General_notation.txt', 'w+') as Notation_file:
+    with open('General_notation.txt', 'w+') as Notation_file:
 
         Notation_file.write(
             f"A detailed description of most of the notation introduced in this program can be found in the articles:\n"
@@ -2023,10 +2018,10 @@ and tensor_structure is a corresponding product of tensor operators. \n"""
 
 
 # ------------------------------------------------------------------------------------------------------------------#
-#                                        Define the main body of the program
+#                                Computing the diagram (the major part of the program)
 # ------------------------------------------------------------------------------------------------------------------#
 
-def get_output_data(graf):
+def get_info_about_diagram(graf):
 
     # --------------------------------------------------------------------------------------------------------------#
     #                     Create a file and start write the information about diagram into it
@@ -2043,8 +2038,12 @@ def get_output_data(graf):
     )[2]  # get symmetry factor from the line with the data
 
     Fey_graphs = open(
-        f"Results/{output_file_name}", "w"
+        f"Results/{output_file_name}", "a"
     )  # creating a file with all output data for the corresponding diagram
+
+    print(
+        f"\nNickel index of the Feynman diagram: {nickel_index}"
+        ) # display the Nickel index of the diagram
 
     Fey_graphs.write(
         f"Nickel index of the Feynman diagram: {nickel_index} \n"
@@ -2059,7 +2058,7 @@ def get_output_data(graf):
     # --------------------------------------------------------------------------------------------------------------#
 
     Fey_graphs.write(
-        f"\nSupporting information start:\n"
+        f"\nSupporting information begin:\n"
     )  # start filling the supporting information (topology, momentum and frequency distribution) to file
 
     # --------------------------------------------------------------------------------------------------------------#
@@ -2170,7 +2169,11 @@ def get_output_data(graf):
     #                   Obtaining the integrand for the diagram (rational function and tensor part)
     # --------------------------------------------------------------------------------------------------------------#
 
-    Tenzor = 1  # here we save the tensor structure
+    # here we save the tensor structure
+    Tenzor = 1 
+
+    # here we save the product of propagators (without tensor structure)
+    Product = 1
 
     # here we save all indices of the projctors in the form [[momentum, index1, index2]]
     P_structure = ([])
@@ -2178,10 +2181,8 @@ def get_output_data(graf):
     # here we save all indices of the helical structures in the form [[momentum, index1, index2]]
     H_structure = ([])
 
+    # here we save the propagator product argument structure (for Wolfram Mathematica file)
     propagator_product_for_WfMath = ''
-
-    # here we save the product of propagators (without tenso structure)
-    Product = 1
 
     structure_of_propagator_product = get_propagator_product(
         moznost, dict_with_internal_lines, P_structure, H_structure, Tenzor,
@@ -2201,6 +2202,11 @@ def get_output_data(graf):
     Fey_graphs.write(
         f"\nArgument structure in the propagator product: \n{propagator_product_for_WfMath}\n"
     )
+
+    print(
+        f"\nProduct of propagators without tensor structure: \n{Product}"
+        )
+
     Fey_graphs.write(
         f"\nProduct of propagators without tensor structure: \n{Product}\n"
     )
@@ -2219,8 +2225,12 @@ def get_output_data(graf):
 
     hyb_structure = whole_tensor_structure_of_integrand_numerator[2]
 
+    print(
+        f"\nDiagram tensor structure before computing tensor convolutions: \n{Tenzor}"
+        )
+
     Fey_graphs.write(
-        f"\nTensor structure of the diagram before computing tensor convolutions: \n{Tenzor} \n"
+        f"\nDiagram tensor structure before computing tensor convolutions: \n{Tenzor}\n"
     )
 
     Fey_graphs.write(
@@ -2232,7 +2242,7 @@ def get_output_data(graf):
     # --------------------------------------------------------------------------------------------------------------#
 
     Fey_graphs.write(
-        f"\nDiagram calculation results start:\n"
+        f"\nDiagram calculation begin:\n"
     )  # starts filling the results of calculations (integrals over frequencies, tensor convolutions) to file
 
     # --------------------------------------------------------------------------------------------------------------#
@@ -2251,11 +2261,11 @@ def get_output_data(graf):
     #                                        Сomputing diagram tensor structure
     # --------------------------------------------------------------------------------------------------------------#
 
+    print(
+        f"\nBeginning the tensor convolutions calculation: \n"
+        )
 
     t = time.time()  # it is only used to calculate the calculation time -- can be omitted
-
-    print(f"\n{Tenzor}\n")
-    print(f"\n{Product}\n")
 
     Tenzor = expand(Tenzor)  # The final tesor structure from the diagram.
 
@@ -2265,7 +2275,7 @@ def get_output_data(graf):
     # Tenzor = Tenzor.subs(A, 1)              # It depends on which part we want to calculate from the vertex Bbv
     # print(Tenzor)
     # We are interested in the leading (proportional to p) contribution to the diagram asymptotic, when p --> 0.
-    print("step 0:", round(time.time() - t, 1), "sec")
+    print(f"step 0: {round(time.time() - t, 1)} sec")
 
     for in2 in kd_structure:
         structurep = list()
@@ -2339,7 +2349,7 @@ def get_output_data(graf):
                 break
         H_structure = H_structure + structureh
 
-    print("step 1:", round(time.time() - t, 1), "sec")
+    print(f"step 1: {round(time.time() - t, 1)} sec")
 
     i = 0
     # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
@@ -2389,7 +2399,7 @@ def get_output_data(graf):
         else:
             i += 1
 
-    print("step 2:", round(time.time() - t, 1), "sec")
+    print(f"step 2: {round(time.time() - t, 1)} sec")
 
     i = 0
     # sipmplify in the Tenzor part H_{ij} (k) P_{il} (k) =  H_{il} (k)
@@ -2429,7 +2439,7 @@ def get_output_data(graf):
         else:
             i += 1
 
-    print("step 3:", round(time.time() - t, 1), "sec")
+    print(f"step 3: {round(time.time() - t, 1)} sec")
 
     i = 0
     # sipmplify in the Tenzor part  P_{ij} (k) P_{il} (k) =  P_{il} (k)
@@ -2474,7 +2484,7 @@ def get_output_data(graf):
             P_structure + structurep
         )  # it add all newly created structures to the list
 
-    print("step 4:", round(time.time() - t, 1), "sec")
+    print(f"step 4: {round(time.time() - t, 1)} sec")
 
     for i in hyb_structure:  # replace: hyb(-k+q, i) = -hyb(k, i) + hyb(q, i)
         k_c = i[0].coeff(k)
@@ -2496,7 +2506,7 @@ def get_output_data(graf):
         )
         kd_structure.append([i[1], i[2]])
 
-    print("step 5:", round(time.time() - t, 1), "sec")
+    print(f"step 5: {round(time.time() - t, 1)} sec")
 
     Tenzor = expand(Tenzor)
 
@@ -2518,7 +2528,7 @@ def get_output_data(graf):
                 H(in1[0], in1[1], in1[2]) * hyb(k, in1[1]) * hyb(k, in1[2]), 0
             )
 
-    print("step 6:", round(time.time() - t, 1), "sec")
+    print(f"step 6: {round(time.time() - t, 1)} sec")
 
     inkd = 0
     while (inkd == 0):  # calculation part connected with the kronecker delta function: kd(i,j) *hyb(k,i) = hyb(k,j)
@@ -2554,7 +2564,7 @@ def get_output_data(graf):
         else:
             inkd = 1
 
-    print("step 7:", round(time.time() - t, 1), "sec")
+    print(f"step 7: {round(time.time() - t, 1)} sec")
 
     i = 0
     while len(H_structure) > i:  # calculation for helical term
@@ -2617,7 +2627,7 @@ def get_output_data(graf):
                 kd_structure.remove(in2)
         i += 1
 
-    print("step 8:", round(time.time() - t, 1), "sec")
+    print(f"step 8: {round(time.time() - t, 1)} sec")
 
     p_structure = list()  # list of indeces for momentum p in Tenzor
     k_structure = list()  # list of indeces for momentum k in Tenzor
@@ -2647,7 +2657,7 @@ def get_output_data(graf):
     )  # delete zero values in the Tenzor: H( ,i,j) hyb(p, i) hyb( ,j) hyb(k, indexB) hyb(k, indexb) = 0
     Tenzor = Tenzor.subs(hyb(k, indexb) * hyb(k, indexB), 0)
 
-    print("step 9:", round(time.time() - t, 1), "sec")
+    print(f"step 9: {round(time.time() - t, 1)} sec")
 
     # calculation of H structure - For this particular case, one of the external indices (p_s, b_i or B_j) is paired with a helicity term.
     # we will therefore use the information that, in addition to the helicity term H( , i,j), they can be multiplied by a maximum of three internal momenta.
@@ -2919,7 +2929,7 @@ def get_output_data(graf):
                         )
         i += 1
 
-    print("step 10:", round(time.time() - t, 1), "sec")
+    print(f"step 10: {round(time.time() - t, 1)} sec")
 
     for (in1) in (H_structure):  # calculate the structure where there are two external momentums: H(momentum, i, indexB)* p(i) hyb( , indexb) and other combinations except H(momentum, indexB, indexb) hyb(p, i) hyb(k, i)
         if Tenzor.coeff(H(in1[0], in1[1], in1[2])) != 0:
@@ -3005,21 +3015,23 @@ def get_output_data(graf):
 
     Tenzor = simplify(Tenzor)
 
-    print("step 11:", round(time.time() - t, 1), "sec")
+    print(f"step 11: {round(time.time() - t, 1)} sec")
 
-    result = str(Tenzor)
-    result = result.replace("**", "^")
+    print(
+        f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor}"
+        )
+
     Fey_graphs.write(
-        f"\nTensor structure (after computing tensor convolutions): "
-        f"\n{result} \n"
+        f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor} \n"
     )
 
+    # result = str(Tenzor)
+    # result = result.replace("**", "^")
+
     Fey_graphs.write(
-        f"\nCalculation results end.\n"
+        f"\nDiagram calculation end.\n"
     )  # finish  filling the results of calculation to file
-
-    print("Tensor structure of the diagram after calculation:", Tenzor)
-
+    
     # print(pretty(Tenzor, use_unicode=False))
 
     # Fey_graphs.write("\n"+ pretty(Tenzor, use_unicode=False) + "\n")
@@ -3028,11 +3040,46 @@ def get_output_data(graf):
 
     Fey_graphs.close()
 
+# ------------------------------------------------------------------------------------------------------------------#
+#                                         Computing all two-loop MHD diagrams
+# ------------------------------------------------------------------------------------------------------------------#
 
-create_file_with_info_and_supplementary_matherials()
+def main():
+    """
+    The program reads the Nickel indices line by line from a special external file (0), 
+    performs calculations and writes the output data about the diagram to the created file.
 
-with open('Two-loop MHD diagrams.txt', 'r') as MHD_diagrams_file:
+    The output data includes the topology of the diagram, the distribution of momenta and frequencies, and 
+    the diagram integrand (the product of tensor operators and everything else separately). All integrands are 
+    calculated up to the level of taking integrals over frequencies and calculating tensor convolutions.
+    """
 
-    for graf in MHD_diagrams_file.readlines():
+    if not os.path.isdir("Results"):
+    # create the Results folder if it doesn't already exist
+        os.mkdir("Results")
 
-        get_output_data(graf)
+    create_file_with_info_and_supplementary_matherials() 
+    # create a file with decoding of all notations and additional information
+
+    number_of_counted_diagrams = 0 # counter to count already processed diagrams
+
+    with open('Two-loop MHD diagrams.txt', 'r') as MHD_diagrams_file:
+
+        for graf in MHD_diagrams_file.readlines():
+        
+            print(f"CALCULATION {number_of_counted_diagrams} BEGIN")
+
+            get_info_about_diagram(graf)
+
+            print(f"\nCALCULATION {number_of_counted_diagrams} END \n")
+
+            number_of_counted_diagrams += 1
+
+    print(f"Number of counted diagrams: {number_of_counted_diagrams}")
+
+# ------------------------------------------------------------------------------------------------------------------#
+#                                                    Entry point 
+# ------------------------------------------------------------------------------------------------------------------#
+
+if __name__ == '__main__':
+    main()
