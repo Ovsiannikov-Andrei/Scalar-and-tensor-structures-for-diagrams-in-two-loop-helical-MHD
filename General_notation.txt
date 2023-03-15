@@ -20,37 +20,37 @@ The first loop corresponds to the pair (k, w_k) and the second to the pair (q, w
 
 Definitions of non-zero elements of the propagator matrix in the momentum-frequency representation:
 
-vv(k, q, i, j) = (I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(k, w_k)*beta_star(k, w_k)/(xi(k, w_k)*xi_star(k, w_k))
+vv(k, q, i, j) = (I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(nuo, k, w_k)*beta_star(nuo, k, w_k)/(xi(k, w_k)*xi_star(k, w_k))
 
-vV(k, q, i, j) = P(k, i, j)*beta_star(k, w_k)/xi_star(k, w_k)
+vV(k, q, i, j) = P(k, i, j)*beta_star(nuo, k, w_k)/xi_star(k, w_k)
 
-Vv(k, q, i, j) = P(k, i, j)*beta_star(k, w_k)/xi_star(k, w_k)
+Vv(k, q, i, j) = P(k, i, j)*beta_star(nuo, k, w_k)/xi_star(k, w_k)
 
-bB(k, q, i, j) = P(k, i, j)*alpha_star(k, w_k)/xi_star(k, w_k)
+bB(k, q, i, j) = P(k, i, j)*alpha_star(nuo, k, w_k)/xi_star(k, w_k)
 
-Bb(k, q, i, j) = P(k, i, j)*alpha_star(k, w_k)/xi_star(k, w_k)
+Bb(k, q, i, j) = P(k, i, j)*alpha_star(nuo, k, w_k)/xi_star(k, w_k)
 
-vb(k, q, i, j) = I*A*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(k, w_k)*sc_prod(theta, k)/(xi(k, w_k)*xi_star(k, w_k))
+vb(k, q, i, j) = I*A*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(nuo, k, w_k)*sc_prod(B, k)/(xi(k, w_k)*xi_star(k, w_k))
 
-bv(k, q, i, j) = I*A*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(k, w_k)*sc_prod(theta, k)/(xi(k, w_k)*xi_star(k, w_k))
+bv(k, q, i, j) = I*A*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*beta(nuo, k, w_k)*sc_prod(B, k)/(xi(k, w_k)*xi_star(k, w_k))
 
-bb(k, q, i, j) = A**2*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*sc_prod(theta, k)**2/(xi(k, w_k)*xi_star(k, w_k))
+bb(k, q, i, j) = A**2*(I*rho*H(k, i, j) + P(k, i, j))*D_v(k)*sc_prod(B, k)**2/(xi(k, w_k)*xi_star(k, w_k))
 
-Vb(k, q, i, j) = I*A*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+Vb(k, q, i, j) = I*A*P(k, i, j)*sc_prod(B, k)/xi_star(k, w_k)
 
-bV(k, q, i, j) = I*A*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+bV(k, q, i, j) = I*A*P(k, i, j)*sc_prod(B, k)/xi_star(k, w_k)
 
-Bv(k, q, i, j) = I*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+Bv(k, q, i, j) = I*P(k, i, j)*sc_prod(B, k)/xi_star(k, w_k)
 
-vB(k, q, i, j) = I*P(k, i, j)*sc_prod(theta, k)/xi_star(k, w_k)
+vB(k, q, i, j) = I*P(k, i, j)*sc_prod(B, k)/xi_star(k, w_k)
 
 Vertex factors: 
 
-vertex_factor_Bbv(k, i, j, l) = I*(-A*hyb(k, j)*kd(i, l) + hyb(k, l)*kd(i, j))
+vertex_factor_Bbv(k, i, j, l) = I*(-A*kd(i, l)*hyb(k, j) + kd(i, j)*hyb(k, l))
 
-vertex_factor_Vvv(k, i, j, l) = I*(hyb(k, j)*kd(i, l) + hyb(k, l)*kd(i, j))
+vertex_factor_Vvv(k, i, j, l) = I*(kd(i, j)*hyb(k, l) + kd(i, l)*hyb(k, j))
 
-vertex_factor_Vbb(k, i, j, l) = I*(hyb(k, j)*kd(i, l) + hyb(k, l)*kd(i, j))
+vertex_factor_Vbb(k, i, j, l) = I*(kd(i, j)*hyb(k, l) + kd(i, l)*hyb(k, j))
 
 Here arguments i, j, l are indices of corresonding fields in corresponding vertex 
 (for example, in the Bbv-vertex i denotes index of B, i - index of b, and l - index ob v).
@@ -63,31 +63,33 @@ A parametrizes the model type: model of linearized NavierStokes equation (A = -1
 Index s reserved to denote the component of the external momentum p, d the spatial dimension of the system 
 (its physical value is equal to 3), function sc_prod(. , .) denotes the standard dot product of vectors in R**d
 (its arguments are always vectors!). 
-function hyb(k, i) denotes i-th component of vector k (i = 1, ..., d), functions kd(i, j) and lcs(i, j, l) 
-denotes the Kronecker delta and Levi-Civita symbols. 
-z = cos(angle between k and q) = sc_prod(k, q)/ (abs(k) * abs(q)), vector theta is proportional to the 
-magnetic induction, nu is a renormalized kinematic viscosity, mu is a renormalization mass, 
-u is a renormalized reciprocal magnetic Prandtl number, rho is a gyrotropy parameter (abs(rho) < 1), 
-g is a coupling constant, eps determines a degree of model deviation from logarithmicity (0 < eps =< 2). 
+Function hyb(k, i) denotes i-th component of vector k (i = 1, ..., d), functions kd(i, j) and lcs(i, j, l) 
+denotes the Kronecker delta and Levi-Civita symbols.
+z = cos(angle between k and q) = sc_prod(k, q)/ (abs(k) * abs(q)), z_k = cos(angle between k and B) = 
+sc_prod(B, k)/ (abs(k) * abs(B)), z_q = cos(angle between q and B) = sc_prod(B, q)/ (abs(q) * abs(B)), 
+vector B is proportional to the magnetic induction, nuo is a renormalized kinematic viscosity, 
+mu is a renormalization mass, uo is a renormalized reciprocal magnetic Prandtl number, 
+rho is a gyrotropy parameter (abs(rho) < 1), go is a coupling constant, 
+eps determines a degree of model deviation from logarithmicity (0 < eps =< 2). 
 
 
-D_v(k) = g*k**(-d - 2*eps + 4)*mu**(2*eps)*nu**3
+D_v(k) = go*k**(-d - 2*eps + 4)*nuo**3
 
-alpha(k, w) = k**2*nu + I*w
+alpha(k, w) = k**2*nuo - I*w
 
-alpha_star(k, w) = alpha*(k, w) = k**2*nu - I*w
+alpha_star(k, w) = alpha*(k, w) = k**2*nuo + I*w
 
-beta(k, w) = k**2*nu*u + I*w
+beta(k, w) = k**2*nuo*uo - I*w
 
-beta_star(k, w) = beta*(k, w) = k**2*nu*u - I*w
+beta_star(k, w) = beta*(k, w) = k**2*nuo*uo + I*w
 
-f_1(k, w) = I*k**2*nu*u/2 + I*k**2*nu/2 + sqrt(4*A*sc_prod(theta, k)**2 - k**4*nu**2*(u - 1)**2)/2
+f_1(B, k, w) = -I*(k**2*nuo*(uo + 1) + sqrt(-4*A*sc_prod(B, k)**2 + k**4*nuo**2*(uo - 1)**2))/2
 
-f_2(k, w) = I*k**2*nu*u/2 + I*k**2*nu/2 - sqrt(4*A*sc_prod(theta, k)**2 - k**4*nu**2*(u - 1)**2)/2
+f_2(B, k, w) = -I*(k**2*nuo*(uo + 1) - sqrt(-4*A*sc_prod(B, k)**2 + k**4*nuo**2*(uo - 1)**2))/2
 
-chi_1(k, w) = w - f_1(k, A)
+chi_1(k, w) = w - f_1(B, nuo, k)
 
-chi_2(k, w) = w - f_2(k, A)
+chi_2(k, w) = w - f_2(B, nuo, k)
 
 xi(k, w) = -chi_1(k, w)*chi_2(k, w)
 
