@@ -26,6 +26,8 @@ class D_v(Function):
     PROPERTIES:
 
     D_v(k) = D_v(-k)
+
+    D_v(k*B/nuo) = (B/nuo)**(4 - d - 2*eps)*D_v(k)
     """
 
     @classmethod
@@ -55,7 +57,9 @@ class D_v(Function):
 
 class alpha(Function):
     """
-    alpha(nuo, k, w) = I*w + nuo*k**2
+    alpha(nuo, k, w) = -I*w + nuo*k**2
+
+    alpha(nuo, k + q, w) = -I*w + nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -64,6 +68,8 @@ class alpha(Function):
     PROPERTIES:
 
     alpha(nuo, k, w) = alpha(nuo, -k, w)
+
+    alpha(nuo, k*B/nuo, w*B**2/nuo) = B**2*alpha(1, k, w)/nuo
     """
 
     @classmethod
@@ -72,9 +78,6 @@ class alpha(Function):
         global momentums_for_helicity_propagators
         global B
 
-        mom1 = momentums_for_helicity_propagators[0]
-        mom2 = momentums_for_helicity_propagators[1]
-
         mom = expand(mom)
 
         # function is even with respect to k by definition
@@ -82,44 +85,53 @@ class alpha(Function):
             return cls(nuo, -mom, freq)
 
         # define scaling properties
+        # if k = k_1 + k_2, then the replacement must be done consistently
+        # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
+        # alpha(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*alpha(1, k + q, w)/nuo
 
-        mom_arg_1 = B * mom1 / nuo
-        mom_arg_2 = B * mom2 / nuo
+        if freq.has(B**2 / nuo) and mom.has(B / nuo):
+            if mom.is_Add and freq.is_Mul:
+                x = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x.append(q)
+                if (sum(x) - mom) == 0:
+                    arg2 = sum(x).subs(nuo, 1).subs(B, 1)
+                    arg3 = freq.subs(nuo, 1).subs(B, 1)
 
-        freq_value_f1_mom1 = B**2 * f_1(1, 1, mom1) / nuo
-        freq_value_f1_mom2 = B**2 * f_1(1, 1, mom2) / nuo
-        freq_value_f1_mom12 = B**2 * f_1(1, 1, mom1 + mom2) / nuo
-        freq_value_f2_mom1 = B**2 * f_2(1, 1, mom1) / nuo
-        freq_value_f2_mom2 = B**2 * f_2(1, 1, mom2) / nuo
-        freq_value_f2_mom12 = B**2 * f_2(1, 1, mom1 + mom2) / nuo
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Mul and freq.is_Add:
+                x = list()
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x.append(q)
+                if (sum(x) - freq) == 0:
+                    arg2 = mom.subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x).subs(nuo, 1).subs(B, 1)
 
-        if mom == mom_arg_1:
-            if freq == freq_value_f1_mom1:
-                return B**2 * cls(1, mom1, f_1(1, 1, mom1)) / nuo
-            elif freq == -freq_value_f1_mom1:
-                return B**2 * cls(1, mom1, -f_1(1, 1, mom1)) / nuo
-            elif freq == freq_value_f2_mom1:
-                return B**2 * cls(1, mom1, f_2(1, 1, mom1)) / nuo
-            elif freq == -freq_value_f2_mom1:
-                return B**2 * cls(1, mom1, -f_2(1, 1, mom1)) / nuo
-        if mom == mom_arg_2:
-            if freq == freq_value_f1_mom2:
-                return B**2 * cls(1, mom2, f_1(1, 1, mom2)) / nuo
-            elif freq == -freq_value_f1_mom2:
-                return B**2 * cls(1, mom2, -f_1(1, 1, mom2)) / nuo
-            elif freq == freq_value_f2_mom2:
-                return B**2 * cls(1, mom2, f_2(1, 1, mom2)) / nuo
-            elif freq == -freq_value_f2_mom2:
-                return B**2 * cls(1, mom2, -f_2(1, 1, mom2)) / nuo
-        if mom == mom_arg_1 + mom_arg_2:
-            if freq == freq_value_f1_mom12:
-                return B**2 * cls(1, mom1 + mom2, f_1(1, 1, mom1 + mom2)) / nuo
-            elif freq == -freq_value_f1_mom12:
-                return B**2 * cls(1, mom1 + mom2, -f_1(1, 1, mom1 + mom2)) / nuo
-            elif freq == freq_value_f2_mom12:
-                return B**2 * cls(1, mom1 + mom2, f_2(1, 1, mom1 + mom2)) / nuo
-            elif freq == -freq_value_f2_mom12:
-                return B**2 * cls(1, mom1 + mom2, f_2(1, 1, mom1 + mom2)) / nuo
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Add and freq.is_Add:
+                x_1 = list()
+                x_2 = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x_1.append(q)
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x_2.append(q)
+                if (len(x_2) - len(freq.args)) == 0 and (len(x_1) - len(mom.args)) == 0:
+                    arg2 = sum(x_1).subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x_2).subs(nuo, 1).subs(B, 1)
+                    return B**2 * cls(1, arg2, arg3) / nuo
+
+            elif mom.is_Mul and freq.is_Mul:
+                arg2 = mom.subs(nuo, 1).subs(B, 1)
+                arg3 = freq.subs(nuo, 1).subs(B, 1)
+                return B**2 * cls(1, arg2, arg3) / nuo
 
     def doit(self, deep=True, **hints):
         nuo, mom, freq = self.args
@@ -131,17 +143,29 @@ class alpha(Function):
             freq = freq.doit(deep=deep, **hints)
             nuo = nuo.doit(deep=deep, **hints)
 
-            if mom == sum(momentums_for_helicity_propagators):
-                mom1 = momentums_for_helicity_propagators[0]
-                mom2 = momentums_for_helicity_propagators[1]
+            mom1 = momentums_for_helicity_propagators[0]
+            mom2 = momentums_for_helicity_propagators[1]
+
+            if mom == mom1 + mom2:
                 return -I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return -I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
             else:
                 return -I * freq + nuo * mom**2
+
+    # define differentiation
+    def fdiff(self, argindex):
+        # argindex indexes the args, starting at 1
+        nuo, mom, freq = self.args
+        if argindex == 3:
+            return -I
 
 
 class alpha_star(Function):
     """
     alpha_star(nuo, k, w) = conjugate(alpha(nuo, k, w)) = I*w + nuo*k**2
+
+    alpha_star(nuo, k + q, w) = I*w + nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -152,6 +176,8 @@ class alpha_star(Function):
     alpha_star(nuo, k, w) = alpha_star(nuo, -k, w),
 
     alpha_star(nuo, k, w) = alpha(nuo, k, -w)
+
+    alpha_star(nuo, k*B/nuo, w*B**2/nuo) = B**2*alpha_star(1, k, w)/nuo
     """
 
     @classmethod
@@ -160,33 +186,61 @@ class alpha_star(Function):
         global momentums_for_helicity_propagators
         global B
 
-        mom1 = momentums_for_helicity_propagators[0]
-        mom2 = momentums_for_helicity_propagators[1]
-
         # function is even with respect to k by definition
         if mom.could_extract_minus_sign():
             return cls(nuo, -mom, freq)
         if freq.could_extract_minus_sign():
             return alpha(nuo, mom, -freq)
+
         # define scaling properties
-        if freq == B**2 * f_1(1, 1, mom1) / nuo:
-            if mom == B * mom1 / nuo:
-                return B**2 * cls(1, mom1, f_1(1, 1, mom1)) / nuo
-        if freq == B**2 * f_1(1, 1, mom2) / nuo:
-            if mom == B * mom2 / nuo:
-                return B**2 * cls(1, mom2, f_1(1, 1, mom2)) / nuo
-        if freq == B**2 * f_1(1, 1, mom1 + mom2) / nuo:
-            if mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-                return B**2 * cls(1, mom1 + mom2, f_1(1, 1, mom1 + mom2)) / nuo
-        if freq == B**2 * f_2(1, 1, mom1) / nuo:
-            if mom == B * mom1 / nuo:
-                return B**2 * cls(1, mom1, f_2(1, 1, mom1)) / nuo
-        if freq == B**2 * f_2(1, 1, mom2) / nuo:
-            if mom == B * mom2 / nuo:
-                return B**2 * cls(1, mom2, f_2(1, 1, mom2)) / nuo
-        if freq == B**2 * f_2(1, 1, mom1 + mom2) / nuo:
-            if mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-                return B**2 * cls(1, mom1 + mom2, f_2(1, 1, mom1 + mom2)) / nuo
+
+        # if k = k_1 + k_2, then the replacement must be done consistently
+        # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
+        # alpha_star(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*alpha_star(1, k + q, w)/nuo
+
+        if freq.has(B**2 / nuo) and mom.has(B / nuo):
+            if mom.is_Add and freq.is_Mul:
+                x = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x.append(q)
+                if (sum(x) - mom) == 0:
+                    arg2 = sum(x).subs(nuo, 1).subs(B, 1)
+                    arg3 = freq.subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Mul and freq.is_Add:
+                x = list()
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x.append(q)
+                if (sum(x) - freq) == 0:
+                    arg2 = mom.subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x).subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Add and freq.is_Add:
+                x_1 = list()
+                x_2 = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x_1.append(q)
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x_2.append(q)
+                if (len(x_2) - len(freq.args)) == 0 and (len(x_1) - len(mom.args)) == 0:
+                    arg2 = sum(x_1).subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x_2).subs(nuo, 1).subs(B, 1)
+                    return B**2 * cls(1, arg2, arg3) / nuo
+
+            elif mom.is_Mul and freq.is_Mul:
+                arg2 = mom.subs(nuo, 1).subs(B, 1)
+                arg3 = freq.subs(nuo, 1).subs(B, 1)
+                return B**2 * cls(1, arg2, arg3) / nuo
 
     def doit(self, deep=True, **hints):
         nuo, mom, freq = self.args
@@ -197,17 +251,30 @@ class alpha_star(Function):
             mom = mom.doit(deep=deep, **hints)
             freq = freq.doit(deep=deep, **hints)
             nuo = nuo.doit(deep=deep, **hints)
-            if mom == sum(momentums_for_helicity_propagators):
-                mom1 = momentums_for_helicity_propagators[0]
-                mom2 = momentums_for_helicity_propagators[1]
+
+            mom1 = momentums_for_helicity_propagators[0]
+            mom2 = momentums_for_helicity_propagators[1]
+
+            if mom == mom1 + mom2:
                 return I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
             else:
                 return I * freq + nuo * mom**2
+
+    # Define differentiation
+    def fdiff(self, argindex):
+        # argindex indexes the args, starting at 1
+        nuo, mom, freq = self.args
+        if argindex == 3:
+            return I
 
 
 class beta(Function):
     """
     beta(nuo, k, w) = -I*w + uo*nuo*k**2
+
+    beta(nuo, k + q, w) = -I*w + uo*nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -220,6 +287,10 @@ class beta(Function):
     PROPERTIES:
 
     beta(nuo, k, w) = beta(nuo, -k, w)
+
+    beta(nuo, k, w) = beta(nuo, -k, w)
+
+    beta(nuo, k*B/nuo, w*B**2/nuo) = B**2*beta(1, k, w)/nuo
     """
 
     @classmethod
@@ -228,52 +299,59 @@ class beta(Function):
         global momentums_for_helicity_propagators
         global B
 
-        mom1 = momentums_for_helicity_propagators[0]
-        mom2 = momentums_for_helicity_propagators[1]
-
         # function is even with respect to k by definition
         if mom.could_extract_minus_sign():
             return cls(nuo, -mom, freq)
 
         # define scaling properties
 
-        mom_arg_1 = B * mom1 / nuo
-        mom_arg_2 = B * mom2 / nuo
+        # if k = k_1 + k_2, then the replacement must be done consistently
+        # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
+        # beta(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*beta(1, k + q, w)/nuo
 
-        freq_value_f1_mom1 = B**2 * f_1(1, 1, mom1) / nuo
-        freq_value_f1_mom2 = B**2 * f_1(1, 1, mom2) / nuo
-        freq_value_f1_mom12 = B**2 * f_1(1, 1, mom1 + mom2) / nuo
-        freq_value_f2_mom1 = B**2 * f_2(1, 1, mom1) / nuo
-        freq_value_f2_mom2 = B**2 * f_2(1, 1, mom2) / nuo
-        freq_value_f2_mom12 = B**2 * f_2(1, 1, mom1 + mom2) / nuo
+        if freq.has(B**2 / nuo) and mom.has(B / nuo):
+            if mom.is_Add and freq.is_Mul:
+                x = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x.append(q)
+                if (sum(x) - mom) == 0:
+                    arg2 = sum(x).subs(nuo, 1).subs(B, 1)
+                    arg3 = freq.subs(nuo, 1).subs(B, 1)
 
-        if mom == mom_arg_1:
-            if freq == freq_value_f1_mom1:
-                return B**2 * cls(1, mom1, f_1(1, 1, mom1)) / nuo
-            elif freq == -freq_value_f1_mom1:
-                return B**2 * cls(1, mom1, -f_1(1, 1, mom1)) / nuo
-            elif freq == freq_value_f2_mom1:
-                return B**2 * cls(1, mom1, f_2(1, 1, mom1)) / nuo
-            elif freq == -freq_value_f2_mom1:
-                return B**2 * cls(1, mom1, -f_2(1, 1, mom1)) / nuo
-        if mom == mom_arg_2:
-            if freq == freq_value_f1_mom2:
-                return B**2 * cls(1, mom2, f_1(1, 1, mom2)) / nuo
-            elif freq == -freq_value_f1_mom2:
-                return B**2 * cls(1, mom2, -f_1(1, 1, mom2)) / nuo
-            elif freq == freq_value_f2_mom2:
-                return B**2 * cls(1, mom2, f_2(1, 1, mom2)) / nuo
-            elif freq == -freq_value_f2_mom2:
-                return B**2 * cls(1, mom2, -f_2(1, 1, mom2)) / nuo
-        if mom == mom_arg_1 + mom_arg_2:
-            if freq == freq_value_f1_mom12:
-                return B**2 * cls(1, mom1 + mom2, f_1(1, 1, mom1 + mom2)) / nuo
-            elif freq == -freq_value_f1_mom12:
-                return B**2 * cls(1, mom1 + mom2, -f_1(1, 1, mom1 + mom2)) / nuo
-            elif freq == freq_value_f2_mom12:
-                return B**2 * cls(1, mom1 + mom2, f_2(1, 1, mom1 + mom2)) / nuo
-            elif freq == -freq_value_f2_mom12:
-                return B**2 * cls(1, mom1 + mom2, f_2(1, 1, mom1 + mom2)) / nuo
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Mul and freq.is_Add:
+                x = list()
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x.append(q)
+                if (sum(x) - freq) == 0:
+                    arg2 = mom.subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x).subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Add and freq.is_Add:
+                x_1 = list()
+                x_2 = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x_1.append(q)
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x_2.append(q)
+                if (len(x_2) - len(freq.args)) == 0 and (len(x_1) - len(mom.args)) == 0:
+                    arg2 = sum(x_1).subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x_2).subs(nuo, 1).subs(B, 1)
+                    return B**2 * cls(1, arg2, arg3) / nuo
+
+            elif mom.is_Mul and freq.is_Mul:
+                arg2 = mom.subs(nuo, 1).subs(B, 1)
+                arg3 = freq.subs(nuo, 1).subs(B, 1)
+                return B**2 * cls(1, arg2, arg3) / nuo
 
     def doit(self, deep=True, **hints):
         nuo, mom, freq = self.args
@@ -284,17 +362,30 @@ class beta(Function):
             mom = mom.doit(deep=deep, **hints)
             freq = freq.doit(deep=deep, **hints)
             nuo = nuo.doit(deep=deep, **hints)
-            if mom == sum(momentums_for_helicity_propagators):
-                mom1 = momentums_for_helicity_propagators[0]
-                mom2 = momentums_for_helicity_propagators[1]
+
+            mom1 = momentums_for_helicity_propagators[0]
+            mom2 = momentums_for_helicity_propagators[1]
+
+            if mom == mom1 + mom2:
                 return -I * freq + uo * nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return -I * freq + uo * nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
             else:
                 return -I * freq + uo * nuo * mom**2
+
+    # Define differentiation
+    def fdiff(self, argindex):
+        # argindex indexes the args, starting at 1
+        nuo, mom, freq = self.args
+        if argindex == 3:
+            return -I
 
 
 class beta_star(Function):
     """
     beta_star(nuo, k, w) = conjugate(beta(nuo, k, w)) = I*w + uo*nuo*k**2
+
+    beta_star(nuo, k, w) = I*w + uo*nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -309,6 +400,8 @@ class beta_star(Function):
     beta_star(nuo, k, w) = beta_star(nuo, -k, w),
 
     beta_star(nuo, k, w) = beta(nuo, k, -w)
+
+    beta_star(nuo, k*B/nuo, w*B**2/nuo) = B**2*beta_star(nuo, k, w)/nuo
     """
 
     @classmethod
@@ -317,9 +410,6 @@ class beta_star(Function):
         global momentums_for_helicity_propagators
         global B
 
-        mom1 = momentums_for_helicity_propagators[0]
-        mom2 = momentums_for_helicity_propagators[1]
-
         # function is even with respect to k by definition
         if mom.could_extract_minus_sign():
             return cls(nuo, -mom, freq)
@@ -327,24 +417,54 @@ class beta_star(Function):
             return beta(nuo, mom, -freq)
 
         # define scaling properties
-        if freq == B**2 * f_1(1, 1, mom1) / nuo:
-            if mom == B * mom1 / nuo:
-                return B**2 * cls(1, mom1, f_1(1, 1, mom1)) / nuo
-        if freq == B**2 * f_1(1, 1, mom2) / nuo:
-            if mom == B * mom2 / nuo:
-                return B**2 * cls(1, mom2, f_1(1, 1, mom2)) / nuo
-        if freq == B**2 * f_1(1, 1, mom1 + mom2) / nuo:
-            if mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-                return B**2 * cls(1, mom1 + mom2, f_1(1, 1, mom1 + mom2)) / nuo
-        if freq == B**2 * f_2(1, 1, mom1) / nuo:
-            if mom == B * mom1 / nuo:
-                return B**2 * cls(1, mom1, f_2(1, 1, mom1)) / nuo
-        if freq == B**2 * f_2(1, 1, mom2) / nuo:
-            if mom == B * mom2 / nuo:
-                return B**2 * cls(1, mom2, f_2(1, 1, mom2)) / nuo
-        if freq == B**2 * f_2(1, 1, mom1 + mom2) / nuo:
-            if mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-                return B**2 * cls(1, mom1 + mom2, f_2(1, 1, mom1 + mom2)) / nuo
+
+        # if k = k_1 + k_2, then the replacement must be done consistently
+        # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
+        # beta_star(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*beta_star(1, k + q, w)/nuo
+
+        if freq.has(B**2 / nuo) and mom.has(B / nuo):
+            if mom.is_Add and freq.is_Mul:
+                x = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x.append(q)
+                if (sum(x) - mom) == 0:
+                    arg2 = sum(x).subs(nuo, 1).subs(B, 1)
+                    arg3 = freq.subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Mul and freq.is_Add:
+                x = list()
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x.append(q)
+                if (sum(x) - freq) == 0:
+                    arg2 = mom.subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x).subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Add and freq.is_Add:
+                x_1 = list()
+                x_2 = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x_1.append(q)
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x_2.append(q)
+                if (len(x_2) - len(freq.args)) == 0 and (len(x_1) - len(mom.args)) == 0:
+                    arg2 = sum(x_1).subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x_2).subs(nuo, 1).subs(B, 1)
+                    return B**2 * cls(1, arg2, arg3) / nuo
+
+            elif mom.is_Mul and freq.is_Mul:
+                arg2 = mom.subs(nuo, 1).subs(B, 1)
+                arg3 = freq.subs(nuo, 1).subs(B, 1)
+                return B**2 * cls(1, arg2, arg3) / nuo
 
     def doit(self, deep=True, **hints):
         nuo, mom, freq = self.args
@@ -355,21 +475,34 @@ class beta_star(Function):
             mom = mom.doit(deep=deep, **hints)
             freq = freq.doit(deep=deep, **hints)
             nuo = nuo.doit(deep=deep, **hints)
-            if mom == sum(momentums_for_helicity_propagators):
-                mom1 = momentums_for_helicity_propagators[0]
-                mom2 = momentums_for_helicity_propagators[1]
+
+            mom1 = momentums_for_helicity_propagators[0]
+            mom2 = momentums_for_helicity_propagators[1]
+
+            if mom == mom1 + mom2:
                 return I * freq + uo * nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return I * freq + uo * nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
             else:
                 return I * freq + uo * nuo * mom**2
+
+    # Define differentiation
+    def fdiff(self, argindex):
+        # argindex indexes the args, starting at 1
+        nuo, mom, freq = self.args
+        if argindex == 3:
+            return I
 
 
 class sc_prod(Function):
     """
-    This auxiliary function denotes the standard dot product of vectors in R**d
+    This auxiliary function denotes the standard dot product of vectors in R**d.
+
+    sc_prod(B, k) = B*k*z_k
 
     ARGUMENTS:
 
-    B -- external magnetic field, k -- momentum
+    B -- external magnetic field, k -- momentum, z_k = cos(angle between B and k)
 
     PROPERTIES:
 
@@ -378,6 +511,8 @@ class sc_prod(Function):
     sc_prod(B, k) = -sc_prod(B, -k)
 
     sc_prod(0, k) = sc_prod(B, 0) = 0
+
+    sc_prod(B, k*B/nuo) = B**2*sc_prod(1, k)/nuo
     """
 
     @classmethod
@@ -398,6 +533,7 @@ class sc_prod(Function):
             return 0
 
         # define scaling properties
+
         if field == B and mom == B * mom1 / nuo:
             return B**2 * cls(1, mom1) / nuo
         if field == B and mom == B * mom2 / nuo:
@@ -443,6 +579,8 @@ class D(Function):
     We introduce: D(B, nuo, k) = k**4*nuo**2*(uo - 1)**2 - 4*A*sc_prod(B, k)**2   == >
     == >    sqrt(true_discriminant) = I*sqrt(D(B, nuo, k))
 
+    D(B, nuo, k + q) = (k**2 + 2*k*q*z + q**2)**2*nuo**2*(uo - 1)**2 - 4*A*sc_prod(B, k + q)**2
+
     ARGUMENTS:
     k -- momentum
 
@@ -454,6 +592,8 @@ class D(Function):
     PROPERTIES:
 
     D(B, nuo, k) = D(B, nuo, -k)
+
+    D(B, nuo, k*B/nuo) = B**4*D(1, 1, k)/nuo**2
     """
 
     @classmethod
@@ -469,13 +609,19 @@ class D(Function):
         # function is even with respect to k by definition
         if mom.could_extract_minus_sign():
             return cls(field, visc, -mom)
+
         # define scaling properties
+
         if mom == B * mom1 / nuo:
-            return B**4 * cls(1, 1, mom1) / nuo**2
+            return B**2 * cls(1, 1, mom1) / nuo
         elif mom == B * mom2 / nuo:
-            return B**4 * cls(1, 1, mom2) / nuo**2
+            return B**2 * cls(1, 1, mom2) / nuo
         elif mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-            return B**4 * cls(1, 1, mom1 + mom2) / nuo**2
+            return B**2 * cls(1, 1, mom1 + mom2) / nuo
+        elif mom == B * (mom1 - mom2) / nuo or mom == B * mom1 / nuo - B * mom2 / nuo:
+            return B**2 * cls(1, 1, mom1 - mom2) / nuo
+        elif mom == B * (-mom1 + mom2) / nuo or mom == -B * mom1 / nuo + B * mom2 / nuo:
+            return B**2 * cls(1, 1, -mom1 + mom2) / nuo
 
     is_integer = True
     is_negative = False
@@ -499,6 +645,11 @@ class D(Function):
                     -4 * A * sc_prod(field, mom) ** 2
                     + (mom1**2 + 2 * mom1 * mom2 * z + mom2**2) ** 2 * visc**2 * (uo - 1) ** 2
                 )
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return (
+                    -4 * A * sc_prod(field, mom) ** 2
+                    + (mom1**2 - 2 * mom1 * mom2 * z + mom2**2) ** 2 * visc**2 * (uo - 1) ** 2
+                )
             else:
                 return -4 * A * sc_prod(field, mom) ** 2 + mom**4 * visc**2 * (uo - 1) ** 2
 
@@ -511,6 +662,8 @@ class f_1(Function):
 
     f_1(B, nuo, k) = -I*(sqrt(D(B, nuo, k)) + k**2*nuo*(uo + 1))/2
 
+    f_1(B, nuo, k + q) = -I*(sqrt(D(B, nuo, k + q)) + (k**2 + 2*k*q*z + q**2)*nuo*(uo + 1))/2
+
     ARGUMENTS:
     B -- external field, nuo -- bare kinematic viscosity, k -- momentum
 
@@ -522,6 +675,8 @@ class f_1(Function):
     PROPERTIES:
 
     f_1(B, nuo, k) = f_1(B, nuo, -k)
+
+    f_1(B, nuo, k*B/nuo) = B**2*f_1(1, 1, k)/nuo
     """
 
     @classmethod
@@ -538,13 +693,19 @@ class f_1(Function):
         # function is even with respect to k by definition
         if mom.could_extract_minus_sign():
             return cls(field, visc, -mom)
+
         # define scaling properties
+
         if mom == B * mom1 / nuo:
             return B**2 * cls(1, 1, mom1) / nuo
         elif mom == B * mom2 / nuo:
             return B**2 * cls(1, 1, mom2) / nuo
         elif mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
             return B**2 * cls(1, 1, mom1 + mom2) / nuo
+        elif mom == B * (mom1 - mom2) / nuo or mom == B * mom1 / nuo - B * mom2 / nuo:
+            return B**2 * cls(1, 1, mom1 - mom2) / nuo
+        elif mom == B * (-mom1 + mom2) / nuo or mom == -B * mom1 / nuo + B * mom2 / nuo:
+            return B**2 * cls(1, 1, -mom1 + mom2) / nuo
 
     def doit(self, deep=True, **hints):
 
@@ -567,6 +728,12 @@ class f_1(Function):
                     * (sqrt(D(field, visc, mom)) + (mom1**2 + 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
                     / 2
                 )
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return (
+                    -I
+                    * (sqrt(D(field, visc, mom)) + (mom1**2 - 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
+                    / 2
+                )
             else:
                 return -I * (sqrt(D(field, visc, mom)) + mom**2 * visc * (uo + 1)) / 2
 
@@ -578,6 +745,8 @@ class f_2(Function):
     xi(k, w) = 0 with respect to w (see below).
 
     f_2(B, nuo, k) = -I*( - sqrt(D(B, nuo, k)) + k**2*nuo*(uo + 1))/2
+
+    f_2(B, nuo, k + q) = -I*( - sqrt(D(B, nuo, k + q)) + (k**2) + 2*k*q*z + q**2)*nuo*(uo + 1))/2
 
     Note:
     f_2(B, nuo, k) differs from f_1(B, nuo, k) by sign before the square root
@@ -594,7 +763,9 @@ class f_2(Function):
 
     f_2(B, nuo, k) = f_2(B, nuo, -k),
 
-    conjugate(f_2(B, nuo, k)) = - f_1(B, nuo, k)  ==>  conjugate(f_1(B, nuo, k)) = - f_2(B, nuo, k)
+    conjugate(f_2(B, nuo, k)) = - f_1(B, nuo, k)  ==>  conjugate(f_1(B, nuo, k)) = - f_2(B, nuo, k),
+
+    f_2(B, nuo, k*B/nuo) = B**2*f_2(1, 1, k)/nuo
     """
 
     @classmethod
@@ -611,13 +782,19 @@ class f_2(Function):
         # function is even with respect to k by definition
         if mom.could_extract_minus_sign():
             return cls(field, visc, -mom)
+
         # define scaling properties
+
         if mom == B * mom1 / nuo:
             return B**2 * cls(1, 1, mom1) / nuo
         elif mom == B * mom2 / nuo:
             return B**2 * cls(1, 1, mom2) / nuo
         elif mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
             return B**2 * cls(1, 1, mom1 + mom2) / nuo
+        elif mom == B * (mom1 - mom2) / nuo or mom == B * mom1 / nuo - B * mom2 / nuo:
+            return B**2 * cls(1, 1, mom1 - mom2) / nuo
+        elif mom == B * (-mom1 + mom2) / nuo or mom == -B * mom1 / nuo + B * mom2 / nuo:
+            return B**2 * cls(1, 1, -mom1 + mom2) / nuo
 
     def doit(self, deep=True, **hints):
         field, visc, mom = self.args
@@ -636,6 +813,12 @@ class f_2(Function):
                 return (
                     -I
                     * (-sqrt(D(field, visc, mom)) + (mom1**2 + 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
+                    / 2
+                )
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return (
+                    -I
+                    * (-sqrt(D(field, visc, mom)) + (mom1**2 - 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
                     / 2
                 )
             else:

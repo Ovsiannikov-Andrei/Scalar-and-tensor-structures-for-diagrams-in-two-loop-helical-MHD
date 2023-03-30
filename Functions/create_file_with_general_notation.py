@@ -92,14 +92,22 @@ def create_file_with_info_and_supplementary_matherials():
 Index {s} reserved to denote the component of the external momentum {p}, {d} the spatial dimension of the system 
 (its physical value is equal to 3), function sc_prod(. , .) denotes the standard dot product of vectors in R**d
 (its arguments are always vectors!). 
+
 Function hyb(k, i) denotes i-th component of vector {k} (i = 1, ..., d), functions kd(i, j) and lcs(i, j, l) 
 denotes the Kronecker delta and Levi-Civita symbols.
-{z} = cos(angle between k and q) = sc_prod(k, q)/ (abs(k) * abs(q)), {z_k} = cos(angle between k and B) = 
-sc_prod(B, k)/ (abs(k) * abs(B)), {z_q} = cos(angle between q and B) = sc_prod(B, q)/ (abs(q) * abs(B)), 
-vector {B} is proportional to the magnetic induction, {nuo} is a renormalized kinematic viscosity, 
-{mu} is a renormalization mass, {uo} is a renormalized reciprocal magnetic Prandtl number, 
-{rho} is a gyrotropy parameter (abs(rho) < 1), {go} is a coupling constant, 
-{eps} determines a degree of model deviation from logarithmicity (0 < eps =< 2). \n
+
+We assume that the integration in the diagram is carried out in the spherical coordinate system for vectors 
+{k} and {q}: k_1 = k*sin(theta_1)*cos(phi_1), k_2 = k*sin(theta_1)*sin(phi_1), k_3 = k*cos(theta_1), 
+q_1 = k*sin(theta_2)*cos(phi_2), q_2 = k*sin(theta_2)*sin(phi_2), q_3 = k*cos(theta_2), where theta_1, theta_2 are
+angles between vector {B} and {k}, or {q} respectively, vector {B} is proportional to the magnetic induction.
+Corresponding measure is: dmu = 2*(pi - u)*k^2*q^2*sin(theta_1)*sin(theta_2)*dk*dq*dtheta_1*d_theta_2*du, where 
+2*u = (phi_2 - phi_1) (all diagrams depends only from cos(phi_1 - phi_2)). We also introduce following notation for
+cosines: {z} = cos(angle between {k} and {q}) = sin(theta_1)*sin(theta_2)*cos(phi_1 - phi_2) + cos(theta_1)*cos(theta_2), 
+{z_k} = cos(theta_1), {z_q} = cos(theta_2).
+
+The rest of the model numeric parameters are {nuo} -- renormalized kinematic viscosity, {go} -- coupling constant,
+{mu} -- renormalization mass, {uo} -- renormalized reciprocal magnetic Prandtl number, {rho} -- gyrotropy 
+parameter (abs(rho) < 1), and {eps} determines a degree of model deviation from logarithmicity (0 < eps =< 2). \n
 """
             f"\nD_v(k) = {D_v(k).doit()}\n"
             f"\nalpha(k, w) = {alpha(nuo, k, w).doit()}\n"

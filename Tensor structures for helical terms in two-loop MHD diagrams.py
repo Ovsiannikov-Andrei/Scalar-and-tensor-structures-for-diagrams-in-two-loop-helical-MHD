@@ -20,6 +20,7 @@ import os
 from Functions.create_file_with_general_notation import *
 from Functions.DIAGRAM_DESCRIPTION import *
 from Functions.DIAGRAM_CALCULATION import *
+from Functions.preparing_for_numerical_integration import *
 
 # ------------------------------------------------------------------------------------------------------------------#
 #                                        Computing two-loop MHD diagrams
@@ -48,7 +49,7 @@ def main():
     print(f"PROGRAM START")
 
     d_default = 3  #  coordinate space dimension (assumed to be 3 by default)
-    eps_default = 0.5  # value of the eps regularization parameter (default is assumed to be 0.5)
+    eps_default = 0  # value of the eps regularization parameter (for convergent diagrams it is assumed to be 0)
     A_MHD = 1  # value of the model parameter A (MHD corresponds to A = 1)
 
     print(f"\nDefault parameters: ")
@@ -68,9 +69,7 @@ def main():
         list_with_uo_values.append("uo")
 
     with open("Two-loop MHD diagrams.txt", "r") as MHD_diagrams_file:
-
         for diagram in MHD_diagrams_file.readlines():
-
             print(f"\nCALCULATION {number_of_counted_diagrams + 1} BEGIN")
 
             diagram_data = get_info_about_diagram(diagram, number_of_counted_diagrams + 1)

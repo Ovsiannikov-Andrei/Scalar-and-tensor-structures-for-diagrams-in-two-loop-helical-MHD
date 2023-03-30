@@ -1,5 +1,7 @@
 import math
 import sympy as sym
+import sys
+import time
 from sympy import *
 
 from Functions.SymPy_classes import *
@@ -136,6 +138,7 @@ def calculate_residues_sum(rational_function, main_variable, parameter):
     sum_of_residues_in_upper_half_plane + sum_of_residues_in_lower_half_plane = 0,
     since the residue of the corresponding function at infinity is 0
     """
+
     numerator = fraction(rational_function)[0]
     denominator = fraction(rational_function)[1]
     denominator_structure = factor_list(denominator)[1]
@@ -270,6 +273,20 @@ def calculating_frequency_integrals_in_two_loop_diagrams(
     return total_sum_of_residues_for_both_frequencies
 
 
+def find_duplicates(lst):
+    """
+    The find_duplicates function takes a list lst as input and returns a dictionary where the keys
+    are the duplicate elements in lst, and the values are lists of their corresponding indices.
+    """
+    duplicates = {}
+    for i, item in enumerate(lst):
+        if item in duplicates:
+            duplicates[item].append(i)
+        else:
+            duplicates[item] = [i]
+    return {k: v for k, v in duplicates.items() if len(v) > 1}
+
+
 def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, variable_substitution):
     """
     The function reduces to a common denominator the terms obtained after frequency integration.
@@ -292,7 +309,6 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
 
     residues_sum = total_sum_of_residues_for_both_frequencies / (4 * pi**2)
     prefactor = 1
-    prefactor_after_substitution = 1
 
     # calculating common denominator
     if type(residues_sum) == sym.core.add.Add:
@@ -304,6 +320,7 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
 
         for i in range(number_of_terms):
             term = residues_sum.args[i]
+            # print(term)
             term_numerator = fraction(term)[0]
             term_denominator = fraction(term)[1]
             if type(term_denominator) == sym.core.add.Mul:
@@ -323,59 +340,74 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
             item for sublist in list_with_all_multipliers_in_all_denominators for item in sublist
         ]
 
+        # print(f"\nmerge_list_with_term_denominators = {merge_list_with_term_denominators}\n")
+
         common_denominator = list()
 
-        # exclude repeating multipliers
+        # exclude repeating linear multipliers
         for x in merge_list_with_term_denominators:
             if x not in common_denominator:
                 if -x not in common_denominator:
                     common_denominator.append(x)
 
-        new_denominator = math.prod(common_denominator)
+        # print(f"\ncommon_denominator = {common_denominator}\n")
 
-        # calculating common denominator after replacing of variables
-        if variable_substitution == True:
-            # creating a list with multipliers
-            common_denominator_after_substitution = list()
-            # idea is to highlight the common factor (B^2/nuo)^n before the corresponding product
-            denominator_prefactor_after_subs = 1
+        help_list_with_info_about_pow_multipliers = list()
+        help_list_with_pow_bases = list()
+        final_common_denominator = list()
+        numeric_factor = 1
 
-            for i in range(len(common_denominator)):
-                multiplier_after_substitution = common_denominator[i].subs(k, B * k / nuo).subs(q, B * q / nuo)
+        # this code only handles exponential factors, ignoring numeric
+        # it is assumed that the numerical factors are multiplied when reduced to a common denominator
+        for i in range(len(common_denominator)):
+            element = common_denominator[i]
+            if type(element) == sym.core.power.Pow:
+                power_base = element.args[0]
+                power_value = element.args[1]
+                help_list_with_info_about_pow_multipliers.append([power_base, power_value])
+                help_list_with_pow_bases.append(power_base)
+            elif type(element) == sym.core.numbers.Integer:
+                numeric_factor *= element
+            else:
+                final_common_denominator.append(element)
 
-                if type(multiplier_after_substitution) == sym.core.power.Pow:
-                    exponent_value = multiplier_after_substitution.args[1]
-                    exponent_base_value = multiplier_after_substitution.args[0]
-                    exponent_base_value = expand((nuo / B**2) * exponent_base_value)
-                    multiplier_after_substitution = exponent_base_value**exponent_value
-                    denominator_prefactor_after_subs *= (B**2 / nuo) ** exponent_value
+        dict_with_pow_duplicates = find_duplicates(help_list_with_pow_bases)
 
-                elif type(multiplier_after_substitution) == sym.core.mul.Mul:
-                    for j in range(len(multiplier_after_substitution.args)):
-                        argument = multiplier_after_substitution.args[j]
-                        if argument.has(B) == False and argument.has(nuo) == False:
-                            multiplier_after_substitution = argument
-                        if type(multiplier_after_substitution) == sym.core.power.Pow:
-                            exponent_value = multiplier_after_substitution.args[1]
-                    denominator_prefactor_after_subs *= (B**2 / nuo) ** exponent_value
+        # print(f"dict_with_pow_duplicates = {dict_with_pow_duplicates}")
 
-                elif type(multiplier_after_substitution) == sym.core.add.Add:
-                    multiplier_after_substitution = expand((nuo / B**2) * multiplier_after_substitution)
-                    denominator_prefactor_after_subs *= B**2 / nuo
+        for dup in dict_with_pow_duplicates:
+            list_with_powers = dict_with_pow_duplicates[dup]
+            list_with_power_values = list()
+            for pow in range(len(list_with_powers)):
+                power_value = help_list_with_info_about_pow_multipliers[pow][1]
+                list_with_power_values.append(power_value)
 
-                elif type(multiplier_after_substitution) == sym.core.numbers.Integer:
-                    multiplier_after_substitution = multiplier_after_substitution
-                else:
-                    sys.exit("Problems in the denominator after variables replacing")
+            max_power = max(list_with_power_values)
+            final_common_denominator.append(dup**max_power)
 
-                common_denominator_after_substitution.append(multiplier_after_substitution)
+            for pow in range(len(list_with_powers)):
+                power_value = help_list_with_info_about_pow_multipliers[pow][1]
+                if power_value != max_power:
+                    help_list_with_info_about_pow_multipliers.remove(help_list_with_info_about_pow_multipliers[pow])
 
-            new_denominator_after_subs = math.prod(common_denominator_after_substitution)
+        for element in help_list_with_info_about_pow_multipliers:
+            power_base = element[0]
+            power_value = element[1]
+            final_common_denominator.append(power_base**power_value)
+
+        # print(f"final_common_denominator = {final_common_denominator}")
+
+        new_denominator = numeric_factor * math.prod(final_common_denominator)
+
+        # new_denominator = factor(common_denominator)
+
+        # print(new_denominator)
 
         # calculating common numerator
         new_numerator = 0
         list_with_lists_with_prefactor_multipliers = list()
         list_with_prefactors = list()
+        list_with_multiplier_factors_for_numerators = list()
 
         for i in range(number_of_terms):
             term = residues_sum.args[i]
@@ -387,16 +419,16 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
 
             for j in range(number_of_numerator_multipliers):
                 multiplier = list_with_numerator_multipliers[j]
-
-                if multiplier.has(A):
+                if multiplier.has(A) or multiplier.has(D_v) or multiplier.has(sc_prod):
                     list_with_prefactor_multipliers.append(multiplier)
-                elif multiplier.has(D_v):
-                    list_with_prefactor_multipliers.append(multiplier)
-                elif multiplier.has(sc_prod):
-                    list_with_prefactor_multipliers.append(multiplier)
-                elif multiplier.has(alpha) or multiplier.has(alpha_star):
-                    part_of_numerator_without_prefactor *= multiplier
-                elif multiplier.has(beta) or multiplier.has(beta_star):
+                elif (
+                    type(multiplier) == sym.core.numbers.NegativeOne
+                    or multiplier.has(I)
+                    or multiplier.has(alpha)
+                    or multiplier.has(alpha_star)
+                    or multiplier.has(beta)
+                    or multiplier.has(beta_star)
+                ):
                     part_of_numerator_without_prefactor *= multiplier
                 else:
                     sys.exit("Unknown object type in numerator")
@@ -411,15 +443,22 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
 
             term_denominator = list_with_denominators[i]
 
+            # print(new_denominator / term_denominator)
+
             # divide the common denominator of the fraction by the denominator of the concret term to get the factor
             # by which the numerator should be multiplied
-            factor_by_which_numerator_is_multiplied = fraction(math.prod(common_denominator) / term_denominator)[0]
+
+            factor_by_which_numerator_is_multiplied = fraction(new_denominator / term_denominator)[0]
+
+            # print(factor_by_which_numerator_is_multiplied)
 
             # no automatic reduction of contributions of the form (a + b)/(-a - b)
-            non_automatically_reduced_contribution = fraction(math.prod(common_denominator) / term_denominator)[1]
+            non_automatically_reduced_contribution = fraction(new_denominator / term_denominator)[1]
 
+            # print(non_automatically_reduced_contribution)
+            # print(f"{type(non_automatically_reduced_contribution)}\n")
             # for contributions of the form (a + b)/(-a - b) we explicitly write out the reduction procedure
-            if type(non_automatically_reduced_contribution) == sym.core.add.Mul:
+            if type(non_automatically_reduced_contribution) == sym.core.mul.Mul:
                 # case when there are product of several contributions of the type (a + b)/(-a - b)
                 for j in range(len(non_automatically_reduced_contribution.args)):
                     factor_by_which_numerator_is_multiplied = -factor_by_which_numerator_is_multiplied / (
@@ -430,114 +469,272 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
                 factor_by_which_numerator_is_multiplied = -factor_by_which_numerator_is_multiplied / (
                     -non_automatically_reduced_contribution
                 )
-
+            # print(factor_by_which_numerator_is_multiplied)
             # checking that the reduction is done correctly
             if fraction(factor_by_which_numerator_is_multiplied)[1] == 1:
                 new_numerator += factor_by_which_numerator_is_multiplied * part_of_numerator_without_prefactor
+                list_with_multiplier_factors_for_numerators.append(factor_by_which_numerator_is_multiplied)
             else:
                 sys.exit("Error in the procedure of the new numerator calculating")
 
         residues_sum_without_prefactor = new_numerator / new_denominator
 
-        # calculating new numerator after replacing of variables
+        # verification of procedure for self-consistency
+        # this procedure must be the identity transformation
+
+        print(
+            f"\nVerifying that reduction to a common denominator is an identity transformation: "
+            f"\n(common_denominator / factor_by_which_term_is_mulyiplied - term_denominator) must be equal to 0."
+        )
+
+        t = time.time()
+
+        for i in range(number_of_terms):
+            # print(new_denominator)
+            # print(list_with_numerators[i])
+            # print(list_with_denominators[i])
+            # print(list_with_multiplier_factors_for_numerators[i])
+            # print(new_denominator - list_with_denominators[i] * list_with_multiplier_factors_for_numerators[i])
+            if (
+                simplify(new_denominator / list_with_multiplier_factors_for_numerators[i] - list_with_denominators[i])
+                != 0
+            ):
+                sys.exit("Error in the procedure for reducing to a common denominator")
+            print(f"The term №{i} has been verified.")
+        # if simplify(prefactor * residues_sum_without_prefactor - total_sum_of_residues_for_both_frequencies) != 0:
+        #     sys.exit("Error in the procedure for reducing to a common denominator")
+
+        print(f"Total verification took: {round(time.time() - t, 1)} sec")
+
+        final_common_denominator.append(numeric_factor)
+
+        # calculating obtained fraction after replacing of momentums k, q --> B*k/nuo, B*q/nuo
         if variable_substitution == True:
-            # idea is to highlight the common factor (B^2/nuo)^n before the corresponding product
-            new_numerator_after_subs = 0
-
-            if type(new_numerator) == sym.core.add.Add:
-                list_with_new_numerator_terms = new_numerator.args
-                numerator_prefactors_after_subs = list()
-
-                for i in range(len(list_with_new_numerator_terms)):
-                    term_in_new_numerator = list_with_new_numerator_terms[i]
-                    numerator_prefactor_after_subs = 1
-
-                    if type(term_in_new_numerator) == sym.core.mul.Mul:
-                        term_in_new_numerator = term_in_new_numerator.subs(k, B * k / nuo).subs(q, B * q / nuo)
-                        term_in_new_numerator_after_subs = list()
-
-                        for j in range(len(term_in_new_numerator.args)):
-                            multiplier_in_term = term_in_new_numerator.args[j]
-
-                            if type(multiplier_in_term) == sym.core.add.Add:
-                                multiplier_in_term = expand((nuo / B**2) * multiplier_in_term)
-                                numerator_prefactor_after_subs *= B**2 / nuo
-
-                            elif type(multiplier_in_term) == sym.core.power.Pow:
-                                if multiplier_in_term.has(B) or multiplier_in_term.has(nuo):
-                                    numerator_prefactor_after_subs *= multiplier_in_term
-                                    multiplier_in_term = 1
-                                else:
-                                    multiplier_in_term = multiplier_in_term
-
-                            elif type(multiplier_in_term) == alpha or type(multiplier_in_term) == alpha_star:
-                                multiplier_in_term = multiplier_in_term
-
-                            elif type(multiplier_in_term) == beta or type(multiplier_in_term) == beta_star:
-                                multiplier_in_term = multiplier_in_term
-
-                            elif type(multiplier_in_term) == sym.core.numbers.Integer:
-                                multiplier_in_term = multiplier_in_term
-
-                            elif type(multiplier_in_term) == sym.core.numbers.NegativeOne:
-                                multiplier_in_term = multiplier_in_term
-
-                            else:
-                                sys.exit("Problems in the numerator after variables replacing")
-
-                            term_in_new_numerator_after_subs.append(multiplier_in_term)
-
-                        numerator_prefactors_after_subs.append(numerator_prefactor_after_subs)
-
-                    new_numerator_after_subs += math.prod(term_in_new_numerator_after_subs)
-                    # prefactor must be the same for all terms.
-                    # As an additional verification, we check that this is the case
-                    if simplify(numerator_prefactor_after_subs - numerator_prefactors_after_subs[i - 1]) != 0:
-                        sys.exit("Different prefactors in different terms")
-
-                numerator_prefactor_after_subs = numerator_prefactors_after_subs[0]
-
-                residues_sum_without_prefactor_after_subs = new_numerator_after_subs / new_denominator_after_subs
-
-                prefactor_after_subs = prefactor.subs(k, B * k / nuo).subs(q, B * q / nuo)
-
-                list_with_prefactor_multipliers = list()
-
-                for i in range(len(prefactor_after_subs.args)):
-                    prefactor_after_subs_mul = prefactor_after_subs.args[i]
-
-                    if type(prefactor_after_subs_mul) == sym.core.add.Add and prefactor_after_subs_mul.has(sc_prod):
-                        prefactor_after_subs_mul = B**2 * expand(nuo * prefactor_after_subs_mul / B**2) / nuo
-                    list_with_prefactor_multipliers.append(prefactor_after_subs_mul)
-
-                prefactor_after_subs = math.prod(list_with_prefactor_multipliers)
-
-                new_prefactor_after_subs = prefactor_after_subs * (
-                    numerator_prefactor_after_subs / denominator_prefactor_after_subs
-                )
+            fraction_after_substitution = reduction_to_common_denominator_after_substitution(
+                prefactor * residues_sum_without_prefactor,
+                final_common_denominator,
+                new_numerator,
+                prefactor,
+            )
+            residues_sum_without_prefactor_after_subs = fraction_after_substitution[0]
+            new_prefactor_after_subs = fraction_after_substitution[1]
+        else:
+            residues_sum_without_prefactor_after_subs = None
+            new_prefactor_after_subs = None
 
     else:
         sys.exit("Atypical structure of the residues sum")
-
-    # verification of procedure for self-consistency
-    # this procedure must be the identity transformation
-    if simplify(prefactor * residues_sum_without_prefactor - total_sum_of_residues_for_both_frequencies) != 0:
-        sys.exit("Error in the procedure for reducing to a common denominator")
-
-    if variable_substitution == True:
-        if (
-            simplify(
-                new_prefactor_after_subs * residues_sum_without_prefactor_after_subs
-                - total_sum_of_residues_for_both_frequencies.subs(k, B * k / nuo).subs(q, B * q / nuo)
-            )
-            != 0
-        ):
-            sys.exit("Error in the procedure for reducing to a common denominator after variables substitution")
 
     return [
         [residues_sum_without_prefactor, prefactor],
         [residues_sum_without_prefactor_after_subs, new_prefactor_after_subs],
     ]
+
+
+def reduction_to_common_denominator_after_substitution(
+    residues_sum_with_common_denominator, common_denominator, new_numerator, prefactor
+):
+    """
+
+
+    ARGUMENTS:
+
+    residues_sum_with_common_denominator, common_denominator, new_numerator, prefactor are given by
+    reduction_to_common_denominator()
+
+    OUTPUT DATA EXAMPLE:
+
+    residues_sum_without_prefactor_after_subs = too long
+
+    new_prefactor_after_subs =
+    """
+
+    # calculating common denominator after replacing of variables
+    # creating a list with multipliers
+    common_denominator_after_substitution = list()
+    # idea is to highlight the common factor (B^2/nuo)^n before the corresponding product
+    denominator_prefactor_after_subs = 1
+    denominator_counter = 0  # start a counter to check that all terms in the sum are processed
+
+    for i in range(len(common_denominator)):
+        multiplier_after_substitution = common_denominator[i].subs(k, B * k / nuo).subs(q, B * q / nuo)
+
+        if type(multiplier_after_substitution) == sym.core.power.Pow:
+            exponent_number_value = multiplier_after_substitution.args[1]
+            exponent_base_value = multiplier_after_substitution.args[0]
+            exponent_base_value = expand((nuo / B**2) * exponent_base_value)
+            multiplier_after_substitution = exponent_base_value**exponent_number_value
+            denominator_prefactor_after_subs *= (B**2 / nuo) ** exponent_number_value
+            denominator_counter += 1
+
+        elif type(multiplier_after_substitution) == sym.core.mul.Mul:
+            pow_multiplier = 1
+            for j in range(len(multiplier_after_substitution.args)):
+                argument = multiplier_after_substitution.args[j]
+                if argument.has(B):
+                    if type(argument) == sym.core.power.Pow:
+                        pow_value = argument.args[1]
+                        denominator_prefactor_after_subs *= B**pow_value
+                        pow_multiplier *= 1 / (B**pow_value)
+
+                elif argument.has(nuo):
+                    if type(argument) == sym.core.power.Pow:
+                        pow_value = argument.args[1]
+                        denominator_prefactor_after_subs *= (nuo) ** pow_value
+                        pow_multiplier *= 1 / (nuo**pow_value)
+
+                elif argument.has(f_1) or argument.has(f_2):
+                    denominator_prefactor_after_subs *= 1
+                else:
+                    sys.exit("Unexpected expression for type Mul")
+
+            multiplier_after_substitution = multiplier_after_substitution * pow_multiplier
+            denominator_counter += 1
+
+        elif type(multiplier_after_substitution) == sym.core.add.Add:
+            multiplier_after_substitution = expand((nuo / B**2) * multiplier_after_substitution)
+            denominator_prefactor_after_subs *= B**2 / nuo
+            denominator_counter += 1
+
+        elif type(multiplier_after_substitution) == sym.core.numbers.Integer:
+            multiplier_after_substitution = multiplier_after_substitution
+            denominator_counter += 1
+        else:
+            sys.exit("Unaccounted for type of multiplier in the denominator " "after the momentums replacement.")
+
+        common_denominator_after_substitution.append(multiplier_after_substitution)
+
+    if denominator_counter != len(common_denominator):
+        sys.exit(
+            "When processing the denominator after the replacement of momentums, "
+            "not all multipliers were taken into account."
+        )
+
+    new_denominator_after_subs = math.prod(common_denominator_after_substitution)
+
+    if new_denominator_after_subs.has(B) or new_denominator_after_subs.has(nuo):
+        sys.exit("Not all factors of the form B**2/nuo in denominator are placed in the prefactor")
+
+    # calculating new numerator after replacing of variables
+    # idea is to highlight the common factor (B^2/nuo)^n before the corresponding product
+    new_numerator_after_subs = 0
+
+    if type(new_numerator) == sym.core.add.Add:
+        list_with_new_numerator_terms = new_numerator.args
+        numerator_prefactors_after_subs = list()
+
+        for i in range(len(list_with_new_numerator_terms)):
+            term_in_new_numerator = list_with_new_numerator_terms[i]
+            numerator_prefactor_after_subs = 1
+
+            if type(term_in_new_numerator) == sym.core.mul.Mul:
+                term_in_new_numerator = term_in_new_numerator.subs(k, B * k / nuo).subs(q, B * q / nuo)
+                term_in_new_numerator_after_subs = list()
+                counter_check = 0  # start a counter to check that all terms in the sum are processed
+
+                for j in range(len(term_in_new_numerator.args)):
+                    multiplier_in_term = term_in_new_numerator.args[j]
+
+                    if type(multiplier_in_term) == sym.core.add.Add:
+                        multiplier_in_term = expand((nuo / B**2) * multiplier_in_term)
+                        numerator_prefactor_after_subs *= B**2 / nuo
+                        counter_check += 1
+
+                    elif type(multiplier_in_term) == sym.core.power.Pow:
+                        multiplier_power_base = multiplier_in_term.args[0]
+                        multiplier_power_exp = multiplier_in_term.args[1]
+                        if type(multiplier_power_base) == sym.core.add.Add:
+                            multiplier_power_base = expand((nuo / B**2) * multiplier_power_base)
+                            numerator_prefactor_after_subs *= (B**2 / nuo) ** multiplier_power_exp
+                            multiplier_in_term = multiplier_power_base**multiplier_power_exp
+                            counter_check += 1
+                        else:
+                            if multiplier_in_term.has(B) or multiplier_in_term.has(nuo):
+                                numerator_prefactor_after_subs *= multiplier_in_term
+                                multiplier_in_term = 1
+                                counter_check += 1
+                            else:
+                                counter_check += 1
+
+                    elif (
+                        type(multiplier_in_term) == alpha
+                        or type(multiplier_in_term) == alpha_star
+                        or type(multiplier_in_term) == beta
+                        or type(multiplier_in_term) == beta_star
+                        or type(multiplier_in_term) == f_1
+                        or type(multiplier_in_term) == f_2
+                        or type(multiplier_in_term) == sym.core.numbers.Integer
+                        or type(multiplier_in_term) == sym.core.numbers.NegativeOne
+                        or type(multiplier_in_term) == sym.core.numbers.ImaginaryUnit
+                    ):
+                        counter_check += 1
+
+                    else:
+                        sys.exit("Unaccounted type of multiplier in the numerator after the momentums replacement.")
+
+                    term_in_new_numerator_after_subs.append(multiplier_in_term)
+
+                if counter_check != len(term_in_new_numerator.args):
+                    sys.exit(
+                        "When processing the numerator after the replacement of momentums, "
+                        "not all multipliers were taken into account."
+                    )
+
+                numerator_prefactors_after_subs.append(numerator_prefactor_after_subs)
+
+                new_numerator_after_subs += math.prod(term_in_new_numerator_after_subs)
+
+            # prefactor must be the same for all terms.
+            # As an additional verification, we check that this is the case
+
+            if simplify(numerator_prefactor_after_subs - numerator_prefactors_after_subs[i - 1]) != 0:
+                sys.exit("Different prefactors in terms")
+
+        numerator_prefactor_after_subs = numerator_prefactors_after_subs[0]
+
+        if new_numerator_after_subs.has(B) or new_numerator_after_subs.has(nuo):
+            sys.exit("Not all factors of the form B**2/nuo in numerator are placed in the prefactor")
+
+        residues_sum_after_subs_without_prefactor = new_numerator_after_subs / new_denominator_after_subs
+
+        prefactor_after_subs = prefactor.subs(k, B * k / nuo).subs(q, B * q / nuo)
+        list_with_prefactor_multipliers = list()
+
+        for i in range(len(prefactor_after_subs.args)):
+            prefactor_after_subs_mul = prefactor_after_subs.args[i]
+
+            if type(prefactor_after_subs_mul) == sym.core.add.Add and prefactor_after_subs_mul.has(sc_prod):
+                prefactor_after_subs_mul = B**2 * expand(nuo * prefactor_after_subs_mul / B**2) / nuo
+            list_with_prefactor_multipliers.append(prefactor_after_subs_mul)
+
+        prefactor_after_subs = math.prod(list_with_prefactor_multipliers)
+
+        new_prefactor_after_subs = prefactor_after_subs * (
+            numerator_prefactor_after_subs / denominator_prefactor_after_subs
+        )
+
+        # This is a partial check that nothing is forgotten.
+        # An honest calculation of this difference for any B and nuo can take hours.
+
+        print(
+            f"\nVerifying that after the momentums replacement k, q --> B*k/nuo, B*q/nuo "
+            f"all terms of the original fraction have been processed. "
+        )
+
+        t1 = time.time()
+
+        if (
+            simplify(
+                (new_prefactor_after_subs * residues_sum_after_subs_without_prefactor).subs(B, 1).subs(nuo, 1)
+                - residues_sum_with_common_denominator.subs(B, 1).subs(nuo, 1)
+            )
+            != 0
+        ):
+            sys.exit("Error in the procedure for reducing to a common denominator after variables substitution")
+
+        print(f"Verification took: {round(time.time() - t1, 1)} sec")
+
+        return residues_sum_after_subs_without_prefactor, new_prefactor_after_subs
 
 
 def partial_simplification_of_diagram_expression(residues_sum_without_prefactor):
@@ -548,7 +745,7 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
     ARGUMENTS:
 
     residues_sum_without_prefactor is given by reduction_to_common_denominator(),
-    variable_substitution
+    variable_substitution is given by get_info_about_diagram()
 
     PARAMETERS:
 
@@ -572,6 +769,7 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
     # after applying the .doit() operation, original_denominator and original_numerator may have a
     # numerical denominator (integer_factor). Eliminate it as follows
     # original_numerator/original_denominator = original_numerator*integer_factor/integer_factor*original_denominator
+
     if fraction(original_denominator)[1] != 1:
         if type(fraction(original_denominator)[1]) == sym.core.numbers.Integer:
             integer_factor = fraction(original_denominator)[1]
@@ -588,21 +786,25 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
             term_in_numerator = original_numerator_new.args[j]
             simplified_term_in_numerator = 1
             I_factor_in_numerator = 1
-
+            # print(f"\n{term_in_numerator}\n")
+            # print("new term")
             for k in range(len(term_in_numerator.args)):
                 multiplier = term_in_numerator.args[k]
+                # print(f"\n{multiplier}\n")
                 re_multiplier = re(multiplier)
                 im_multiplier = im(multiplier)
 
                 if re_multiplier == 0 and im_multiplier != 0:
                     new_multiplier = im_multiplier
                     I_factor_in_numerator *= I
+                    # print(I_factor_in_numerator)
                 elif re_multiplier != 0 and im_multiplier == 0:
                     new_multiplier = re_multiplier
                 else:
                     sys.exit("Atypical structure of the multiplier")
 
                 z = expand(new_multiplier)
+                # print(z)
                 n = len(z.args)
                 terms_with_sqrt = 0
                 terms_without_sqrt = 0
@@ -622,9 +824,17 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
                         simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
                             uo**2 + 2 * uo + 1, (uo + 1) ** 2
                         )
+                    elif simplified_terms_without_sqrt.has(uo**2 - 2 * uo + 1):
+                        simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
+                            uo**2 - 2 * uo + 1, (uo - 1) ** 2
+                        )
                     elif simplified_terms_without_sqrt.has(-(uo**2) - 2 * uo - 1):
                         simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
                             -(uo**2) - 2 * uo - 1, -((uo + 1) ** 2)
+                        )
+                    elif simplified_terms_without_sqrt.has(-(uo**2) + 2 * uo - 1):
+                        simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
+                            -(uo**2) + 2 * uo - 1, -((uo - 1) ** 2)
                         )
 
                     fully_simplified_multiplier_in_numerator = simplified_terms_without_sqrt + terms_with_sqrt
@@ -636,8 +846,12 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
                     sys.exit("Unaccounted multiplier type")
 
                 simplified_term_in_numerator *= fully_simplified_multiplier_in_numerator
+            fully_simplified_term_in_numerator = I_factor_in_numerator * simplified_term_in_numerator
+            # print(I_factor_in_numerator)
+            # print(im(fully_simplified_term_in_numerator / I))
+            # print(re(fully_simplified_term_in_numerator))
+            simplified_numerator += fully_simplified_term_in_numerator
 
-            simplified_numerator += I_factor_in_numerator * simplified_term_in_numerator
     else:
         sys.exit("Atypical structure of the numerator")
 
@@ -673,12 +887,18 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
                         -(uo**2) - 2 * uo - 1, -((uo + 1) ** 2)
                     )
 
-                fully_simplified_multiplier_in_denominator = simplified_terms_without_sqrt + terms_with_sqrt
+                fully_simplified_multiplier_in_denominator_re_z = simplified_terms_without_sqrt + terms_with_sqrt
+
+            # z can just be a numeric factor
+            elif type(re_z) == sym.core.numbers.NegativeOne or type(re_z) == sym.core.numbers.Integer:
+                fully_simplified_multiplier_in_denominator_re_z = re_z
+
+            elif re_z.has(D):
+                fully_simplified_multiplier_in_denominator_re_z = re_z
             else:
-                if re_z.has(D):
-                    fully_simplified_multiplier_in_denominator = re_z
-                else:
-                    sys.exit("The denominator multiplier has non-zero real part contains unaccounted structures")
+                sys.exit("The denominator multiplier has non-zero real part contains unaccounted structures")
+
+            simplified_denominator *= fully_simplified_multiplier_in_denominator_re_z
 
         elif re_z == 0 and im_z != 0:
             if type(im_z) == sym.core.add.Add:
@@ -698,33 +918,68 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
                     simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
                         uo**2 + 2 * uo + 1, (uo + 1) ** 2
                     )
+                elif simplified_terms_without_sqrt.has(uo**2 - 2 * uo + 1):
+                    simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
+                        uo**2 - 2 * uo + 1, (uo - 1) ** 2
+                    )
                 elif simplified_terms_without_sqrt.has(-(uo**2) - 2 * uo - 1):
                     simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
                         -(uo**2) - 2 * uo - 1, -((uo + 1) ** 2)
                     )
-
-                fully_simplified_multiplier_in_denominator = I * (simplified_terms_without_sqrt + terms_with_sqrt)
-            else:
-                if im_z.has(D):
-                    fully_simplified_multiplier_in_denominator = I * im_z
-                else:
-                    sys.exit(
-                        "The denominator multiplier has non-zero imaginary part and contains unaccounted structures"
+                elif simplified_terms_without_sqrt.has(-(uo**2) + 2 * uo - 1):
+                    simplified_terms_without_sqrt = simplified_terms_without_sqrt.subs(
+                        -(uo**2) + 2 * uo - 1, -((uo - 1) ** 2)
                     )
+
+                fully_simplified_multiplier_in_denominator_im_z = I * (simplified_terms_without_sqrt + terms_with_sqrt)
+
+            elif im_z.has(D):
+                fully_simplified_multiplier_in_denominator_im_z = I * im_z
+            else:
+                sys.exit("The denominator multiplier has non-zero imaginary part and contains unaccounted structures")
+
+            simplified_denominator *= fully_simplified_multiplier_in_denominator_im_z
+
         else:
             sys.exit("Multiplier has non-zero both real and imaginary parts")
 
-        simplified_denominator *= fully_simplified_multiplier_in_denominator
+    # print(im(simplified_numerator / I))
+    # print(f"smth = {im(simplified_denominator / I)}")
+    # print(re(simplified_numerator))
+    # print(re(simplified_denominator))
+    simplified_expression = simplified_numerator / simplified_denominator
+
+    # Resulting integrand must not explicitly contain imaginary units
+    # if im(simplified_denominator / I) == 0 and im(simplified_numerator / I) == 0:
+    #     final_simplified_denominator = simplified_denominator / I
+    #     final_simplified_numerator = 1
+    #     for i in range(len(simplified_numerator.args)):
+    #         real_term_in_simplified_numerator = simplified_numerator.args[i] / I
+    #         final_simplified_numerator += real_term_in_simplified_numerator
+
+    #     simplified_expression = final_simplified_numerator / final_simplified_denominator
+
+    # elif im(simplified_denominator) == 0 and im(simplified_numerator) == 0:
+    #     simplified_expression = simplified_numerator / simplified_denominator
+    # else:
+    #     sys.exit("Transformed expression contains imaginary parts")
 
     # # verification of procedure for self-consistency
     # # this procedure must be the identity transformation
+
+    # print(f"Verifying that the made simplification is the identity transformation.")
+
+    # t = time.time()
+
     # delta1 = simplified_denominator - original_denominator_new
     # delta2 = simplified_numerator - original_numerator_new
 
     # if simplify(delta1) != 0 and simplify(delta2) != 0:
     #     sys.exit("Error in the simplification procedure")
 
-    return simplified_numerator / simplified_denominator
+    # print(f"Verification took: {round(time.time() - t, 1)} sec")
+
+    return simplified_expression
 
 
 def prefactor_simplification(new_prefactor_after_subs):
