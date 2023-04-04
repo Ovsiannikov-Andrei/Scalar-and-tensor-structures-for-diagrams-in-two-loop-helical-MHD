@@ -353,25 +353,33 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         for in1 in kd_structure:
             # beware, I not treat the case if there remains a delta function with indexes of external fields !!
             clen = Tenzor.coeff(kd(in1[0], in1[1]))
-            if clen.coeff(hyb(k, in1[0])) != 0:
-                Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(k, in1[0]), hyb(k, in1[1]))
-            if clen.coeff(hyb(k, in1[1])) != 0:
-                Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(k, in1[1]), hyb(k, in1[0]))
-            if clen.coeff(hyb(q, in1[0])) != 0:
-                Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(q, in1[0]), hyb(q, in1[1]))
-            if clen.coeff(hyb(q, in1[1])) != 0:
-                Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(q, in1[1]), hyb(q, in1[0]))
-            if clen.coeff(hyb(p, in1[0])) != 0:
-                Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(p, in1[0]), hyb(p, in1[1]))
-            if clen.coeff(hyb(p, in1[1])) != 0:
-                Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(p, in1[1]), hyb(p, in1[0]))
-            if Tenzor.coeff(kd(in1[0], in1[1])) == 0:
+            if clen !=0:
+                if clen.coeff(hyb(k, in1[0])) != 0:
+                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(k, in1[0]), hyb(k, in1[1]))
+                    inkd += 1
+                if clen.coeff(hyb(k, in1[1])) != 0:
+                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(k, in1[1]), hyb(k, in1[0]))
+                    inkd += 1
+                if clen.coeff(hyb(q, in1[0])) != 0:
+                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(q, in1[0]), hyb(q, in1[1]))
+                    inkd += 1
+                if clen.coeff(hyb(q, in1[1])) != 0:
+                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(q, in1[1]), hyb(q, in1[0]))
+                    inkd += 1
+                if clen.coeff(hyb(p, in1[0])) != 0:
+                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(p, in1[0]), hyb(p, in1[1]))
+                    inkd += 1
+                if clen.coeff(hyb(p, in1[1])) != 0:
+                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(p, in1[1]), hyb(p, in1[0]))
+                    inkd += 1
+            else:
                 kd_structure.remove(in1)
-                inkd += 1
+                inkd = 1
+                break
         if inkd != 0:
             inkd = 0
         else:
-            inkd = 1
+            break
 
     print(f"step 7: {round(time.time() - t, 1)} sec")
 
