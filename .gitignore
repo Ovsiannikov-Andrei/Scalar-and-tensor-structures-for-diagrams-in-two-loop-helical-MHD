@@ -6,3 +6,4 @@ Sandbox.ipynb
 !/.gitignore
 /.vscode
 /.vscode/**.*.json
+Functions/__pycache__
