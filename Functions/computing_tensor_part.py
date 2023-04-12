@@ -86,7 +86,134 @@ def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
     else:
         return zoznam[:pozicia] + [ind_hod] + zoznam[pozicia + 1 :]
 
+    
+def kronecker_transver_operator(tensor, transver, kronecker):
+    """
+    The function replace the Kronecker's delta function and transverse projector by the transverse projector. 
+    For example: P(k, i, j) * kd(i, l) = P(k, l, j)
+    
+    ARGUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    transver  - P_structure - all possible transverse structure in Tensor
+    kronecker - kd_structure - all possible kronecker structure in Tensor
+    """
+    
+    for j in kronecker:
+        structure = list()
+        for i in transver:
+            if i[1] == j[0]:
+                tensor = tensor.subs(
+                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    P(i[0], j[1], i[2]),
+                )
+                structure.append([i[0], j[1], i[2]])
+            elif i[1] == j[1]:
+                tensor = tensor.subs(
+                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    P(i[0], j[0], i[2]),
+                )
+                structure.append([i[0], j[0], i[2]])
+            elif i[2] == j[0]:
+                tensor = tensor.subs(
+                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    P(i[0], i[1], j[1]),
+                )
+                structure.append([i[0], i[1], j[1]])
+            elif i[2] == j[1]:
+                tensor = tensor.subs(
+                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    P(i[0], i[1], j[0]),
+                )
+                structure.append([i[0], i[1], j[0]])
+            if tensor.coeff(kd(j[0], j[1])) == 0:
+                break
+        
+        transver = transver + structure
+        
+    return [tensor, transver]
 
+
+def kronecker_helical_operator(tensor, helical, kronecker):
+    """
+    The function replace the Kronecker's delta function and helical projector by the helical projector 
+    For example: H(k, i, j) * kd(i, l) = H(k, l, j)
+    
+    ARGUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    helical   - H_structure - all possible transverse structure in Tensor
+    kronecker - kd_structure - all possible kronecker structure in Tensor
+    """
+    
+    for j in kronecker:
+        structure = list()
+        for i in helical:
+            if i[1] == j[0]:
+                tensor = tensor.subs(
+                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    H(i[0], j[1], i[2]),
+                )
+                structure.append([i[0], j[1], i[2]])
+            elif i[1] == j[1]:
+                tensor = tensor.subs(
+                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    H(i[0], j[0], i[2]),
+                )
+                structure.append([i[0], j[0], i[2]])
+            elif i[2] == j[0]:
+                tensor = tensor.subs(
+                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    H(i[0], i[1], j[1]),
+                )
+                structure.append([i[0], i[1], j[1]])
+            elif i[2] == j[1]:
+                tensor = tensor.subs(
+                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
+                    H(i[0], i[1], j[0]),
+                )
+                structure.append([i[0], i[1], j[0]])
+            if tensor.coeff(kd(j[0], j[1])) == 0:
+                break
+        
+        helical = helical + structure
+        
+    return [tensor, helical]
+    
+    
+def momenta_transver_operator(tensor, transver):
+    """"
+    The function replace the momentum and transver projector with the same index by 0. 
+    For example: p(k, i, j) * hyb(k, i) = 0
+    
+    ARBUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    transver  - P_structure - all possible transverse structure in Tensor
+    """"
+
+    i = 0
+    # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
+    while i < len(P_structure):
+        in1 = P_structure[i]
+        if Tenzor.coeff(hyb(in1[0], in1[1])) != 0:
+            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
+        elif Tenzor.coeff(hyb(-in1[0], in1[1])) != 0:
+            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[1]), 0)
+        elif Tenzor.coeff(hyb(in1[0], in1[2])) != 0:
+            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[2]), 0)
+        elif Tenzor.coeff(hyb(-in1[0], in1[2])) != 0:
+            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[2]), 0)
+        if Tenzor.coeff(P(in1[0], in1[1], in1[2])) == 0:
+            P_structure.remove(in1)
+        else:
+            if in1[0] == -k or in1[0] == -q:
+                # Replace in the tensor structure in the projection operators:  P(-k,i,j) = P(k,i,j)
+                Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]), P(-in1[0], in1[1], in1[2]))
+                P_structure[i][0] = -in1[0]
+            i += 1
+
+    
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
     """
     This function calculates the integrand of the corresponding diagram in terms of tensor and scalar parts.
