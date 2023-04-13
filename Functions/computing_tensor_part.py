@@ -129,7 +129,9 @@ def kronecker_transver_operator(tensor, transver, kronecker):
             if tensor.coeff(kd(j[0], j[1])) == 0:
                 break
         
-        transver = transver + structure
+        for i in structure:
+            if i is not transver:
+                transver.append(i)
         
     return [tensor, transver]
 
@@ -176,7 +178,9 @@ def kronecker_helical_operator(tensor, helical, kronecker):
             if tensor.coeff(kd(j[0], j[1])) == 0:
                 break
         
-        helical = helical + structure
+        for i in structure:
+            if i is not helical:
+                helical.append(i)
         
     return [tensor, helical]
     
