@@ -343,6 +343,51 @@ def transver_transver_operator(tensor, transver):
     return [tensor, transver]
 
 
+def kronecker_momenta(tensor, structure):
+    """
+    The function replace the kronecker symbol and momentum with a same index by momentum.
+    For example: hyb( k, i) * kd(i, j) = hyb(k, j)
+        
+    ARGUMENTS:
+    
+    tensor     - Tenzor - projector, kronecker symbol and momenta
+    kronecker  - kd_structure - all possible transver structure in Tensor 
+    """
+    
+    i = 0
+    while i == 0:
+        for j in structure:
+            part = tensor.coeff( kd( j[0], j[1]))
+            if part !=0:
+                if part.coeff( hyb( k, j[0])) != 0:
+                    tensor = tensor.subs( kd( j[0], j[1]) * hyb( k, j[0]), hyb( k, j[1]))
+                    i += 1
+                if part.coeff( hyb( k, j[1])) != 0:
+                    tensor = tensor.subs( kd( j[0], j[1]) * hyb( k, j[1]), hyb( k, j[0]))
+                    i += 1
+                if part.coeff( hyb( q, j[0])) != 0:
+                    tensor = tensor.subs( kd( j[0], j[1]) * hyb( q, j[0]), hyb( q, j[1]))
+                    i += 1
+                if part.coeff( hyb( q, j[1])) != 0:
+                    tensor = tensor.subs( kd( j[0], j[1]) * hyb( q, j[1]), hyb( q, j[0]))
+                    i += 1
+                if part.coeff( hyb( p, j[0])) != 0:
+                    tensor = tensor.subs( kd( j[0], j[1]) * hyb( p, j[0]), hyb( p, j[1]))
+                    i += 1
+                if part.coeff( hyb( p, j[1])) != 0:
+                    tensor = tensor.subs( kd( j[0], j[1]) * hyb( p, j[1]), hyb( p, j[0]))
+                    i += 1
+            else:
+                structure.remove(j)
+                i = 1
+                break
+        if i != 0:
+            i = 0
+        else:
+            break
+    
+    return [tensor, structure]
+
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
     """
@@ -423,43 +468,11 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     Tenzor = expand(Tenzor)
     
-    [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
+    [Tenzor, H_structure] = momenta_helical_operator( Tenzor, H_structure)
 
     print(f"step 6: {round(time.time() - t, 1)} sec")
 
-    inkd = 0
-    while inkd == 0:
-        # calculation part connected with the kronecker delta function: kd(i,j)*hyb(k,i) = hyb(k,j)
-        for in1 in kd_structure:
-            # beware, I not treat the case if there remains a delta function with indexes of external fields !!
-            clen = Tenzor.coeff(kd(in1[0], in1[1]))
-            if clen !=0:
-                if clen.coeff(hyb(k, in1[0])) != 0:
-                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(k, in1[0]), hyb(k, in1[1]))
-                    inkd += 1
-                if clen.coeff(hyb(k, in1[1])) != 0:
-                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(k, in1[1]), hyb(k, in1[0]))
-                    inkd += 1
-                if clen.coeff(hyb(q, in1[0])) != 0:
-                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(q, in1[0]), hyb(q, in1[1]))
-                    inkd += 1
-                if clen.coeff(hyb(q, in1[1])) != 0:
-                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(q, in1[1]), hyb(q, in1[0]))
-                    inkd += 1
-                if clen.coeff(hyb(p, in1[0])) != 0:
-                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(p, in1[0]), hyb(p, in1[1]))
-                    inkd += 1
-                if clen.coeff(hyb(p, in1[1])) != 0:
-                    Tenzor = Tenzor.subs(kd(in1[0], in1[1]) * hyb(p, in1[1]), hyb(p, in1[0]))
-                    inkd += 1
-            else:
-                kd_structure.remove(in1)
-                inkd = 1
-                break
-        if inkd != 0:
-            inkd = 0
-        else:
-            break
+    [Tenzor, kd_structure] = kronecker_momenta( Tenzor, kd_structure)
 
     print(f"step 7: {round(time.time() - t, 1)} sec")
 
