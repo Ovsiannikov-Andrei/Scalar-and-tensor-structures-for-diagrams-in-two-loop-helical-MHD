@@ -223,27 +223,74 @@ def momenta_helical_operator(tensor, helical):
     ARBUMENTS:
     
     tensor    - Tenzor - projector, kronecker symbol and momenta
-    transver  - H_structure - all possible helical structure in Tensor
+    helical   - H_structure - all possible helical structure in Tensor
     """
 
     i = 0
     while i < len(helical):
         j = helical[i]
-        if tensor.coeff(hyb( j[0], j[1])) != 0:
+        if tensor.coeff( hyb( j[0], j[1])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( j[0], j[1]), 0)
-        elif tensor.coeff(hyb( - j[0], j[1])) != 0:
+        elif tensor.coeff( hyb( - j[0], j[1])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( - j[0], j[1]), 0)
-        elif tensor.coeff(hyb( j[0], j[2])) != 0:
+        elif tensor.coeff( hyb( j[0], j[2])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( j[0], j[2]), 0)
-        elif tensor.coeff(hyb( - j[0], j[2])) != 0:
+        elif tensor.coeff( hyb( - j[0], j[2])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( - j[0], j[2]), 0)
-        if tensor.coeff(H( j[0], j[1], j[2])) == 0:
+        if tensor.coeff( H( j[0], j[1], j[2])) == 0:
             helical.remove( j)
         else:
             i += 1
         
     return [tensor, helical]
 
+def transfer_helical_operator(tensor, transver, helical):
+    """
+    The function replace the product between transver and helical operator with a same momenta and one a same index by helical operator.
+    For example: P(k, i, j) * H(k, i, l) = H (k, l, j)
+    
+    ARGUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    helical   - H_structure - all possible helical structure in Tensor
+    transver  - P_structure - all possible transver structure in Tensor 
+    """
+    
+    i = 0
+    while len(helical) > i:
+        j = helical[i]
+        for in2 in transver:
+            if j[0] == in2[0] and tensor.coeff( H( j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2])) != 0:
+                if j[1] == in2[1]:
+                    tensor = tensor.subs(
+                        H( j[0], j[1], j[2]) * P( in2[0], in2[1], in2[2]),
+                        H( j[0], in2[2], j[2]),
+                    )
+                    helical += [[ j[0], in2[2], j[2]]]
+                elif j[1] == in2[2]:
+                    tensor = tensor.subs(
+                        H( j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
+                        H( j[0], in2[1], j[2]),
+                    )
+                    helical += [[ j[0], in2[1], j[2]]]
+                elif j[2] == in2[1]:
+                    tensor = tensor.subs(
+                        H( j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
+                        H( j[0], j[1], in2[2]),
+                    )
+                    helical += [[ j[0], j[1], in2[2]]]
+                elif j[2] == in2[2]:
+                    tensor = tensor.subs(
+                        H( j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
+                        H( j[0], j[1], in2[1]),
+                    )
+                    helical += [[ j[0], j[1], in2[1]]]
+        if tensor.coeff(H( j[0], j[1], j[2])) == 0:
+            helical.remove( j)
+        else:
+            i += 1
+            
+    return [tensor, helical]
             
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
@@ -290,40 +337,7 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 2: {round(time.time() - t, 1)} sec")
 
-    i = 0
-    # sipmplify in the Tenzor part H_{ij} (k) P_{il} (k) =  H_{il} (k)
-    while len(H_structure) > i:
-        in1 = H_structure[i]
-        for in2 in P_structure:
-            if in1[0] == in2[0] and Tenzor.coeff(H(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2])) != 0:
-                if in1[1] == in2[1]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        H(in1[0], in2[2], in1[2]),
-                    )
-                    H_structure += [[in1[0], in2[2], in1[2]]]
-                elif in1[1] == in2[2]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        H(in1[0], in2[1], in1[2]),
-                    )
-                    H_structure += [[in1[0], in2[1], in1[2]]]
-                elif in1[2] == in2[1]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        H(in1[0], in1[1], in2[2]),
-                    )
-                    H_structure += [[in1[0], in1[1], in2[2]]]
-                elif in1[2] == in2[2]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        H(in1[0], in1[1], in2[1]),
-                    )
-                    H_structure += [[in1[0], in1[1], in2[1]]]
-        if Tenzor.coeff(H(in1[0], in1[1], in1[2])) == 0:
-            H_structure.remove(in1)
-        else:
-            i += 1
+    [Tenzor, H_structure] = transfer_helical_operator(Tenzor, P_structure, H_structure)
 
     print(f"step 3: {round(time.time() - t, 1)} sec")
 
