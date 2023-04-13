@@ -182,37 +182,69 @@ def kronecker_helical_operator(tensor, helical, kronecker):
     
     
 def momenta_transver_operator(tensor, transver):
-    """"
+    """
     The function replace the momentum and transver projector with the same index by 0. 
-    For example: p(k, i, j) * hyb(k, i) = 0
+    For example: P(k, i, j) * hyb(k, i) = 0
     
     ARBUMENTS:
     
     tensor    - Tenzor - projector, kronecker symbol and momenta
     transver  - P_structure - all possible transverse structure in Tensor
-    """"
+    """
 
     i = 0
-    # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
-    while i < len(P_structure):
-        in1 = P_structure[i]
-        if Tenzor.coeff(hyb(in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
-        elif Tenzor.coeff(hyb(-in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[1]), 0)
-        elif Tenzor.coeff(hyb(in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[2]), 0)
-        elif Tenzor.coeff(hyb(-in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[2]), 0)
-        if Tenzor.coeff(P(in1[0], in1[1], in1[2])) == 0:
-            P_structure.remove(in1)
+    while i < len(transver):
+        j = transver[i]
+        if tensor.coeff(hyb( j[0], j[1])) != 0:
+            tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( j[0], j[1]), 0)
+        elif tensor.coeff(hyb( - j[0], j[1])) != 0:
+            tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( - j[0], j[1]), 0)
+        elif tensor.coeff(hyb( j[0], j[2])) != 0:
+            tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( j[0], j[2]), 0)
+        elif tensor.coeff(hyb( - j[0], j[2])) != 0:
+            tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( - j[0], j[2]), 0)
+        if tensor.coeff(P(j[0], j[1], j[2])) == 0:
+            transver.remove( j)
         else:
-            if in1[0] == -k or in1[0] == -q:
-                # Replace in the tensor structure in the projection operators:  P(-k,i,j) = P(k,i,j)
-                Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]), P(-in1[0], in1[1], in1[2]))
-                P_structure[i][0] = -in1[0]
+            if j[0] == -k or j[0] == -q:
+                # Replace in the tensor structure the projection operators:  P(-k,i,j) = P(k,i,j)
+                tensor = tensor.subs(P( j[0], j[1], j[2]), P( -j[0], j[1], j[2]))
+                transver[i][0] = - j[0]
             i += 1
+        
+    return [tensor, transver]
 
+
+def momenta_helical_operator(tensor, helical):
+    """
+    The function replace the momentum and helical operator with the same index by 0. 
+    For example: H(k, i, j) * hyb(k, i) = 0
+    
+    ARBUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    transver  - H_structure - all possible helical structure in Tensor
+    """
+
+    i = 0
+    while i < len(helical):
+        j = helical[i]
+        if tensor.coeff(hyb( j[0], j[1])) != 0:
+            tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( j[0], j[1]), 0)
+        elif tensor.coeff(hyb( - j[0], j[1])) != 0:
+            tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( - j[0], j[1]), 0)
+        elif tensor.coeff(hyb( j[0], j[2])) != 0:
+            tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( j[0], j[2]), 0)
+        elif tensor.coeff(hyb( - j[0], j[2])) != 0:
+            tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( - j[0], j[2]), 0)
+        if tensor.coeff(H( j[0], j[1], j[2])) == 0:
+            helical.remove( j)
+        else:
+            i += 1
+        
+    return [tensor, helical]
+
+            
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
     """
@@ -248,114 +280,13 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
     # We are interested in the leading (proportional to p) contribution to the diagram asymptotic, when p --> 0.
     print(f"step 0: {round(time.time() - t, 1)} sec")
 
-    structurep = list()
-    structureh = list()
-
-    for in2 in kd_structure:
-        structurep = list()
-        for in1 in P_structure:
-            # calculation via Kronecker's delta function: P(k, i, j) kd(i, l) = P(k, l, j)
-            if in1[1] == in2[0]:
-                Tenzor = Tenzor.subs(
-                    P(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    P(in1[0], in2[1], in1[2]),
-                )
-                structurep.append([in1[0], in2[1], in1[2]])
-            elif in1[1] == in2[1]:
-                Tenzor = Tenzor.subs(
-                    P(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    P(in1[0], in2[0], in1[2]),
-                )
-                structurep.append([in1[0], in2[0], in1[2]])
-            elif in1[2] == in2[0]:
-                Tenzor = Tenzor.subs(
-                    P(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    P(in1[0], in1[1], in2[1]),
-                )
-                structurep.append([in1[0], in1[1], in2[1]])
-            elif in1[2] == in2[1]:
-                Tenzor = Tenzor.subs(
-                    P(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    P(in1[0], in1[1], in2[0]),
-                )
-                structurep.append([in1[0], in1[1], in2[0]])
-            if Tenzor.coeff(kd(in2[0], in2[1])) == 0:
-                # del kd_structure[0]
-                # it deletes the kronecker delta from the list if it is no longer in the tensor structure
-                break
-        # it adds all newly created structures to the list
-        P_structure = P_structure + structurep
-
-        for in1 in H_structure:
-            # calculation via Kronecker's delta function: H(k, i, j) kd(i, l) = H(k, l, j)
-            if in1[1] == in2[0]:
-                Tenzor = Tenzor.subs(
-                    H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    H(in1[0], in2[1], in1[2]),
-                )
-                structureh.append([in1[0], in2[1], in1[2]])
-            elif in1[1] == in2[1]:
-                Tenzor = Tenzor.subs(
-                    H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    H(in1[0], in2[0], in1[2]),
-                )
-                structureh.append([in1[0], in2[0], in1[2]])
-            elif in1[2] == in2[0]:
-                Tenzor = Tenzor.subs(
-                    H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    H(in1[0], in1[1], in2[1]),
-                )
-                structureh.append([in1[0], in1[1], in2[1]])
-            elif in1[2] == in2[1]:
-                Tenzor = Tenzor.subs(
-                    H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    H(in1[0], in1[1], in2[0]),
-                )
-                structureh.append([in1[0], in1[1], in2[0]])
-            if Tenzor.coeff(kd(in2[0], in2[1])) == 0:
-                # del kd_structure[0]
-                break
-        H_structure = H_structure + structureh
+    [Tenzor, P_structure] = kronecker_transver_operator(Tenzor, P_structure, kd_structure)
+    [Tenzor, H_structure] = kronecker_helical_operator(Tenzor, H_structure, kd_structure)
 
     print(f"step 1: {round(time.time() - t, 1)} sec")
 
-    i = 0
-    # discard from the Tensor structure what is zero for the projection operator P_ij (k) * k_i = 0
-    while i < len(P_structure):
-        in1 = P_structure[i]
-        if Tenzor.coeff(hyb(in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
-        elif Tenzor.coeff(hyb(-in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[1]), 0)
-        elif Tenzor.coeff(hyb(in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[2]), 0)
-        elif Tenzor.coeff(hyb(-in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[2]), 0)
-        if Tenzor.coeff(P(in1[0], in1[1], in1[2])) == 0:
-            P_structure.remove(in1)
-        else:
-            if in1[0] == -k or in1[0] == -q:
-                # Replace in the tensor structure in the projection operators:  P(-k,i,j) = P(k,i,j)
-                Tenzor = Tenzor.subs(P(in1[0], in1[1], in1[2]), P(-in1[0], in1[1], in1[2]))
-                P_structure[i][0] = -in1[0]
-            i += 1
-
-    i = 0
-    # discard from the Tensor structure what is zero for the helical operator H_ij (k) * k_i = 0
-    while i < len(H_structure):
-        in1 = H_structure[i]
-        if Tenzor.coeff(hyb(in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
-        elif Tenzor.coeff(hyb(-in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[1]), 0)
-        elif Tenzor.coeff(hyb(in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[2]), 0)
-        elif Tenzor.coeff(hyb(-in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(-in1[0], in1[2]), 0)
-        if Tenzor.coeff(H(in1[0], in1[1], in1[2])) == 0:
-            H_structure.remove(in1)
-        else:
-            i += 1
+    [Tenzor, P_structure] = momenta_transver_operator(Tenzor, P_structure)
+    [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
 
     print(f"step 2: {round(time.time() - t, 1)} sec")
 
