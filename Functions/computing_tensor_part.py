@@ -341,7 +341,8 @@ def transver_transver_operator(tensor, transver):
         transver = transver + structure
         
     return [tensor, transver]
-            
+
+
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
     """
@@ -400,6 +401,10 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         q_c = i[0].coeff(q)
         if k_c != 0 or q_c != 0:
             Tenzor = Tenzor.subs(hyb(i[0], i[1]), (k_c * hyb(k, i[1]) + q_c * hyb(q, i[1])))
+            
+    Tenzor = expand(Tenzor)
+    [Tenzor, P_structure] = momenta_transver_operator(Tenzor, P_structure)
+    [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)    
 
     kd_structure = list()
     for i in P_structure:  # Define transverse projection operator P(k,i,j) = kd(i,j) - hyb(k,i)*hyb(k,j)/k^2
@@ -417,18 +422,8 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
     print(f"step 5: {round(time.time() - t, 1)} sec")
 
     Tenzor = expand(Tenzor)
-
-    # discard from the Tensor structure what is zero for the helical operator H_{ij} (k) * k_i = 0
-    for in1 in H_structure:
-        clen = Tenzor.coeff(H(in1[0], in1[1], in1[2]))
-        if clen.coeff(hyb(in1[0], in1[1])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
-        if clen.coeff(hyb(in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[2]), 0)
-        if in1[0] == k and clen.coeff(hyb(q, in1[1]) * hyb(q, in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(q, in1[1]) * hyb(q, in1[2]), 0)
-        if in1[0] == q and clen.coeff(hyb(k, in1[1]) * hyb(k, in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(k, in1[1]) * hyb(k, in1[2]), 0)
+    
+    [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
 
     print(f"step 6: {round(time.time() - t, 1)} sec")
 
