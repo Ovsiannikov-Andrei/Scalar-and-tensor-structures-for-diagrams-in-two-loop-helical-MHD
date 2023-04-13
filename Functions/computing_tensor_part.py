@@ -291,6 +291,56 @@ def transfer_helical_operator(tensor, transver, helical):
             i += 1
             
     return [tensor, helical]
+
+def transver_transver_operator(tensor, transver):
+    """
+    The function replace the product between transver and transver operator with a same momenta and one a same index by transver operator.
+    For example: P(k, i, j) * P(k, i, l) = P (k, l, j)
+    
+    ARGUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    transver  - P_structure - all possible transver structure in Tensor 
+    """    
+    
+    i = 0
+    while len(transver) > i:
+        in1 = transver[i]
+        structure = list()
+        for j in range(i + 1, len(transver)):
+            in2 = transver[j]
+            if in1[0] == in2[0] and tensor.coeff(P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2])) != 0:
+                if in1[1] == in2[1]:
+                    tensor = tensor.subs(
+                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
+                        P(in1[0], in2[2], in1[2]),
+                    )
+                    structure.append([in1[0], in2[2], in1[2]])
+                elif in1[1] == in2[2]:
+                    tensor = tensor.subs(
+                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
+                        P(in1[0], in2[1], in1[2]),
+                    )
+                    structure.append([in1[0], in2[1], in1[2]])
+                elif in1[2] == in2[1]:
+                    tensor = tensor.subs(
+                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
+                        P(in1[0], in1[1], in2[2]),
+                    )
+                    structure.append([in1[0], in1[1], in2[2]])
+                elif in1[2] == in2[2]:
+                    tensor = tensor.subs(
+                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
+                        P(in1[0], in1[1], in2[1]),
+                    )
+                    structure.append([in1[0], in1[1], in2[1]])
+        if tensor.coeff(P(in1[0], in1[1], in1[2])) == 0:
+            transver.remove(in1)
+        else:
+            i += 1
+        transver = transver + structure
+        
+    return [tensor, transver]
             
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
@@ -341,44 +391,7 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 3: {round(time.time() - t, 1)} sec")
 
-    i = 0
-    # sipmplify in the Tenzor part  P_{ij} (k) P_{il} (k) =  P_{il} (k)
-    while len(P_structure) > i:
-        in1 = P_structure[i]
-        structurep = list()
-        for j in range(i + 1, len(P_structure)):
-            in2 = P_structure[j]
-            if in1[0] == in2[0] and Tenzor.coeff(P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2])) != 0:
-                if in1[1] == in2[1]:
-                    Tenzor = Tenzor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in2[2], in1[2]),
-                    )
-                    structurep.append([in1[0], in2[2], in1[2]])
-                elif in1[1] == in2[2]:
-                    Tenzor = Tenzor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in2[1], in1[2]),
-                    )
-                    structurep.append([in1[0], in2[1], in1[2]])
-                elif in1[2] == in2[1]:
-                    Tenzor = Tenzor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in1[1], in2[2]),
-                    )
-                    structurep.append([in1[0], in1[1], in2[2]])
-                elif in1[2] == in2[2]:
-                    Tenzor = Tenzor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in1[1], in2[1]),
-                    )
-                    structurep.append([in1[0], in1[1], in2[1]])
-        if Tenzor.coeff(P(in1[0], in1[1], in1[2])) == 0:
-            P_structure.remove(in1)
-        else:
-            i += 1
-        P_structure = P_structure + structurep
-        # it add all newly created structures to the list
+    [Tenzor, P_structure] = transver_transver_operator(Tenzor, P_structure)
 
     print(f"step 4: {round(time.time() - t, 1)} sec")
 
