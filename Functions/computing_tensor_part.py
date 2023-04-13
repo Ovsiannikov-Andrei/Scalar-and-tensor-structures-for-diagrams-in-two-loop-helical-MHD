@@ -346,7 +346,6 @@ def transver_transver_operator(tensor, transver):
         
     return [tensor, transver]
 
-
 def kronecker_momenta(tensor, structure):
     """
     The function replace the kronecker symbol and momentum with a same index by momentum.
@@ -391,6 +390,31 @@ def kronecker_momenta(tensor, structure):
             break
     
     return [tensor, structure]
+
+def momenta_momenta_helical_operator( tensor, helical):
+    """
+    The function replace the product among helical term and two same momenta with by the 0.
+    For example: H( k, i, j) * hyb( q, i) * hyb( q, j) = 0
+    
+    ARGUMENTS:
+    
+    tensor    - Tenzor - projector, kronecker symbol and momenta
+    helical   - H_structure - all possible transverse structure in Tensor
+    """
+    
+    i = 0
+    while len(helical) > i:  # calculation for helical term
+        j = helical[i]
+        part = tensor.coeff(H( j[0], j[1], j[2]))
+        if j[0] == k and part.coeff( hyb( q, j[1]) * hyb( q, j[2])) != 0:      
+            tensor = tensor.subs( H( k, j[1], j[2]) * hyb( q, j[1]) * hyb( q, j[2]), 0)
+        if j[0] == q and part.coeff( hyb( k, j[1]) * hyb( k, j[2])) != 0:
+            tensor = tensor.subs( H( q, j[1], j[2]) * hyb( k, j[1]) * hyb( k, j[2]), 0)            
+           
+        i += 1
+        
+    return [tensor, helical]
+
 
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
@@ -473,62 +497,17 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
     Tenzor = expand(Tenzor)
     
     [Tenzor, H_structure] = momenta_helical_operator( Tenzor, H_structure)
+    [Tenzor, H_structure] = momenta_momenta_helical_operator( Tenzor, H_structure)
 
     print(f"step 6: {round(time.time() - t, 1)} sec")
 
     [Tenzor, kd_structure] = kronecker_momenta( Tenzor, kd_structure)
 
     print(f"step 7: {round(time.time() - t, 1)} sec")
-
-    i = 0
-    while len(H_structure) > i:  # calculation for helical term
-        in1 = H_structure[i]
-        clen = Tenzor.coeff(H(in1[0], in1[1], in1[2]))
-        if clen.coeff(hyb(in1[0], in1[1])) != 0:
-            # I throw out the part:  H (k,i,j) hyb(k,i) = 0
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[1]), 0)
-        if clen.coeff(hyb(in1[0], in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(in1[0], in1[2]), 0)
-        if in1[0] == k and clen.coeff(hyb(q, in1[1]) * hyb(q, in1[2])) != 0:
-            # I throw out the part:  H (k,i,j) hyb(q,i) hyb(q, j) = 0
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(q, in1[1]) * hyb(q, in1[2]), 0)
-        if in1[0] == q and clen.coeff(hyb(k, in1[1]) * hyb(k, in1[2])) != 0:
-            Tenzor = Tenzor.subs(H(in1[0], in1[1], in1[2]) * hyb(k, in1[1]) * hyb(k, in1[2]), 0)
-        for in2 in kd_structure:
-            # it puts together the Kronecker delta and the helical term: H(k,i,j)*kd(i,l) = H(k,l,j)
-            if clen.coeff(kd(in2[0], in2[1])) != 0:
-                if in1[1] == in2[0]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                        H(in1[0], in2[1], in1[2]),
-                    )
-                    if [in1[0], in2[1], in1[2]] is not H_structure:
-                        H_structure.append([in1[0], in2[1], in1[2]])
-                elif in1[1] == in2[1]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                        H(in1[0], in2[0], in1[2]),
-                    )
-                    if [in1[0], in2[1], in1[2]] is not H_structure:
-                        H_structure.append([in1[0], in2[0], in1[2]])
-                elif in1[2] == in2[0]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                        H(in1[0], in1[1], in2[1]),
-                    )
-                    if [in1[0], in2[1], in1[2]] is not H_structure:
-                        H_structure.append([in1[0], in1[1], in2[1]])
-                elif in1[2] == in2[1]:
-                    Tenzor = Tenzor.subs(
-                        H(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                        H(in1[0], in1[1], in2[0]),
-                    )
-                    if [in1[0], in2[1], in1[2]] is not H_structure:
-                        H_structure.append([in1[0], in1[1], in2[0]])
-        for in2 in kd_structure:
-            if Tenzor.coeff(kd(in2[0], in2[1])) == 0:
-                kd_structure.remove(in2)
-        i += 1
+    
+    [Tenzor, H_structure] = momenta_helical_operator( Tenzor, H_structure)
+    [Tenzor, H_structure] = momenta_momenta_helical_operator( Tenzor, H_structure)
+    [Tenzor, H_structure] = kronecker_helical_operator( Tenzor, H_structure, kd_structure)
 
     print(f"step 8: {round(time.time() - t, 1)} sec")
 
@@ -571,7 +550,10 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         while Tenzor.coeff(H(in1[0], in1[1], in1[2])) == 0:
             # if the H( , , ) structure is no longer in the Tenzor, I throw it away
             H_structure.remove(in1)
-            in1 = H_structure[i]
+            if len(H_structure) < i:
+                break
+            else:
+                in1 = H_structure[i]
         if in1[0] == k:
             # it create a list where momenta are stored in the positions and indexes pf momenta. - I have for internal momenta k or q
             kombinacia = in1 + [q, -1, p, -1, k, -1, q, -1]
