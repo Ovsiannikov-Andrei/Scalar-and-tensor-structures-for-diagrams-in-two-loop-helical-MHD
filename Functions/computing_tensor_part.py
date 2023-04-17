@@ -74,17 +74,27 @@ def get_tensor_structure_arguments_structure(expr):
     return list_for_term_multipliers
 
 
-def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
-    if ind_hod in zoznam:
-        return zoznam
-    elif ind_hod not in struktura:
+def external_index(tensor_structure, ext_index, index_list, position):
+    """
+    The function put the index of external field on the position in list, if the index of external field is in the index_list. On the other hand, the result is sn empty list.   
+    
+    ARGUMENTS: 
+    
+    tensor_structure - combination of index and momenta: [i, j, "q", l, "k", j, "p", -1, "k", -1, "q", -1]
+    ext_index  - indexb or indexB
+    index_list - list of index for momenta k or q
+    position   - position on which the index is change to the ex_index
+    """
+    if ext_index in tensor_structure:
+        return tensor_structure
+    elif ext_index not in index_list:
         return list()
-    elif zoznam[pozicia] != -1:
+    elif tensor_structure[position] != -1:
         return list()
-    elif len(zoznam) - 1 == pozicia:
-        return zoznam[:pozicia] + [ind_hod]
+    elif len(tensor_structure) - 1 == position:
+        return tensor_structure[:position] + [ext_index]
     else:
-        return zoznam[:pozicia] + [ind_hod] + zoznam[pozicia + 1 :]
+        return tensor_structure[:position] + [ext_index] + tensor_structure[ position+1:]    
 
     
 def kronecker_transver_operator(tensor, transver, kronecker):
@@ -518,7 +528,7 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         for y in kd_structure:
             if Tenzor.coeff( kd( y[0], y[1])) == 0:
                 kd_structure.remove(y)
-        if x == int(len(moznost)/3 - 1):  # Solve a problem: for example kd(indexb, indexB) -> len( kd_structure) > 1 I do not have a cycle
+        if x == int(len(moznost)/3 - 1):  # Solve a problem: for example kd(indexb, indexB) -> len( kd_structure) > 1, I do not have a cycle
             break
         else: 
             x += 1
@@ -586,9 +596,9 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         kombinacia_old = [kombinacia]
         # search whether the index B or b is in momenta not associated with the helicity term
         kombinacia_new = list()
-        kombinacia_new.append(dosad(kombinacia_old[0], indexB, k_structure, 8))
+        kombinacia_new.append(external_index(kombinacia_old[0], indexB, k_structure, 8))
         # it create and put the field index B in to the list on the position 8: hyb(k,indexB)
-        kombinacia = dosad(kombinacia_old[0], indexB, q_structure, 10)
+        kombinacia = external_index(kombinacia_old[0], indexB, q_structure, 10)
         # it create and put the field index B in to the list on the position 10: hyb(q,indexB)
         if kombinacia not in kombinacia_new:
             kombinacia_new.append(kombinacia)
@@ -596,8 +606,8 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         kombinacia_new = list()
         for in2 in kombinacia_old:
             # # it create and put the field index b in to the list with index
-            kombinacia_new.append(dosad(in2, indexb, k_structure, 8))
-            kombinacia = dosad(in2, indexb, q_structure, 10)
+            kombinacia_new.append(external_index(in2, indexb, k_structure, 8))
+            kombinacia = external_index(in2, indexb, q_structure, 10)
             if kombinacia not in kombinacia_new:
                 kombinacia_new.append(kombinacia)
             if list() in kombinacia_new:
