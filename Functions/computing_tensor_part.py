@@ -505,6 +505,10 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 7: {round(time.time() - t, 1)} sec")
     
+    Tenzor = Tenzor.subs(hyb(q, indexb) * hyb(q, indexB), 0)
+    # delete zero values in the Tenzor: H( ,i,j) hyb(p, i) hyb( ,j) hyb(k, indexB) hyb(k, indexb) = 0
+    Tenzor = Tenzor.subs(hyb(k, indexb) * hyb(k, indexB), 0)        
+    
     [Tenzor, H_structure] = momenta_helical_operator( Tenzor, H_structure)
     [Tenzor, H_structure] = momenta_momenta_helical_operator( Tenzor, H_structure)
     
@@ -540,15 +544,12 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
             Tenzor = Tenzor.subs(hyb(p, in1) * hyb(k, in1) * hyb(k, indexB), 0)
             Tenzor = Tenzor.subs(hyb(p, in1) * hyb(q, in1) * hyb(q, indexb), 0)
             Tenzor = Tenzor.subs(hyb(p, in1) * hyb(k, in1) * hyb(k, indexb), 0)
-            p_structure += [in1]
+            p_structure += [in1]  # list correspond to the index of momentum 
         if Tenzor.coeff(hyb(q, in1)) != 0:
             q_structure += [in1]
         if Tenzor.coeff(hyb(k, in1)) != 0:
             k_structure += [in1]
 
-    Tenzor = Tenzor.subs(hyb(q, indexb) * hyb(q, indexB), 0)
-    # delete zero values in the Tenzor: H( ,i,j) hyb(p, i) hyb( ,j) hyb(k, indexB) hyb(k, indexb) = 0
-    Tenzor = Tenzor.subs(hyb(k, indexb) * hyb(k, indexB), 0)
 
     print(f"step 9: {round(time.time() - t, 1)} sec")
 
