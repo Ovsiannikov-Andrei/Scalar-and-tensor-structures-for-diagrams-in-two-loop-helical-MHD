@@ -507,7 +507,21 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
     
     [Tenzor, H_structure] = momenta_helical_operator( Tenzor, H_structure)
     [Tenzor, H_structure] = momenta_momenta_helical_operator( Tenzor, H_structure)
-    [Tenzor, H_structure] = kronecker_helical_operator( Tenzor, H_structure, kd_structure)
+    
+    x = 0
+    while len(kd_structure) > 0:
+        [Tenzor, H_structure] = kronecker_helical_operator( Tenzor, H_structure, kd_structure)
+        for y in kd_structure:
+            if Tenzor.coeff( kd( y[0], y[1])) == 0:
+                kd_structure.remove(y)
+                print(y)
+        if x == int(len(moznost)/3 - 1):  # Solve a problem: for example kd(indexb, indexB) -> len( kd_structure) > 1 I do not have a cycle
+            break
+        else: 
+            x += 1
+    
+    [Tenzor, H_structure] = momenta_helical_operator( Tenzor, H_structure)
+    [Tenzor, H_structure] = momenta_momenta_helical_operator( Tenzor, H_structure)
 
     print(f"step 8: {round(time.time() - t, 1)} sec")
 
