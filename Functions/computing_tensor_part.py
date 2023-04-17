@@ -203,7 +203,7 @@ def momenta_transver_operator(tensor, transver):
             tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( j[0], j[1]), 0)
         elif tensor.coeff(hyb( - j[0], j[1])) != 0:
             tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( - j[0], j[1]), 0)
-        elif tensor.coeff(hyb( j[0], j[2])) != 0:
+        if tensor.coeff(hyb( j[0], j[2])) != 0:
             tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( j[0], j[2]), 0)
         elif tensor.coeff(hyb( - j[0], j[2])) != 0:
             tensor = tensor.subs(P( j[0], j[1], j[2]) * hyb( - j[0], j[2]), 0)
@@ -237,7 +237,7 @@ def momenta_helical_operator(tensor, helical):
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( j[0], j[1]), 0)
         elif tensor.coeff( hyb( - j[0], j[1])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( - j[0], j[1]), 0)
-        elif tensor.coeff( hyb( j[0], j[2])) != 0:
+        if tensor.coeff( hyb( j[0], j[2])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( j[0], j[2]), 0)
         elif tensor.coeff( hyb( - j[0], j[2])) != 0:
             tensor = tensor.subs(H( j[0], j[1], j[2]) * hyb( - j[0], j[2]), 0)
