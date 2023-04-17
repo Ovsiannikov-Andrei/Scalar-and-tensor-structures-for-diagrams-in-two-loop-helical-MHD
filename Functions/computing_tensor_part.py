@@ -514,7 +514,6 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
         for y in kd_structure:
             if Tenzor.coeff( kd( y[0], y[1])) == 0:
                 kd_structure.remove(y)
-                print(y)
         if x == int(len(moznost)/3 - 1):  # Solve a problem: for example kd(indexb, indexB) -> len( kd_structure) > 1 I do not have a cycle
             break
         else: 
