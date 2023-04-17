@@ -426,6 +426,51 @@ def momenta_momenta_helical_operator( tensor, helical):
     return [tensor, helical]
 
 
+def identification_index_structure( helical, indexb, indexB, k_indices, q_indices):
+    """
+    The function looking for the index structure in the helical part with four internal momenta. The result is the list with momenta and indices
+    For Example: H(k, i_b, j) hyb(q, j) hyb(k, indexB) hyb(q, i) hyb(p, i) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_p]
+    H(q, i_p, j) hyb(k, j) hyb(k, indexB) hyb(q, i_b) hyb(p, i) -> [i_p, j, "q", l, "k", j, "p", i_p, "k", i_B, "q", i_b]
+      
+    ARGUMENTS:
+    helical   - is helical term H(k, i, j) = epsilon(i,j,l) k_l /k
+    indexb    - index correspond to the external field b
+    indexB    - index correspond to the external field b'
+    k_indices - k_structure - list of possible indices for momentum k
+    q_indices - q_structure - list of possible indices for momentum q
+    """
+       
+    if helical[0] == k:
+        structure = [helical[1], helical[2], s, k, s, q, -1, p, -1, k, -1, q, -1]
+    else:
+        structure = [helical[1], helical[2], s, q, s, k, -1, p, -1, k, -1, q, -1]
+
+    if indexB == structure[0]:
+        structure[6] = structure[1]
+    elif indexB == structure[1]:
+        structure[6] = structure[0]
+    elif indexb == structure[0]:
+        structure[6] = structure[1]
+    elif indexb == structure[1]:
+        structure[6] = structure[0]
+        
+    structure_old = [external_index( structure, indexB, k_indices, 10)]
+    structure_new = [external_index( structure, indexB, q_indices, 12)]
+    if structure_new not in structure_old:
+        structure_old += structure_new
+    
+    structure_new = list()
+    for i in structure_old:
+        structure_new.append(external_index( i, indexb, k_indices, 10))
+        structure = external_index( i, indexb, q_indices, 12)
+        if structure not in structure_new:
+            structure_new.append(structure)
+        if list() in structure_new:
+            structure_new.remove(list())
+                
+    return structure_new
+
+
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
     """
