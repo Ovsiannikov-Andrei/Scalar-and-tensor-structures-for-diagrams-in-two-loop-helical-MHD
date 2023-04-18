@@ -440,9 +440,9 @@ def four_indices_external_fields( helical, indexb, indexB, k_indices, q_indices)
     """
        
     if helical[0] == k:
-        structure = [helical[1], helical[2], s, k, s, q, -1, p, -1, k, -1, q, -1]
+        structure = [helical[1], helical[2], s, k, s, q, -1, p, -2, k, -1, q, -1]
     else:
-        structure = [helical[1], helical[2], s, q, s, k, -1, p, -1, k, -1, q, -1]
+        structure = [helical[1], helical[2], s, q, s, k, -1, p, -2, k, -1, q, -1]
 
     if indexB == structure[0]:
         structure[6] = structure[1]
