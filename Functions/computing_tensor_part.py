@@ -425,12 +425,11 @@ def momenta_momenta_helical_operator( tensor, helical):
         
     return [tensor, helical]
 
-
-def identification_index_structure( helical, indexb, indexB, k_indices, q_indices):
+def four_indices_external_fields( helical, indexb, indexB, k_indices, q_indices):
     """
     The function looking for the index structure in the helical part with four internal momenta. The result is the list with momenta and indices
-    For Example: H(k, i_b, j) hyb(q, j) hyb(k, indexB) hyb(q, i) hyb(p, i) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_p]
-    H(q, i_p, j) hyb(k, j) hyb(k, indexB) hyb(q, i_b) hyb(p, i) -> [i_p, j, "q", l, "k", j, "p", i_p, "k", i_B, "q", i_b]
+    For Example: H(k, i_b, j) hyb(q, j) hyb(k, indexB) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_]
+    H(q, i_b, j) hyb(k, j) hyb(k, indexB) ... -> [i_b, j, l, "q", l, "k", j, "p", -2, "k", i_B, "q", -1]
       
     ARGUMENTS:
     helical   - is helical term H(k, i, j) = epsilon(i,j,l) k_l /k
@@ -455,7 +454,7 @@ def identification_index_structure( helical, indexb, indexB, k_indices, q_indice
         structure[6] = structure[0]
     
     if structure[3] == q:
-        structure = structure[0:2] + structure[5:6] + structure[3:4] + structure[7:12]
+        structure = structure[0:3] + structure[5:7] + structure[3:5] + structure[7:13]
         
     structure_old = [external_index( structure, indexB, k_indices, 10)]
     structure_new = [external_index( structure, indexB, q_indices, 12)]
@@ -473,6 +472,52 @@ def identification_index_structure( helical, indexb, indexB, k_indices, q_indice
                 
     return structure_new
 
+def four_indices_external_momentum( structure, p_indices, k_indices, q_indices):
+    """
+    The function give the specified indecies structure for index of external momentum among four momenta and helical term in a tensor structure.
+    For Example: H(k, i_b, j) hyb(q, j) hyb(k, indexB)  hyb(p, i) hyb(q, i) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_p]
+    
+    ARGUMENTS:
+    structure   - the structure what it is needed to be replace with
+    p_indices - list all indices for external momentum 
+    k_indices - list all indices for k momentum 
+    q_indices - list all indices for q momentum 
+    """
+    
+    i = structure.index(-1)
+    result = list()
+    if i == 4:
+        if p_indices.count(structure[0]) == 1 and k_indices.count(structure[1]) == 1:
+            structure[8] = structure[0]
+            structure[4] = structure[1]
+            result.append(structure)
+        if p_indices.count(structure[1]) == 1 and k_indices.count(structure[0]) == 1:
+            structure[8] = structure[1]
+            structure[4] = structure[0]
+            result.append(structure)    
+    elif i == 6:
+        if p_indices.count(structure[0]) == 1 and q_indices.count(structure[1]) == 1:
+            structure[8] = structure[0]
+            structure[6] = structure[1]
+            result.append(structure)
+        if p_indices.count(structure[1]) == 1 and q_indices.count(structure[0]) == 1:
+            structure[8] = structure[1]
+            structure[6] = structure[0]
+            result.append(structure)  
+    elif i == 10:
+        indices = list(set(p_indices).intersection(k_indices))
+        for j in indices:
+            structure[8] = j
+            structure[10] = j
+            result.append(structure)
+    elif i == 12:
+        indices = list(set(p_indices).intersection(q_indices))
+        for j in indices:
+            structure[8] = j
+            structure[12] = j
+            result.append(structure)
+               
+    return result
 
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
