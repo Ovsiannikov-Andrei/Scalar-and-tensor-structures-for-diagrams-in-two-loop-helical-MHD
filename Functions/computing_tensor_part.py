@@ -453,6 +453,9 @@ def identification_index_structure( helical, indexb, indexB, k_indices, q_indice
         structure[6] = structure[1]
     elif indexb == structure[1]:
         structure[6] = structure[0]
+    
+    if structure[3] == q:
+        structure = structure[0:2] + structure[5:6] + structure[3:4] + structure[7:12]
         
     structure_old = [external_index( structure, indexB, k_indices, 10)]
     structure_new = [external_index( structure, indexB, q_indices, 12)]
