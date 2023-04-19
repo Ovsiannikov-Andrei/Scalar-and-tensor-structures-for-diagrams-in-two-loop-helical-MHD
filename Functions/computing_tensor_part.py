@@ -487,36 +487,24 @@ def four_indices_external_momentum( structure, p_indices, k_indices, q_indices):
     i = structure.index(-1)
     result = list()
     if i == 4:
-        if p_indices.count(structure[0]) == 1 and k_indices.count(structure[1]) == 1:
-            structure[8] = structure[0]
-            structure[4] = structure[1]
-            result.append(structure)
-        if p_indices.count(structure[1]) == 1 and k_indices.count(structure[0]) == 1:
-            structure[8] = structure[1]
-            structure[4] = structure[0]
-            result.append(structure)    
+        if (structure[0] in p_indices) and (structure[1] in k_indices):
+            result += [structure[0:4] + [structure[1]] + structure[5:8] + [structure[0]] + structure[9:13]]
+        if (structure[1] in p_indices) and (structure[0] in k_indices):
+            result += [structure[0:4] + [structure[0]] + structure[5:8] + [structure[1]] + structure[9:13]]        
     elif i == 6:
         if p_indices.count(structure[0]) == 1 and q_indices.count(structure[1]) == 1:
-            structure[8] = structure[0]
-            structure[6] = structure[1]
-            result.append(structure)
+            result += [structure[0:6] + [structure[1]] + structure[7:8] + [structure[0]] + structure[9:13]]
         if p_indices.count(structure[1]) == 1 and q_indices.count(structure[0]) == 1:
-            structure[8] = structure[1]
-            structure[6] = structure[0]
-            result.append(structure)  
+            result += [structure[0:6] + [structure[0]] + structure[7:8] + [structure[1]] + structure[9:13]]        
     elif i == 10:
         indices = list(set(p_indices).intersection(k_indices))
         for j in indices:
-            structure[8] = j
-            structure[10] = j
-            result.append(structure)
+            result += [structure[0:8] + [j] + structure[9:10] + [j] + structure[11:13]]        
     elif i == 12:
         indices = list(set(p_indices).intersection(q_indices))
         for j in indices:
-            structure[8] = j
-            structure[12] = j
-            result.append(structure)
-               
+            result += [structure[0:8] + [j] + structure[9:12] + [j]]
+    
     return result
 
     
