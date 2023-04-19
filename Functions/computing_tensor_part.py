@@ -644,134 +644,78 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 9: {round(time.time() - t, 1)} sec")
 
-    # calculation of H structure - For this particular case, one of the external indices (p_s, b_i or B_j) is paired with a helicity term.
-    # we will therefore use the information that, in addition to the helicity term H( , i,j), they can be multiplied by a maximum of three internal momenta.
-    # For examle: H(k, indexb, j) hyb(q, j) hyb(k, indexB) hyb(q, i) hyb(p, i) and thus in this step I will calculate all possible combinations for this structure.
-    # In this case, helical term H(k, i, j) = epsilon(i,j,s) k_s /k
-
-    i = 0
-    while i < len(H_structure):  # I go through all of them helical term H( , , )
-        in1 = H_structure[i]
-        while Tenzor.coeff(H(in1[0], in1[1], in1[2])) == 0:
-            # if the H( , , ) structure is no longer in the Tenzor, I throw it away
-            H_structure.remove(in1)
-            if len(H_structure) < i:
-                break
-            else:
-                in1 = H_structure[i]
-        if in1[0] == k:
-            # it create a list where momenta are stored in the positions and indexes pf momenta. - I have for internal momenta k or q
-            kombinacia = in1 + [q, -1, p, -1, k, -1, q, -1]
-            # [ k, indexH, indexH, q, -1, p, -1,  k, -1, q, -1 ]
-        else:
-            kombinacia = in1 + [k, -1, p, -1, k, -1, q, -1]
-        if indexB == in1[1]:
-            # it looks for whether the H helicity term contains an idex corresponding to the externa field b or B
-            kombinacia[4] = in1[2]
-        elif indexB == in1[2]:
-            kombinacia[4] = in1[1]
-        elif indexb == in1[1]:
-            kombinacia[4] = in1[2]
-        elif indexb == in1[2]:
-            kombinacia[4] = in1[1]
-        kombinacia_old = [kombinacia]
-        # search whether the index B or b is in momenta not associated with the helicity term
-        kombinacia_new = list()
-        kombinacia_new.append(external_index(kombinacia_old[0], indexB, k_structure, 8))
-        # it create and put the field index B in to the list on the position 8: hyb(k,indexB)
-        kombinacia = external_index(kombinacia_old[0], indexB, q_structure, 10)
-        # it create and put the field index B in to the list on the position 10: hyb(q,indexB)
-        if kombinacia not in kombinacia_new:
-            kombinacia_new.append(kombinacia)
-        kombinacia_old = kombinacia_new
-        kombinacia_new = list()
-        for in2 in kombinacia_old:
-            # # it create and put the field index b in to the list with index
-            kombinacia_new.append(external_index(in2, indexb, k_structure, 8))
-            kombinacia = external_index(in2, indexb, q_structure, 10)
-            if kombinacia not in kombinacia_new:
-                kombinacia_new.append(kombinacia)
-            if list() in kombinacia_new:
-                kombinacia_new.remove(list())
-        kombinacia_old = kombinacia_new
-        kombinacia_new = list()
-        # I know which indexes are free. I know where the fields B or b are located.
-        for in2 in kombinacia_old:
-            # I have free two indecies and I start summing in the tensor structure
-            if in2[4] == -1 and in2[0] == k:
-                # it calculate if there is H(k,...,...) and the indecies of the external fields are outside
-                if in2[1] in p_structure and in2[2] in q_structure:
-                    # H(k, i, j) hyb(q, j) hyb(p, i) hyb(k, indexb) hyb(q, indexB) = ... or  H(k, i, j) hyb(q, j) hyb(p, i) hyb(k, indexB) hyb(q, indexb)
+    y = 0
+    while y < len(H_structure):     
+        combination = four_indices_external_fields(H_structure[y], indexb, indexB, k_structure, q_structure)
+        combination_new = list()
+        for x in combination:
+             combination_new += four_indices_external_momentum(x, p_structure, k_structure, q_structure)
+        for x in combination_new:
+            if x[8] == x[12]: 
+                if x[1] == x[6]:
                     Tenzor = Tenzor.subs(
-                        H(k, in2[1], in2[2]) * hyb(q, in2[2]) * hyb(p, in2[1]) * hyb(k, in2[8]) * hyb(q, in2[10]),
-                        hyb(p, s) * lcs(s, in2[10], in2[8]) * q**2 * k * (1 - z**2) / d / (d + 2),
+                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        - hyb(p, s) * lcs(s, x[0], x[10]) * q**2 * k * (1 - z**2) / d / (d + 2),
                     )
-                if in2[2] in p_structure and in2[1] in q_structure:
+                if x[1] == x[4]:
                     Tenzor = Tenzor.subs(
-                        H(k, in2[1], in2[2]) * hyb(q, in2[1]) * hyb(p, in2[2]) * hyb(k, in2[8]) * hyb(q, in2[10]),
-                        -hyb(p, s) * lcs(s, in2[10], in2[8]) * q**2 * k * (1 - z**2) / d / (d + 2),
+                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        hyb(p, s) * lcs(s, x[0], x[10]) * q * k**2 * (1 - z**2) / d / (d + 2),
                     )
-            if in2[4] == -1 and in2[0] == q:  #
-                if in2[1] in p_structure and in2[2] in k_structure:
+                if x[0] == x[6]:
                     Tenzor = Tenzor.subs(
-                        H(q, in2[1], in2[2]) * hyb(k, in2[2]) * hyb(p, in2[1]) * hyb(k, in2[8]) * hyb(q, in2[10]),
-                        -hyb(p, s) * lcs(s, in2[10], in2[8]) * q * k**2 * (1 - z**2) / d / (d + 2),
+                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        hyb(p, s) * lcs(s, x[1], x[10]) * q**2 * k * (1 - z**2) / d / (d + 2),
                     )
-                if in2[2] in p_structure and in2[1] in k_structure:
+                if x[0] == x[4]:
                     Tenzor = Tenzor.subs(
-                        H(q, in2[1], in2[2]) * hyb(k, in2[1]) * hyb(p, in2[2]) * hyb(k, in2[8]) * hyb(q, in2[10]),
-                        hyb(p, s) * lcs(s, in2[10], in2[8]) * q * k**2 * (1 - z**2) / d / (d + 2),
+                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        - hyb(p, s) * lcs(s, x[1], x[10]) * q * k**2 * (1 - z**2) / d / (d + 2),
                     )
-            if in2[8] == -1 and in2[0] == k:
-                # H(k, indexb, j) hyb(q, j) hyb(p, i) hyb(k, i) hyb(q, indexB) = ... or  H(k, indexB, j) hyb(q, j) hyb(p, i) hyb(k, i) hyb(q, indexb)
-                for in3 in p_structure:
-                    if in2[1] == indexb or in2[1] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(k, in2[1], in2[2]) * hyb(q, in2[2]) * hyb(p, in3) * hyb(k, in3) * hyb(q, in2[10]),
-                            -hyb(p, s) * lcs(s, in2[10], in2[1]) * q**2 * k * (1 - z**2) / d / (d + 2),
-                        )
-                    if in2[2] == indexb or in2[2] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(k, in2[1], in2[2]) * hyb(q, in2[1]) * hyb(p, in3) * hyb(k, in3) * hyb(q, in2[10]),
-                            hyb(p, s) * lcs(s, in2[10], in2[2]) * q**2 * k * (1 - z**2) / d / (d + 2),
-                        )
-            if in2[8] == -1 and in2[0] == q:
-                for in3 in p_structure:
-                    if in2[1] == indexb or in2[1] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(q, in2[1], in2[2]) * hyb(k, in2[2]) * hyb(p, in3) * hyb(k, in3) * hyb(q, in2[10]),
-                            hyb(p, s) * lcs(s, in2[10], in2[1]) * q * k**2 * (1 - z**2) / d / (d + 2),
-                        )
-                    if in2[2] == indexb or in2[2] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(q, in2[1], in2[2]) * hyb(k, in2[1]) * hyb(p, in3) * hyb(k, in3) * hyb(q, in2[10]),
-                            -hyb(p, s) * lcs(s, in2[10], in2[2]) * q * k**2 * (1 - z**2) / d / (d + 2),
-                        )
-            if in2[10] == -1 and in2[0] == k:
-                for in3 in p_structure:
-                    if in2[1] == indexb or in2[1] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(k, in2[1], in2[2]) * hyb(q, in2[2]) * hyb(p, in3) * hyb(k, in2[8]) * hyb(q, in3),
-                            -hyb(p, s) * lcs(s, in2[1], in2[8]) * q**2 * k * (1 - z**2) / d / (d + 2),
-                        )
-                    if in2[2] == indexb or in2[2] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(k, in2[1], in2[2]) * hyb(q, in2[1]) * hyb(p, in3) * hyb(k, in2[8]) * hyb(q, in3),
-                            hyb(p, s) * lcs(s, in2[2], in2[8]) * q**2 * k * (1 - z**2) / d / (d + 2),
-                        )
-            if in2[10] == -1 and in2[0] == q:
-                for in3 in p_structure:
-                    if in2[1] == indexb or in2[1] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(q, in2[1], in2[2]) * hyb(k, in2[2]) * hyb(k, in2[8]) * hyb(p, in3) * hyb(q, in3),
-                            hyb(p, s) * lcs(s, in2[1], in2[8]) * q * k**2 * (1 - z**2) / d / (d + 2),
-                        )
-                    if in2[2] == indexb or in2[2] == indexB:
-                        Tenzor = Tenzor.subs(
-                            H(q, in2[1], in2[2]) * hyb(k, in2[1]) * hyb(k, in2[8]) * hyb(p, in3) * hyb(q, in3),
-                            -hyb(p, s) * lcs(s, in2[2], in2[8]) * q * k**2 * (1 - z**2) / d / (d + 2),
-                        )
-        i += 1
+            if x[8] == x[10]:
+                if x[1] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        hyb(p, s) * lcs(s, x[0], x[12]) * q**2 * k * (1 - z**2) / d / (d + 2),
+                    )
+                if x[1] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        - hyb(p, s) * lcs(s, x[0], x[12]) * q * k**2 * (1 - z**2) / d / (d + 2),
+                    )
+                if x[0] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        - hyb(p, s) * lcs(s, x[1], x[12]) * q**2 * k * (1 - z**2) / d / (d + 2),
+                    )
+                if x[0] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        hyb(p, s) * lcs(s, x[1], x[12]) * q * k**2 * (1 - z**2) / d / (d + 2),
+                    )
+            if x[8] == x[0]:
+                if x[1] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        - hyb(p, s) * lcs(s, x[10], x[12]) * q**2 * k * (1 - z**2) / d / (d + 2),
+                    )
+                if x[1] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        hyb(p, s) * lcs(s, x[10], x[12]) * q * k**2 * (1 - z**2) / d / (d + 2),
+                    )
+            if x[8] == x[1]:
+                if x[0] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        hyb(p, s) * lcs(s, x[10], x[12]) * q**2 * k * (1 - z**2) / d / (d + 2),
+                    )
+                if x[0] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
+                        - hyb(p, s) * lcs(s, x[10], x[12]) * q * k**2 * (1 - z**2) / d / (d + 2),
+                    )
+        y += 1
 
     print(f"step 10: {round(time.time() - t, 1)} sec")
 
