@@ -507,6 +507,38 @@ def four_indices_external_momentum( structure, p_indices, k_indices, q_indices):
     
     return result
 
+
+def scalar_result( momenta, part):
+    """
+    The function replace the momenta the equivalent form proportional Lambda or B magnetic field.
+    
+    ARGUMENTS:
+    
+    momenta  - the structure of momenta
+    part     - lambda or B field 
+    """
+    
+    if momenta == k**2 * q**2:
+        if part == "lambda":
+            return q**2 * k**2 * (1 - z**2) / d / (d + 2)
+        if part == "Bfield":
+            return  ((2*(B*k*z_k)*(B*q*z_q)*(k*q*z) - (B*q*z_q)**2 * k**2  - (B*k*z_k)**2 * q**2 + B**2*(k**2 * q**2 - (k*q*z)**2))/(B**2*(d-2)*(d-1)))
+    if momenta == k**2:
+        if part == "lambda":
+            return k**2 / d 
+        if part == "Bfield":
+            return ( k**2 - (B*k*z_k)**2 / B**2 )/(d - 1)
+    if momenta == q**2:
+        if part == "lambda":
+            return q**2 / d 
+        if part == "Bfield":
+            return ( q**2 - (B*q*z_q)**2 / B**2 )/(d - 1)
+    if momenta == k*q:
+        if part == "lambda":
+            return k * q * z / d 
+        if part == "Bfield":
+            return ( k * q * z - (B*k*z_k) * (B*q*z_q) / B**2 )/(d - 1)
+
     
 def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
     """
