@@ -753,84 +753,103 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 10: {round(time.time() - t, 1)} sec")
 
-    for in1 in H_structure:
-        # calculate the structure where there are two external momentums: H(momentum, i, indexB)* p(i) hyb( , indexb) and other combinations except H(momentum, indexB, indexb) hyb(p, i) hyb(k, i)
-        if Tenzor.coeff(H(in1[0], in1[1], in1[2])) != 0:
-            if in1[1] in p_structure and in1[2] == indexb:
-                if in1[0] == k:
+    for x in H_structure:
+        if Tenzor.coeff(H( x[0], x[1], x[2])) != 0:
+            if x[1] in p_structure and x[2] == indexb:
+                if x[0] == k:
                     Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(k, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * k / d,
+                        H(k, x[1], indexb) * hyb(p, x[1]) * hyb(k, indexB),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k**2, "Bfield") / k,
                     )
                     Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(q, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * q * z / d,
+                        H(k, x[1], indexb) * hyb(p, x[1]) * hyb(q, indexB),
+                        hyb(p, s) * lcs(s, indexb, indexB)  * scalar_result( k*q, "Bfield") / k,
+                    )
+                if x[0] == q:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexb) * hyb(p, x[1]) * hyb(q, indexB),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( q**2, "Bfield") / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexb) * hyb(p, x[1]) * hyb(k, indexB),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / q,
+                    )
+            if x[2] in p_structure and x[1] == indexb:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, indexb, x[2]) * hyb(p, x[2]) * hyb(k, indexB),
+                        - hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k**2, "Bfield") / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, indexb, x[2]) * hyb(p, x[2]) * hyb(q, indexB),
+                        - hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / k,
+                    )
+                if x[0] == q:
+                    Tenzor = Tenzor.subs(
+                        H(q, indexb, x[2]) * hyb(p, x[2]) * hyb(q, indexB),
+                        - hyb(p, s) * lcs(s, indexb, indexB)  * scalar_result( q**2, "Bfield") / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, indexb, x[2]) * hyb(p, x[2]) * hyb(k, indexB),
+                        - hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / q,
+                    )
+            if x[1] in p_structure and x[2] == indexB:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], indexB) * hyb(p, x[1]) * hyb(k, indexb),
+                        - hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k**2, "Bfield") / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], indexB) * hyb(p, x[1]) * hyb(q, indexb),
+                        - hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / k,
+                    )
+                if x[0] == q: 
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexB) * hyb(p, x[1]) * hyb(q, indexb),
+                        - hyb(p, s) * lcs(s, indexb, indexB)  * scalar_result( q**2, "Bfield") / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexB) * hyb(p, x[1]) * hyb(k, indexb),
+                        - hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / q,
+                    )
+            if x[2] in p_structure and x[1] == indexB:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, indexB, x[2]) * hyb(p, x[2]) * hyb(k, indexb),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k**2, "Bfield") / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, indexB, x[2]) * hyb(p, x[2]) * hyb(q, indexb),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / k,
                     )
                 else:
                     Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(q, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * q / d,
+                        H(q, indexB, x[2]) * hyb(p, x[2]) * hyb(q, indexb),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( q**2, "Bfield") / q,
                     )
                     Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(k, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * k * z / d,
+                        H(q, indexB, x[2]) * hyb(p, x[2]) * hyb(k, indexb),
+                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result( k*q, "Bfield") / q,
                     )
-            if in1[2] in p_structure and in1[1] == indexb:
-                if in1[0] == k:
+        if Tenzor.coeff(H( x[0], x[1], x[2])) != 0:
+            for y in p_structure:
+                if x[0] == k:
                     Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(k, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * k / d,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(q, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * q * z / d,
-                    )
-                else:
-                    Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(q, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * q / d,
+                        H(k, x[1], x[2]) * hyb(p, y) * hyb(k, y),
+                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result( k**2, "Bfield") / k,
                     )
                     Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(k, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * k * z / d,
+                        H(k, x[1], x[2]) * hyb(p, y) * hyb(q, y),
+                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result( k*q, "Bfield") / k,
                     )
-            if in1[1] in p_structure and in1[2] == indexB:
-                if in1[0] == k:
+                if x[0] == q:
                     Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(k, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * k / d,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(q, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * q * z / d,
-                    )
-                else:
-                    Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(q, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * q / d,
+                        H(q, x[1], x[2]) * hyb(p, y) * hyb(q, y),
+                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result( q**2, "Bfield") / q,
                     )
                     Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[1]) * hyb(k, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * k * z / d,
-                    )
-            if in1[2] in p_structure and in1[1] == indexB:
-                if in1[0] == k:
-                    Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(k, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * k / d,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(q, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * q * z / d,
-                    )
-                else:
-                    Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(q, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * q / d,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(q, in1[1], in1[2]) * hyb(p, in1[2]) * hyb(k, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * k * z / d,
+                        H(q, x[1], x[2]) * hyb(p, y) * hyb(k, y),
+                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result( k*q, "Bfield") / q,
                     )
 
     # lcs( i, j, l) - Levi-Civita symbol
