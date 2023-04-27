@@ -461,6 +461,9 @@ def four_indices_external_fields( helical, indexb, indexB, k_indices, q_indices)
     if structure_new not in structure_old:
         structure_old += structure_new
     
+    if list() in structure_old:   
+        structure_old.remove(list())
+    
     structure_new = list()
     for i in structure_old:
         structure_new.append(external_index( i, indexb, k_indices, 10))
