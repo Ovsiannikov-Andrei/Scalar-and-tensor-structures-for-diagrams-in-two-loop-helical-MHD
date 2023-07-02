@@ -83,17 +83,20 @@ More information about the model can be found in [[1, 2]](#references). Used not
 ### **Microscopic Foundation of the Model**
 **Stochastic MHD.** 
 MHD problem is governed by two coupled equations 
+
 $$
 \begin{align*}
 &\boldsymbol{\nabla}_t \boldsymbol{v} = \nu_0 \Delta \boldsymbol{v}  + (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{b} - \boldsymbol{\nabla} P + \boldsymbol{F}, \\ 
 &\boldsymbol{\nabla}_t \boldsymbol{b} = \nu_0 u_0 \Delta \boldsymbol{b} +  (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{v} 
 \end{align*}
 $$
+
 with Lagrangian derivative $\boldsymbol{\nabla}_t \equiv \partial_t + (\boldsymbol{v} \cdot \boldsymbol{\nabla})$, where $\boldsymbol{\nabla}$ is the gradient, and $\nu_0$ is the molecular kinematic viscosity, $u_0$ is the dimensionless constant - reciprocal Prandtl number ($\nu_0 u_0 = c^2/4 \pi \sigma_0$, where $c$ is the light speed and $\sigma_0$ is the constant turbulent medium conductivity). 
 Vector function $\boldsymbol{b} (\boldsymbol{x}, t) \equiv \boldsymbol{B_0}(\boldsymbol{x}, t)/(4\pi \rho_0)^{1/2}$ denote a magnetic field $\boldsymbol{B_0}(\boldsymbol{x}, t)$ advected by turbulent flow, $\rho_0$ is a constant density of the turbulent medium, $\boldsymbol{v} (\boldsymbol{x}, t)$ is a velocity field, and $\boldsymbol{F} (\boldsymbol{x}, t)$ is an external random force per unit density.
 The scalar function $P\equiv P (\boldsymbol{x}, t)$ represents pressure field per unit density and is not relevant in the following analysis.
 
 Vector fields $\boldsymbol{v}, \boldsymbol{b}, \boldsymbol{F}$ satisfy the transversality conditions
+
 $$
 \begin{equation*}
 \boldsymbol{\nabla} \cdot \boldsymbol{b} = \boldsymbol{\nabla} \cdot \boldsymbol{v} = \boldsymbol{\nabla} \cdot \boldsymbol{F} = 0.
@@ -102,42 +105,50 @@ $$
 
 **Correlator of the random force.** 
 We consider the model of homogeneous and isotropic three-dimensional turbulence with the $\delta$-shaped pumping modeling energy injection to the system by infinitely large eddies. In this way, $\boldsymbol{F}$ is a zero-mean Gaussian random function whose correlator is given by 
+
 $$
 \begin{equation*}
 \mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle = \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2\pi)^{3}} d_F(k) R_{i j}(\boldsymbol{k}) e^{i\boldsymbol{k}(\boldsymbol{x} - \boldsymbol{x'})},
 \end{equation*}
 $$
+
 where $d_F(k) = g_0 {\nu}_0^3 k^{1 - 2 \varepsilon}$ is the so-called pump function of $k = |\boldsymbol{k}|$. Here $g_0$ is a coupling constant connected to the typical UV momentum scale $\Lambda$ through $g_0 \simeq \Lambda^{2 \varepsilon}$, $0 \leqslant \varepsilon \leqslant 2$ is the model parameter characterizing the type of pumping. In the limit  $\varepsilon \rightarrow 2$ function $d_F(k)$ can be understood as a power-law equivalent of $\delta$-shaped pumping. The tensor quantity $R_{i j}(\boldsymbol{k})$ is defined below.
 
 **Helical turbulence.**
 From a symmetry point of view, helical turbulence can be understood as turbulence in a system (gyrotropic liquid) that is invariant under translations and rotations, but not under plane reflections. 
 This implies the non-vanishing of the helicity $\langle \boldsymbol{v} \cdot\text{curl }\boldsymbol{v} \rangle$, i.e. exist a correlation between the velocity $\boldsymbol{v}$ and the vorticity $\text{curl }\boldsymbol{v}$. Technically, the rejection of spatial parity conservation means that the correlator $\mathrm{D}_{i j}^v$ is a mixture of a tensor and a pseudotensor, i.e. $R_{i j}(\boldsymbol{k})$ is equal to the sum of the transverse projection operator $P_{i j} (\boldsymbol{k}) \equiv \delta_{i j} - k_i k_j/k^2$ and a so-called Helical term  $H_{i j} (\boldsymbol{k}) \equiv i \epsilon_{i j l} k_l/k$
+
 $$
 \begin{equation*} 
 R_{i j} (\boldsymbol{k}) = P_{i j} (\boldsymbol{k}) + \rho H_{i j} (\boldsymbol{k}) = \delta_{i j} - \frac{k_i k_j}{k^2} + i \rho \epsilon_{i j l} \frac{k_l}{k},
 \end{equation*} 
 $$ 
+
 where $\epsilon_{ijl}$ is a fundamental antisymmetric tensor, and helicity parameter $\rho$ shows the amount of reflection symmetry breaking ($|\rho| \leqslant 1$).
 
 ### **Field Theory Formulation**
 The stabilized (see below) stochastic helical MHD problem is equivalent to a multiplicatively
 renormalizable field-theoretic model with the set of fields $\Phi = \{ \boldsymbol{v}, \boldsymbol{b}, \boldsymbol{v'}, \boldsymbol{b'} \}$ [[1]](#references). Its field action is the corresponding Dominicis–Janssen MHD action functional has form
+
 $$
 \begin{equation*}
 \mathcal{S} = \frac{1}{2}  \boldsymbol{v'} \mathrm{D}^v \boldsymbol{v'} + \boldsymbol{v'} \left(-\nabla_t \boldsymbol{v} + {\nu}_0 \boldsymbol{\nabla}^2 \boldsymbol{v} + (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{b} + ({\bf B} \cdot \boldsymbol{\nabla}) \boldsymbol{b}\right) + \boldsymbol{b'}\left(-\nabla_t \boldsymbol{b} + u_0 {\nu}_0 \boldsymbol{\nabla}^2 \boldsymbol{b} +  (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{v} + ({\bf B} \cdot \boldsymbol{\nabla}) \boldsymbol{v} \right).
 \end{equation*}
 $$
+
 Here fields with primes (transverse) denote the response fields. Parameter ${\bf B}$ is a spatially homogeneous magnetic field that stabilizes the system. See the next section for more information.
 
 ### **Instability Mechanism and Computed Objects**
 Generally speaking, the transition from stochastic magnetohydrodynamics to the field formalism results in the action $\mathcal{S}$ at ${\bf B} = 0$. Let's consider correlation functions $\langle v_i^{~} v'_j \rangle$ and $\langle b_i^{~} b'_j \rangle$ in this model (with ${\bf B = 0}$).
 They have the meaning of response functions characterizing the linear response of the system to an arbitrary perturbation by an external (nonrandom) force. Therefore, they must be retarded and ensure the damping of any perturbations in a stable system
+
 $$
 \begin{align*}
 &\langle v_i^{~} v'_j \rangle = \big[P_{ij}(-i \omega + {\nu}_0 p^2) - \Sigma_{ij}^{v'v}(\omega, p)\big]^{-1}, \\
 &\langle b_i^{~} b'_j \rangle = \big[P_{ij}(-i \omega + u_0{\nu}_0 p^2) - \Sigma_{ij}^{b'b}(\omega, p)\big]^{-1}, 
 \end{align*}
 $$
+
 where $\Sigma_{ij}^{v'v}$, $\Sigma_{ij}^{b'b}$ are self-energy corrections given by infinite diagram series.
  
 According to the analysis carried out in [[1]](#references) at the level of one-loop perturbation theory, in a gyrotropic media $\Sigma_{ij}^{b' b}$ has contribution $\sim i\epsilon_{i l k} p_k T_{lj}$ (so-called "rotor" term because, in the coordinate representation, this term correspond to the addition of $\text{rot} \boldsymbol{b}$ to the r.h.s. of the corresponding "magnetic" equation of motion) that lead to instability. 
@@ -145,6 +156,7 @@ This instability, in turn, leads to the appearance in the system of an anomalous
 The model under consideration differs from those typical for the theory of critical phenomena in that here the stationarity condition for the generating functional of 1-irreducible Green's functions (the 1-st Legendre transformation) $\delta_{\alpha}\text{Г}_{ij}^{b'b}(\alpha)\Big|_{\langle\boldsymbol{b'}\rangle = \langle\boldsymbol{v'}\rangle = 0} = 0$ does not fix the spatially homogeneous mean $\langle\boldsymbol{b}\rangle$ [1]. Therefore, to justify the appearance of the mean field ${\bf B} = \langle\boldsymbol{b}\rangle$ and the definition of ${\bf B}$ in our model, it was proposed to act differently, namely, straightforwardly: assuming the appearance of a mean field, let's see how it affects the "rotor" terms that cause instability. This results in an action $\mathcal{S}$. If it is possible to make them disappear by a suitable choice of ${\bf B}$, then this ${\bf B}$ will be the desired one.
 
 Two-loop calculations of the asymptotics $\Sigma_{ij}^{b' b}(0, \boldsymbol{p})|_{p\rightarrow 0} \sim i\epsilon_{i l k} p_k T_{lj}$ yields the following expression for $T_{lj}$
+
 $$
 T_{lj} = c_1 \delta_{lj} + c_2 B_l B_j = a\Lambda\delta_{lj} - b|{\bf B}|(\delta_{lj} + B_lB_j).
 $$
@@ -194,6 +206,7 @@ Further details of the Nickel index algorithm and its generalizations can be fou
 
 #### **Feynman Rules**
 In the frequency–momentum representation, free propagators of the model with the action $\mathcal{S}$ are
+
 $$
 \begin{align*}
 &{\langle v_i v_j \rangle}_0 = \frac{\beta(k, \omega)\beta^*(k, \omega)}{\xi(k, \omega)\xi^*(k, \omega)} \mathrm{D}^v(k) R_{ij}(\boldsymbol{k})& \qquad &{\langle b_i b_j \rangle}_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi(k, \omega)\xi^*(k, \omega)} \mathrm{D}^v(k) R_{ij}(\boldsymbol{k})& \\
@@ -203,6 +216,7 @@ $$
 $$
 
 Here, the following abbreviations have been introduced 
+
 $$
 \begin{equation*}
 \alpha(k, \omega) = -i \omega + {\nu}_0 k^2, \qquad \beta(k, \omega) =  -i \omega + {\nu}_0 u_0 k^2, \qquad \xi(k, \omega) = ({\bf B} \cdot \boldsymbol{k})^2 + \alpha(k, \omega)\beta(k, \omega).
@@ -225,6 +239,7 @@ The theory under consideration includes three interaction vertices
 * $\mathcal{S}_{v'bb}:~\boldsymbol{v'} (\boldsymbol{b}\cdot \boldsymbol{\nabla})\boldsymbol{b} = v'_ib_jU_{ijl}b_l/2$
 
 In the momentum–frequency representation, they are associated with the vertex factors
+
 $$
 \begin{equation*}
 U_{ijl}(\boldsymbol{k}) = -i(k_j \delta_{il} + k_l \delta_{ij}), \qquad W_{ijl}(\boldsymbol{k}) = i(k_j \delta_{il} + k_l \delta_{ij}), \qquad V_{ijl}(\boldsymbol{k}) = i(k_j \delta_{il} - k_l \delta_{ij}),
