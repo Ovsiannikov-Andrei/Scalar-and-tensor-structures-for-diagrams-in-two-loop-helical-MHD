@@ -2,6 +2,7 @@ import time
 
 from sympy import *
 
+from Functions.Data_classes import *
 from Functions.SymPy_classes import *
 
 
@@ -74,6 +75,63 @@ def get_tensor_structure_arguments_structure(expr):
     return list_for_term_multipliers
 
 
+def extract_B_and_nuo_depend_factor_from_tensor_part(tensor_convolution: Any):
+    """
+    The function divides the tensor structure into parts that depend on and
+    do not depend on the integration variables.
+
+    ARGUMENTS:
+
+    tensor_convolution is given by computing_tensor_structures()
+
+    OUTPUT DATA EXAMPLE:
+
+    too long
+    """
+
+    tensor_part_numerator = fraction(tensor_convolution)[0]
+    tensor_part_denominator = fraction(tensor_convolution)[1]
+
+    tensor_part_numerator_args = tensor_part_numerator.args
+
+    field_and_nuo_depend_factor_in_tonsor_part = 1
+    dimless_tensor_part_numerator = 1
+
+    for i in range(len(tensor_part_numerator_args)):
+        numerator_term = tensor_part_numerator_args[i]
+        if numerator_term.has(I) or numerator_term.has(rho) or numerator_term.has(hyb) or numerator_term.has(lcs):
+            field_and_nuo_depend_factor_in_tonsor_part *= numerator_term
+        else:
+            dimless_tensor_part_numerator *= numerator_term
+
+    scale_parameter = B / nuo
+
+    dimless_tensor_part_numerator_after_subs = dimless_tensor_part_numerator.subs(k, k * scale_parameter).subs(
+        q, q * scale_parameter
+    )
+    tensor_part_denominator_after_subs = tensor_part_denominator.subs(k, k * scale_parameter).subs(
+        q, q * scale_parameter
+    )
+
+    # by construction, the numerator and denominator of the tensor structure
+    # are homogeneous polynomials in momentums
+    if (
+        Poly(dimless_tensor_part_numerator_after_subs, k, q).is_homogeneous
+        and Poly(dimless_tensor_part_numerator_after_subs, k, q).is_homogeneous
+    ):
+        numerator_order = Poly(dimless_tensor_part_numerator_after_subs, k, q).homogeneous_order()
+        denomenator_order = Poly(tensor_part_denominator_after_subs, k, q).homogeneous_order()
+        field_and_nuo_depend_factor_in_tonsor_part *= scale_parameter ** (numerator_order - denomenator_order)
+    else:
+        sys.exit("An unexpected view of the tensor structure")
+
+    tensor_structure_separated_into_two_parts = IntegrandPrefactorAfterSubstitution(
+        dimless_tensor_part_numerator / tensor_part_denominator, field_and_nuo_depend_factor_in_tonsor_part
+    )
+
+    return tensor_structure_separated_into_two_parts
+
+
 def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
     if ind_hod in zoznam:
         return zoznam
@@ -87,22 +145,25 @@ def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
         return zoznam[:pozicia] + [ind_hod] + zoznam[pozicia + 1 :]
 
 
-def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
+def computing_tensor_structures(diagram_data: DiagramData):
     """
     This function calculates the integrand of the corresponding diagram in terms of tensor and scalar parts.
 
     ARGUMENTS:
 
-    moznost
-    indexb, indexB
-    P_structure
-    H_structure
-    kd_structure
-    hyb_structure
-    Tenzor
+    diagram_data is given by get_info_about_diagram()
 
     OUTPUT DATA EXAMPLE:
+
     """
+    moznost = diagram_data.momentums_at_vertices
+    indexb = diagram_data.indexb
+    indexB = diagram_data.indexB
+    P_structure = diagram_data.P_structure
+    H_structure = diagram_data.H_structure
+    kd_structure = diagram_data.kd_structure
+    hyb_structure = diagram_data.momentum_structure
+    Tenzor = diagram_data.integrand_tensor_part
 
     t = time.time()
     # print(f"{Tenzor}")

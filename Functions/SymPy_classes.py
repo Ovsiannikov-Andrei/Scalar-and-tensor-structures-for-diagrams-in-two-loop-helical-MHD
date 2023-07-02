@@ -32,7 +32,6 @@ class D_v(Function):
 
     @classmethod
     def eval(cls, mom):
-
         global momentums_for_helicity_propagators
         global B, nuo, d, eps
 
@@ -57,9 +56,9 @@ class D_v(Function):
 
 class alpha(Function):
     """
-    alpha(nuo, k, w) = -I*w + nuo*k**2
+    alpha(nuo, k, w) = I*w + nuo*k**2
 
-    alpha(nuo, k + q, w) = -I*w + nuo*(k**2 + 2*k*q*z + q**2)
+    alpha(nuo, k + q, w) = I*w + nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -74,7 +73,6 @@ class alpha(Function):
 
     @classmethod
     def eval(cls, nuo, mom, freq):
-
         global momentums_for_helicity_propagators
         global B
 
@@ -147,25 +145,25 @@ class alpha(Function):
             mom2 = momentums_for_helicity_propagators[1]
 
             if mom == mom1 + mom2:
-                return -I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+                return I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return -I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+                return I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
             else:
-                return -I * freq + nuo * mom**2
+                return I * freq + nuo * mom**2
 
     # define differentiation
     def fdiff(self, argindex):
         # argindex indexes the args, starting at 1
         nuo, mom, freq = self.args
         if argindex == 3:
-            return -I
+            return I
 
 
 class alpha_star(Function):
     """
-    alpha_star(nuo, k, w) = conjugate(alpha(nuo, k, w)) = I*w + nuo*k**2
+    alpha_star(nuo, k, w) = conjugate(alpha(nuo, k, w)) = -I*w + nuo*k**2
 
-    alpha_star(nuo, k + q, w) = I*w + nuo*(k**2 + 2*k*q*z + q**2)
+    alpha_star(nuo, k + q, w) = -I*w + nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -182,7 +180,6 @@ class alpha_star(Function):
 
     @classmethod
     def eval(cls, nuo, mom, freq):
-
         global momentums_for_helicity_propagators
         global B
 
@@ -256,25 +253,25 @@ class alpha_star(Function):
             mom2 = momentums_for_helicity_propagators[1]
 
             if mom == mom1 + mom2:
-                return I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+                return -I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+                return -I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
             else:
-                return I * freq + nuo * mom**2
+                return -I * freq + nuo * mom**2
 
     # Define differentiation
     def fdiff(self, argindex):
         # argindex indexes the args, starting at 1
         nuo, mom, freq = self.args
         if argindex == 3:
-            return I
+            return -I
 
 
 class beta(Function):
     """
-    beta(nuo, k, w) = -I*w + uo*nuo*k**2
+    beta(nuo, k, w) = I*w + uo*nuo*k**2
 
-    beta(nuo, k + q, w) = -I*w + uo*nuo*(k**2 + 2*k*q*z + q**2)
+    beta(nuo, k + q, w) = I*w + uo*nuo*(k**2 + 2*k*q*z + q**2)
 
     ARGUMENTS:
 
@@ -295,7 +292,6 @@ class beta(Function):
 
     @classmethod
     def eval(cls, nuo, mom, freq):
-
         global momentums_for_helicity_propagators
         global B
 
@@ -308,119 +304,6 @@ class beta(Function):
         # if k = k_1 + k_2, then the replacement must be done consistently
         # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
         # beta(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*beta(1, k + q, w)/nuo
-
-        if freq.has(B**2 / nuo) and mom.has(B / nuo):
-            if mom.is_Add and freq.is_Mul:
-                x = list()
-                for i in range(len(mom.args)):
-                    q = mom.args[i]
-                    if q.has(B / nuo):
-                        x.append(q)
-                if (sum(x) - mom) == 0:
-                    arg2 = sum(x).subs(nuo, 1).subs(B, 1)
-                    arg3 = freq.subs(nuo, 1).subs(B, 1)
-
-                    return B**2 * cls(1, arg2, arg3) / nuo
-            elif mom.is_Mul and freq.is_Add:
-                x = list()
-                for i in range(len(freq.args)):
-                    q = freq.args[i]
-                    if q.has(B**2 / nuo):
-                        x.append(q)
-                if (sum(x) - freq) == 0:
-                    arg2 = mom.subs(nuo, 1).subs(B, 1)
-                    arg3 = sum(x).subs(nuo, 1).subs(B, 1)
-
-                    return B**2 * cls(1, arg2, arg3) / nuo
-            elif mom.is_Add and freq.is_Add:
-                x_1 = list()
-                x_2 = list()
-                for i in range(len(mom.args)):
-                    q = mom.args[i]
-                    if q.has(B / nuo):
-                        x_1.append(q)
-                for i in range(len(freq.args)):
-                    q = freq.args[i]
-                    if q.has(B**2 / nuo):
-                        x_2.append(q)
-                if (len(x_2) - len(freq.args)) == 0 and (len(x_1) - len(mom.args)) == 0:
-                    arg2 = sum(x_1).subs(nuo, 1).subs(B, 1)
-                    arg3 = sum(x_2).subs(nuo, 1).subs(B, 1)
-                    return B**2 * cls(1, arg2, arg3) / nuo
-
-            elif mom.is_Mul and freq.is_Mul:
-                arg2 = mom.subs(nuo, 1).subs(B, 1)
-                arg3 = freq.subs(nuo, 1).subs(B, 1)
-                return B**2 * cls(1, arg2, arg3) / nuo
-
-    def doit(self, deep=True, **hints):
-        nuo, mom, freq = self.args
-
-        global momentums_for_helicity_propagators
-
-        if deep:
-            mom = mom.doit(deep=deep, **hints)
-            freq = freq.doit(deep=deep, **hints)
-            nuo = nuo.doit(deep=deep, **hints)
-
-            mom1 = momentums_for_helicity_propagators[0]
-            mom2 = momentums_for_helicity_propagators[1]
-
-            if mom == mom1 + mom2:
-                return -I * freq + uo * nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
-            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return -I * freq + uo * nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
-            else:
-                return -I * freq + uo * nuo * mom**2
-
-    # Define differentiation
-    def fdiff(self, argindex):
-        # argindex indexes the args, starting at 1
-        nuo, mom, freq = self.args
-        if argindex == 3:
-            return -I
-
-
-class beta_star(Function):
-    """
-    beta_star(nuo, k, w) = conjugate(beta(nuo, k, w)) = I*w + uo*nuo*k**2
-
-    beta_star(nuo, k, w) = I*w + uo*nuo*(k**2 + 2*k*q*z + q**2)
-
-    ARGUMENTS:
-
-    nuo -- bare kinematic viscosity, k -- momentum, w - frequency
-
-    PARAMETERS:
-
-    uo -- bare reciprocal magnetic Prandtl number,
-
-    PROPERTIES:
-
-    beta_star(nuo, k, w) = beta_star(nuo, -k, w),
-
-    beta_star(nuo, k, w) = beta(nuo, k, -w)
-
-    beta_star(nuo, k*B/nuo, w*B**2/nuo) = B**2*beta_star(nuo, k, w)/nuo
-    """
-
-    @classmethod
-    def eval(cls, nuo, mom, freq):
-
-        global momentums_for_helicity_propagators
-        global B
-
-        # function is even with respect to k by definition
-        if mom.could_extract_minus_sign():
-            return cls(nuo, -mom, freq)
-        if freq.could_extract_minus_sign():
-            return beta(nuo, mom, -freq)
-
-        # define scaling properties
-
-        # if k = k_1 + k_2, then the replacement must be done consistently
-        # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
-        # beta_star(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*beta_star(1, k + q, w)/nuo
 
         if freq.has(B**2 / nuo) and mom.has(B / nuo):
             if mom.is_Add and freq.is_Mul:
@@ -494,6 +377,118 @@ class beta_star(Function):
             return I
 
 
+class beta_star(Function):
+    """
+    beta_star(nuo, k, w) = conjugate(beta(nuo, k, w)) = -I*w + uo*nuo*k**2
+
+    beta_star(nuo, k, w) = -I*w + uo*nuo*(k**2 + 2*k*q*z + q**2)
+
+    ARGUMENTS:
+
+    nuo -- bare kinematic viscosity, k -- momentum, w - frequency
+
+    PARAMETERS:
+
+    uo -- bare reciprocal magnetic Prandtl number,
+
+    PROPERTIES:
+
+    beta_star(nuo, k, w) = beta_star(nuo, -k, w),
+
+    beta_star(nuo, k, w) = beta(nuo, k, -w)
+
+    beta_star(nuo, k*B/nuo, w*B**2/nuo) = B**2*beta_star(nuo, k, w)/nuo
+    """
+
+    @classmethod
+    def eval(cls, nuo, mom, freq):
+        global momentums_for_helicity_propagators
+        global B
+
+        # function is even with respect to k by definition
+        if mom.could_extract_minus_sign():
+            return cls(nuo, -mom, freq)
+        if freq.could_extract_minus_sign():
+            return beta(nuo, mom, -freq)
+
+        # define scaling properties
+
+        # if k = k_1 + k_2, then the replacement must be done consistently
+        # (when k_1 --> k_1*B/nuo, k_2 --> k_2*B/nuo, respectively), i.e.
+        # beta_star(nuo, k*B/nuo + q*B/nuo, w*B**2/nuo) = B**2*beta_star(1, k + q, w)/nuo
+
+        if freq.has(B**2 / nuo) and mom.has(B / nuo):
+            if mom.is_Add and freq.is_Mul:
+                x = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x.append(q)
+                if (sum(x) - mom) == 0:
+                    arg2 = sum(x).subs(nuo, 1).subs(B, 1)
+                    arg3 = freq.subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Mul and freq.is_Add:
+                x = list()
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x.append(q)
+                if (sum(x) - freq) == 0:
+                    arg2 = mom.subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x).subs(nuo, 1).subs(B, 1)
+
+                    return B**2 * cls(1, arg2, arg3) / nuo
+            elif mom.is_Add and freq.is_Add:
+                x_1 = list()
+                x_2 = list()
+                for i in range(len(mom.args)):
+                    q = mom.args[i]
+                    if q.has(B / nuo):
+                        x_1.append(q)
+                for i in range(len(freq.args)):
+                    q = freq.args[i]
+                    if q.has(B**2 / nuo):
+                        x_2.append(q)
+                if (len(x_2) - len(freq.args)) == 0 and (len(x_1) - len(mom.args)) == 0:
+                    arg2 = sum(x_1).subs(nuo, 1).subs(B, 1)
+                    arg3 = sum(x_2).subs(nuo, 1).subs(B, 1)
+                    return B**2 * cls(1, arg2, arg3) / nuo
+
+            elif mom.is_Mul and freq.is_Mul:
+                arg2 = mom.subs(nuo, 1).subs(B, 1)
+                arg3 = freq.subs(nuo, 1).subs(B, 1)
+                return B**2 * cls(1, arg2, arg3) / nuo
+
+    def doit(self, deep=True, **hints):
+        nuo, mom, freq = self.args
+
+        global momentums_for_helicity_propagators
+
+        if deep:
+            mom = mom.doit(deep=deep, **hints)
+            freq = freq.doit(deep=deep, **hints)
+            nuo = nuo.doit(deep=deep, **hints)
+
+            mom1 = momentums_for_helicity_propagators[0]
+            mom2 = momentums_for_helicity_propagators[1]
+
+            if mom == mom1 + mom2:
+                return -I * freq + uo * nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+            elif mom == mom1 - mom2 or mom == -mom1 + mom2:
+                return -I * freq + uo * nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+            else:
+                return -I * freq + uo * nuo * mom**2
+
+    # Define differentiation
+    def fdiff(self, argindex):
+        # argindex indexes the args, starting at 1
+        nuo, mom, freq = self.args
+        if argindex == 3:
+            return -I
+
+
 class sc_prod(Function):
     """
     This auxiliary function denotes the standard dot product of vectors in R**d.
@@ -517,7 +512,6 @@ class sc_prod(Function):
 
     @classmethod
     def eval(cls, field, mom):
-
         global momentums_for_helicity_propagators
         global B
 
@@ -598,7 +592,6 @@ class D(Function):
 
     @classmethod
     def eval(cls, field, visc, mom):
-
         global momentums_for_helicity_propagators
         global B, nuo
 
@@ -627,7 +620,6 @@ class D(Function):
     is_negative = False
 
     def doit(self, deep=True, **hints):
-
         field, visc, mom = self.args
 
         global momentums_for_helicity_propagators
@@ -681,7 +673,6 @@ class f_1(Function):
 
     @classmethod
     def eval(cls, field, visc, mom):
-
         global momentums_for_helicity_propagators
         global B, nuo
 
@@ -708,7 +699,6 @@ class f_1(Function):
             return B**2 * cls(1, 1, -mom1 + mom2) / nuo
 
     def doit(self, deep=True, **hints):
-
         field, visc, mom = self.args
 
         global momentums_for_helicity_propagators
@@ -770,7 +760,6 @@ class f_2(Function):
 
     @classmethod
     def eval(cls, field, visc, mom):
-
         global momentums_for_helicity_propagators
         global B, nuo
 
@@ -1070,6 +1059,39 @@ class vertex_factor_Vvv(Function):
             index2_v = index2_v.doit(deep=deep, **hints)
 
         return I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
+
+
+class vertex_factor_Vbb(Function):
+    """
+    The vertex_factor_Vbb(k, index_V, index1_b, index2_b) function determines the corresponding
+    vertex multiplier (Vbb) of the diagram.
+
+    vertex_factor_Vbb(k, index_V, index1_b, index2_b) = -I * (hyb(k, index1_b) * kd(index_V, index2_b) +
+    hyb(k, index2_b) * kd(index_V, index1_b))
+
+    ARGUMENTS:
+    k -- momentum, index_V, index1_b, index2_b -- positive integers
+
+    PROPERTIES:
+
+    vertex_factor_Vbb = -vertex_factor_Vvv
+    """
+
+    @classmethod
+    def eval(cls, k, index_V, index1_b, index2_b):
+        if isinstance(k, Number) and all(isinstance(m, Integer) for m in [index_V, index1_b, index2_b]):
+            return -I * (hyb(k, index1_b) * kd(index_V, index2_b) + hyb(k, index2_b) * kd(index_V, index1_b))
+
+    def doit(self, deep=True, **hints):
+        k, index_V, index1_v, index2_v = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            index_V = index_V.doit(deep=deep, **hints)
+            index1_v = index1_v.doit(deep=deep, **hints)
+            index2_v = index2_v.doit(deep=deep, **hints)
+
+        return -I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
 
 
 class P(Function):

@@ -4,6 +4,8 @@ import sys
 import time
 from sympy import *
 
+from typing import Any
+from Functions.Data_classes import *
 from Functions.SymPy_classes import *
 
 # ------------------------------------------------------------------------------------------------------------------#
@@ -13,7 +15,7 @@ from Functions.SymPy_classes import *
 # Integrals over frequency are calculated using the residue theorem
 
 
-def get_info_how_to_close_contour(rational_function, variable1):
+def get_info_how_to_close_contour(rational_function: Any, variable1: Any):
     """
     This function evaluates the complexity of calculating integrals of two variables using residues.
     The estimation is made on the basis of counting the number of poles lying in the upper/lower
@@ -87,7 +89,7 @@ def get_info_how_to_close_contour(rational_function, variable1):
     ]
 
 
-def calculate_residues_sum(rational_function, main_variable, parameter):
+def calculate_residues_sum(rational_function: Any, main_frequency: Any, second_frequency: Any):
     """
     This function calculates the sum of the residues (symbolically, at the level of functions f_1, f_2)
     of a rational function (without 2*pi*I factor) with respect to one given variable.
@@ -105,9 +107,9 @@ def calculate_residues_sum(rational_function, main_variable, parameter):
     rational_function -- a rational function whose denominator consists of the product of the powers
     of the functions chi_1.doit() and chi_2.doit(),
 
-    main_variable -- variable over which the residues are calculated
+    main_frequency -- variable over which the residues are calculated,
 
-    parameter -- other variables (which may not be, then this argument does not affect anything)
+    second_frequency -- other variables (which may not be, then this argument does not affect anything)
 
     Note:
 
@@ -151,32 +153,32 @@ def calculate_residues_sum(rational_function, main_variable, parameter):
         pole_equation = denominator_structure[pole][0]
         multiplicity = denominator_structure[pole][1]
 
-        if pole_equation.has(main_variable) == True:
+        if pole_equation.has(main_frequency) == True:
             # we solve a linear equation of the form w - smth = 0
             # solve_linear() function, unlike solve(), is less sensitive to the type of input data
-            solution_of_pole_equation = solve_linear(pole_equation, symbols=[main_variable])[1]
+            solution_of_pole_equation = solve_linear(pole_equation, symbols=[main_frequency])[1]
             # see note in description
-            if denominator.has(main_variable - solution_of_pole_equation) == True:
+            if denominator.has(main_frequency - solution_of_pole_equation) == True:
                 calcullable_function = (
-                    (numerator * (main_variable - solution_of_pole_equation) ** multiplicity) / denominator
-                ).diff(main_variable, multiplicity - 1)
-                residue_by_variable = calcullable_function.subs(main_variable, solution_of_pole_equation)
+                    (numerator * (main_frequency - solution_of_pole_equation) ** multiplicity) / denominator
+                ).diff(main_frequency, multiplicity - 1)
+                residue_by_variable = calcullable_function.subs(main_frequency, solution_of_pole_equation)
                 # residue cannot be zero
                 if residue_by_variable == 0:
                     sys.exit("An error has been detected. The residue turned out to be zero.")
 
             else:
                 calcullable_function = (
-                    (numerator * (-main_variable + solution_of_pole_equation) ** multiplicity) / denominator
-                ).diff(main_variable, multiplicity - 1)
+                    (numerator * (-main_frequency + solution_of_pole_equation) ** multiplicity) / denominator
+                ).diff(main_frequency, multiplicity - 1)
                 residue_by_variable = (-1) ** multiplicity * calcullable_function.subs(
-                    main_variable, solution_of_pole_equation
+                    main_frequency, solution_of_pole_equation
                 )
                 # residue cannot be zero
                 if residue_by_variable == 0:
                     sys.exit("An error has been detected. The residue turned out to be zero.")
 
-            if solution_of_pole_equation.subs(parameter, 0).could_extract_minus_sign() == True:
+            if solution_of_pole_equation.subs(second_frequency, 0).could_extract_minus_sign() == True:
                 residues_in_lower_half_plane.append(residue_by_variable)
             else:
                 residues_in_upper_half_plane.append(residue_by_variable)
@@ -194,7 +196,7 @@ def calculate_residues_sum(rational_function, main_variable, parameter):
 
 
 def calculating_frequency_integrals_in_two_loop_diagrams(
-    integrand_with_denominator_from_xi_functions, frequency1, frequency2
+    integrand_with_denominator_from_xi_functions: Any, frequency1: Any, frequency2: Any
 ):
     """
     This function calculates integrals over frequencies using the residue theorem
@@ -273,7 +275,7 @@ def calculating_frequency_integrals_in_two_loop_diagrams(
     return total_sum_of_residues_for_both_frequencies
 
 
-def find_duplicates(lst):
+def find_duplicates(lst: list):
     """
     The find_duplicates function takes a list lst as input and returns a dictionary where the keys
     are the duplicate elements in lst, and the values are lists of their corresponding indices.
@@ -287,7 +289,7 @@ def find_duplicates(lst):
     return {k: v for k, v in duplicates.items() if len(v) > 1}
 
 
-def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, variable_substitution):
+def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies: Any, variable_substitution: Any):
     """
     The function reduces to a common denominator the terms obtained after frequency integration.
     The function is entirely focused on a specific input data structure.
@@ -296,9 +298,7 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
 
     total_sum_of_residues_for_both_frequencies -- (+-4pi^2)*sum of residues
 
-    PARAMETERS:
-
-    PROPERTIES:
+    variable_substitution is a parameter (T/F) which says whether the expression is UV-finite
 
     OUTPUT DATA EXAMPLE:
 
@@ -524,14 +524,15 @@ def reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies, 
     else:
         sys.exit("Atypical structure of the residues sum")
 
-    return [
-        [residues_sum_without_prefactor, prefactor],
-        [residues_sum_without_prefactor_after_subs, new_prefactor_after_subs],
-    ]
+    diagram_expression = IntegrandIsRationalFunction(
+        residues_sum_without_prefactor, prefactor, residues_sum_without_prefactor_after_subs, new_prefactor_after_subs
+    )
+
+    return diagram_expression
 
 
 def reduction_to_common_denominator_after_substitution(
-    residues_sum_with_common_denominator, common_denominator, new_numerator, prefactor
+    residues_sum_with_common_denominator: Any, common_denominator: Any, new_numerator: Any, prefactor: Any
 ):
     """
     This function is supposed to be used inside the reduction_to_common_denominator() function.
@@ -747,7 +748,7 @@ def reduction_to_common_denominator_after_substitution(
         # An honest calculation of this difference for any B and nuo can take hours.
 
         print(
-            f"\nVerifying that after the momentums replacement k, q --> B*k/nuo, B*q/nuo "
+            f"\nVerifying that after the momentums replacement k, q --> |B|*k/nuo, |B|*q/nuo "
             f"all terms of the original fraction have been processed. "
         )
 
@@ -767,7 +768,7 @@ def reduction_to_common_denominator_after_substitution(
         return residues_sum_after_subs_without_prefactor, new_prefactor_after_subs
 
 
-def partial_simplification_of_diagram_expression(residues_sum_without_prefactor):
+def partial_simplification_of_diagram_expression(residues_sum_without_prefactor: Any):
     """
     The function performs a partial simplification of the given expression.
     The function is entirely focused on a specific input expression structure.
@@ -1000,7 +1001,7 @@ def partial_simplification_of_diagram_expression(residues_sum_without_prefactor)
     return simplified_expression
 
 
-def prefactor_simplification(new_prefactor_after_subs):
+def prefactor_simplification(new_prefactor_after_subs: Any):
     """
     The function additionally splits the prefactor into momentum-dependent and momentum-independent parts.
 
@@ -1010,12 +1011,12 @@ def prefactor_simplification(new_prefactor_after_subs):
 
     OUTPUT DATA EXAMPLE:
 
-    numeric_factor = 4*pi**2*A**3*nuo**5*(B/nuo)**(-2*d - 4*eps + 8)/B**10
+    dim_factor = 4*pi**2*A**3*nuo**5*(B/nuo)**(-2*d - 4*eps + 8)/B**10
 
     part_to_integrand = (-sc_prod(1, k) - sc_prod(1, q))*D_v(k)*D_v(q)*sc_prod(1, q)**3
     """
     list_with_prefactor_args = new_prefactor_after_subs.args
-    numeric_factor = 1
+    dim_factor = 1
     part_to_integrand = 1
     for i in range(len(list_with_prefactor_args)):
         term = list_with_prefactor_args[i]
@@ -1028,8 +1029,10 @@ def prefactor_simplification(new_prefactor_after_subs):
                 if term_arg.has(k) or term_arg.has(q):
                     part_to_integrand *= term_arg
                 else:
-                    numeric_factor *= term_arg
+                    dim_factor *= term_arg
         else:
-            numeric_factor *= term
+            dim_factor *= term
 
-    return part_to_integrand, numeric_factor
+    prefactor_data = IntegrandPrefactorAfterSubstitution(part_to_integrand, dim_factor)
+
+    return prefactor_data

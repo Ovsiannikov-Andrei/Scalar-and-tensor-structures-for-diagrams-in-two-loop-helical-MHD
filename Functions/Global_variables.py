@@ -1,4 +1,3 @@
-
 from sympy import *
 
 # -----------------------------------------------------------------------------------------------------------------#
@@ -35,7 +34,12 @@ z = cos(angle between k and q) = dot_product(k, q)/ (abs(k) * abs(q))
 z_k = cos(angle between k and B) = dot_product(k, B)/ (abs(k) * abs(B))
 z_q = cos(angle between q and B) = dot_product(q, B)/ (abs(q * abs(B))
 
-B is proportional to the magnetic induction vector
+B is a field proportional to the magnetic induction vector
+
+Attention! 
+Do not confuse the field B (in the notation [1] it is theta') and <B> is a 
+spontaneously arising constant magnetic field (in the notation [1] it is c)
+
 Lambda is a momentum dimension cutoff parameter
 """
 
@@ -57,6 +61,10 @@ eps determines a degree of model deviation from logarithmicity (0 < eps =< 2)
 a1, a2, ... are some additional symbols needed to define the properties of the functions defined below
 """
 
+"""
+Due to the appearance of <B> != 0, additional propagators appear in MHD. 
+Here v is phi, V is phi', b is theta and B is theta' (in the notation [1]).
+"""
 all_nonzero_propagators = [
     ["v", "v"],
     ["v", "V"],
@@ -71,14 +79,17 @@ all_nonzero_propagators = [
     ["B", "v"],
     ["v", "B"],
 ]
-propagators_with_helicity = [["v", "v"], ["v", "b"], ["b", "v"], ["b", "b"]]
-momentums_for_helicity_propagators = [k, q]
-frequencies_for_helicity_propagators = [w_k, w_q]
 """
 The set all_nonzero_propagators contains all possible nonzero propagators.
+"""
+propagators_with_helicity = [["v", "v"], ["v", "b"], ["b", "v"], ["b", "b"]]
+"""
 The set propagators_with_helicity consists of propagators containing the core D_v (see below). 
 In this program, this set is used to define the loop structure of the diagram.
-
+"""
+momentums_for_helicity_propagators = [k, q]
+frequencies_for_helicity_propagators = [w_k, w_q]
+""" 
 For technical reasons, it is convenient for us to give to propagators from propagators_with_helicity 
 new momentums (momentums_for_helicity_propagators) and frequencies (frequencies_for_helicity_propagators). 
 The first loop corresponds to the pair (k, w_k) and the second to the pair (q, w_q).
@@ -86,7 +97,7 @@ The first loop corresponds to the pair (k, w_k) and the second to the pair (q, w
 
 number_int_vert = 4
 """ 
-Parametr number_int_vert is a total number of internal (three-point) vertecies in diagram
+Parameter number_int_vert is a total number of internal (three-point) vertecies in diagram
 """
 stupen = 1
 """ 

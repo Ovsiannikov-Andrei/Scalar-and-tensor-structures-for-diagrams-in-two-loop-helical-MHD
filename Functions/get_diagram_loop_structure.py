@@ -2,26 +2,14 @@ import copy
 import itertools
 from collections import Counter
 
+from Functions.Data_classes import *
+
 # ------------------------------------------------------------------------------------------------------------------#
 #                       We get a loop structure of the diagram (which lines form loops)
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def get_list_as_dictionary(list):
-    """
-    Turns the list into a dictionary, keys are digits
-
-    ARGUMENTS:
-
-    Some list
-    """
-    dictionary = dict()
-    for x in range(len(list)):
-        dictionary.update({x: list[x]})
-    return dictionary
-
-
-def get_line_keywards_to_dictionary(some_dictionary):
+def get_line_keywards_to_dictionary(some_dictionary: dict):
     """
     Turns the dictionary with digits keys to dictionary which string keys
 
@@ -41,7 +29,7 @@ def get_line_keywards_to_dictionary(some_dictionary):
     return new_some_dictionary
 
 
-def list_of_all_possible_lines_combinations(dict_with_internal_lines):
+def get_all_possible_line_combinations(diagram_lines: InternalAndExternalLines):
     """
     Return all possible (in principle) combinations of lines (propagators).
     Each digit in output list = key from dict_with_internal_lines, i.e. line in diagram.
@@ -58,6 +46,7 @@ def list_of_all_possible_lines_combinations(dict_with_internal_lines):
     (0, 1, 2, 3), (0, 1, 2, 4), (0, 1, 3, 4), (0, 2, 3, 4), (1, 2, 3, 4), (0, 1, 2, 3, 4)]
 
     """
+    dict_with_internal_lines = diagram_lines.dict_internal_propagators
 
     list_of_loops = list()
     for i in range(len(dict_with_internal_lines) - 1):
@@ -69,7 +58,7 @@ def list_of_all_possible_lines_combinations(dict_with_internal_lines):
 
 
 def check_if_the_given_lines_combination_is_a_loop_in_diagram(
-    list_of_all_possible_lines_combinations, dict_with_diagram_internal_lines
+    diagram_lines: InternalAndExternalLines,
 ):
     """
     It checks if the given lines combination from list_of_all_possible_lines_combinations is a loop.
@@ -79,20 +68,20 @@ def check_if_the_given_lines_combination_is_a_loop_in_diagram(
 
     ARGUMENTS:
 
-    list_of_all_possible_lines_combinations is given by the function list_of_all_possible_lines_combinations(),
-
-    dict_with_diagram_internal_lines is given by the functions get_list_with_propagators_from_nickel_index()
-    and get_list_as_dictionary()
+    diagram_lines is given by the functions get_list_with_propagators_from_nickel_index()
 
     Note: for some technical reasons, we will assign new momentums (k and q, according to the list_of_momentums)
     to propagators containing the D_v kernel, i.e. to propagators_with_helicity. Since each loop in the diagram
     contains such helical propagator, we can describe the entire loop structure of the diagram by assigning a
     new momentum to it in each loop.
 
-    OUTPUT DATA EXAMPLE: (digit corresponds to the line from dict_with_diagram_internal_lines):
+    OUTPUT DATA EXAMPLE: (digit corresponds to the line from diagram_lines):
 
     [(0, 1, 2), (2, 3, 4), (0, 1, 3, 4)]
     """
+    list_of_all_possible_lines_combinations = get_all_possible_line_combinations(diagram_lines)
+
+    dict_with_diagram_internal_lines = diagram_lines.dict_internal_propagators
 
     i = 0
     while i < len(list_of_all_possible_lines_combinations):
@@ -121,10 +110,10 @@ def check_if_the_given_lines_combination_is_a_loop_in_diagram(
 
 
 def put_momentums_and_frequencies_to_propagators_with_helicity(
-    set_of_all_internal_propagators,
-    set_of_propagators_with_helicity,
-    list_of_momentums,
-    list_of_frequencies,
+    diagram_lines: InternalAndExternalLines,
+    list_of_propagators_with_helicity: list,
+    list_of_momentums: list,
+    list_of_frequencies: list,
 ):
     """
     It assigning momentum (according to the list_of_momentums) to helicity propagators in the concret diagram.
@@ -132,9 +121,8 @@ def put_momentums_and_frequencies_to_propagators_with_helicity(
 
     ARGUMENTS:
 
-    set_of_all_internal_propagators (is given by the function get_list_with_propagators_from_nickel_index()),
-
-    set_of_propagators_with_helicity, list_of_momentums, list_of_frequencies (see global variables)
+    diagram_lines is given by the function get_list_with_propagators_from_nickel_index(),
+    list_of_propagators_with_helicity, list_of_momentums, list_of_frequencies (see global variables)
 
     OUTPUT DATA EXAMPLE:
 
@@ -142,30 +130,32 @@ def put_momentums_and_frequencies_to_propagators_with_helicity(
 
     dict_with_frequencies_for_propagators_with_helicity = {1: w_k, 3: w_q}
     """
+    list_of_all_internal_propagators = diagram_lines.dict_internal_propagators
+
     dict_with_momentums_for_propagators_with_helicity = dict()
     dict_with_frequencies_for_propagators_with_helicity = dict()
-    for i in set_of_all_internal_propagators:
-        vertices_and_fields_in_propagator = set_of_all_internal_propagators[i]
+    for i in list_of_all_internal_propagators:
+        vertices_and_fields_in_propagator = list_of_all_internal_propagators[i]
         # selected one particular propagator from the list
         fields_in_propagator = vertices_and_fields_in_propagator[1]
         # selected information about which fields define the propagator
         length = len(dict_with_momentums_for_propagators_with_helicity)
         # sequentially fill in the empty dictionary for corresponding diagram according to
         # list_of_momentums and set_of_propagators_with_helicity
-        if fields_in_propagator in set_of_propagators_with_helicity:
+        if fields_in_propagator in list_of_propagators_with_helicity:
             for j in range(len(list_of_momentums)):
                 # len(list_of_momentums) = len(list_of_frequencies)
                 if length == j:
                     dict_with_momentums_for_propagators_with_helicity.update({i: list_of_momentums[j]})
                     dict_with_frequencies_for_propagators_with_helicity.update({i: list_of_frequencies[j]})
 
-    return [
-        dict_with_momentums_for_propagators_with_helicity,
-        dict_with_frequencies_for_propagators_with_helicity,
-    ]
+    independent_args_in_helical_lines = IndependentMomentumsInHelicalPropagators(
+        dict_with_momentums_for_propagators_with_helicity, dict_with_frequencies_for_propagators_with_helicity
+    )
+    return independent_args_in_helical_lines
 
 
-def get_usual_QFT_loops(list_of_loops, dict_with_momentums_for_propagators_with_helicity):
+def get_usual_QFT_loops(list_of_loops: list, dict_with_momentums_for_propagators_with_helicity: dict):
     """
     It selects from the list_of_loops only those that contain one heicity propagator
     (through which the momentum k or q flows), i.e. each new loop corresponds one new

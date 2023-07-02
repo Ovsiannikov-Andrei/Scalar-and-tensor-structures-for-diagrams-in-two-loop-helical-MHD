@@ -1,16 +1,18 @@
+from Functions.Data_classes import *
+
 # ------------------------------------------------------------------------------------------------------------------#
 #                      We create a file and start write the information about diagram into it
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def get_information_from_Nickel_index(graf, diagram_number):
+def get_information_from_Nickel_index(line_with_info: str, diagram_number: int):
     """
     Generates a file name with results for each particular diagram
     using the data from the file "Two-loop MHD diagramms".
 
     ARGUMENTS:
 
-    graf -- Nickel index of the diagram + symmetry factor
+    line_with_info -- Nickel index of the diagram + symmetry factor
     diagram_number -- ordinal number of the line with the Nickel index from the file with the list of all indices
 
     OUTPUT DATA EXAMPLE:
@@ -23,31 +25,33 @@ def get_information_from_Nickel_index(graf, diagram_number):
     Symmetry factor example: 1
     """
 
-    Nickel_index = "".join(graf.split(sep="SC = ")[0])
-    Symmetry_factor = " ".join(graf.split(sep="SC = ")[1])
     # separating the Nickel index from the symmetry factor of the diagram
+    nickel_index = "".join(line_with_info.split(sep="SC = ")[0])
+    symmetry_factor = " ".join(line_with_info.split(sep="SC = ")[1])
 
-    Nickel_topology = "_".join(graf.split(sep="SC = ")[0].rstrip().split(sep=":")[0].split(sep="|"))[:-1]
     # topological part of the Nickel index
+    nickel_topology = "_".join(line_with_info.split(sep="SC = ")[0].rstrip().split(sep=":")[0].split(sep="|"))[:-1]
 
-    Nickel_lines = "__".join(graf.split(sep="SC = ")[0].rstrip().split(sep=":")[1].split(sep="|"))[:-1]
     # line structure in the diagram corresponding to Nickel_topology
+    nickel_lines = "__".join(line_with_info.split(sep="SC = ")[0].rstrip().split(sep=":")[1].split(sep="|"))[:-1]
 
-    return [
-        f"{diagram_number}. Diagram__{Nickel_topology.strip()}__{Nickel_lines.strip()}.txt",
-        Nickel_index.strip(),
-        Symmetry_factor.strip(),
-    ]
+    nickel_index_info = NickelIndexInfo(
+        f"{diagram_number}.Diagram__{nickel_topology.strip()}__{nickel_lines.strip()}.txt",
+        nickel_index.strip(),
+        int(symmetry_factor.strip()),
+    )
+
+    return nickel_index_info
 
 
-def get_list_with_propagators_from_nickel_index(nickel):
+def get_list_with_propagators_from_nickel_index(nickel_index: str):
     """
     Arranges the propagators into a list of inner and outer lines with fields. The list is constructed as follows:
     vertex 0 is connected to vertex 1 by a line b---B, vertex 0 is connected to vertex 2 by a line v---v, etc.
 
     ARGUMENTS:
 
-    nickel -- Nickel index of the diagram.
+    nickel_index -- Nickel index of the diagram.
     It is defined by the function get_information_from_Nickel_index()
 
     Note:
@@ -68,18 +72,40 @@ def get_list_with_propagators_from_nickel_index(nickel):
     # numbers individual blocks |...| in the topological part of the Nickel index
     # (all before the symbol :), i.e. vertices of the diagram
 
-    s2 = nickel.find(":")
+    s2 = nickel_index.find(":")
     # runs through the part of the Nickel index describing the lines (after the symbol :)
 
     propagator_internal = []
     propagator_external = []
-    for i in nickel[: nickel.find(":")]:
+
+    for i in nickel_index[: nickel_index.find(":")]:
         if i == "e":
-            propagator_external += [[(-1, s1), ["0", nickel[s2 + 2]]]]
+            propagator_external += [[(-1, s1), ["0", nickel_index[s2 + 2]]]]
             s2 += 3
         elif i != "|":
-            propagator_internal += [[(s1, int(i)), [nickel[s2 + 1], nickel[s2 + 2]]]]
+            propagator_internal += [[(s1, int(i)), [nickel_index[s2 + 1], nickel_index[s2 + 2]]]]
             s2 += 3
         else:
             s1 += 1
-    return [propagator_internal, propagator_external]
+
+    def get_list_as_dictionary(list: list):
+        """
+        Turns the list into a dictionary, keys are digits
+
+        ARGUMENTS:
+
+        Some list
+        """
+        dictionary = dict()
+        for x in range(len(list)):
+            dictionary.update({x: list[x]})
+        return dictionary
+
+    dict_internal_propagators = get_list_as_dictionary(propagator_internal)
+    dict_external_propagators = get_list_as_dictionary(propagator_external)
+
+    diagram_lines = InternalAndExternalLines(
+        propagator_internal, propagator_external, dict_internal_propagators, dict_external_propagators
+    )
+
+    return diagram_lines
