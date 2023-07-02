@@ -108,15 +108,15 @@ We consider the model of homogeneous and isotropic three-dimensional turbulence 
 
 $$
 \begin{equation*}
-\mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle = \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2\pi)^{3}} d_F(k) R_{i j}(\boldsymbol{k}) e^{i\boldsymbol{k}(\boldsymbol{x} - \boldsymbol{x'})},
+D_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle = \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2\pi)^{3}} d_F(k) R_{i j}(\boldsymbol{k}) e^{i\boldsymbol{k}(\boldsymbol{x} - \boldsymbol{x'})},
 \end{equation*}
 $$
 
-where $d_F(k) = g_0 {\nu}_0^3 k^{1 - 2 \varepsilon}$ is the so-called pump function of $k = |\boldsymbol{k}|$. Here $g_0$ is a coupling constant connected to the typical UV momentum scale $\Lambda$ through $g_0 \simeq \Lambda^{2 \varepsilon}$, $0 \leqslant \varepsilon \leqslant 2$ is the model parameter characterizing the type of pumping. In the limit  $\varepsilon \rightarrow 2$ function $d_F(k)$ can be understood as a power-law equivalent of $\delta$-shaped pumping. The tensor quantity $R_{i j}(\boldsymbol{k})$ is defined below.
+where $d_F(k) = g_0 \nu_0^3 k^{1 - 2 \varepsilon}$ is the so-called pump function of $k = |\boldsymbol{k}|$. Here $g_0$ is a coupling constant connected to the typical UV momentum scale $\Lambda$ through $g_0 \simeq \Lambda^{2 \varepsilon}$, $0 \leqslant \varepsilon \leqslant 2$ is the model parameter characterizing the type of pumping. In the limit  $\varepsilon \rightarrow 2$ function $d_F(k)$ can be understood as a power-law equivalent of $\delta$-shaped pumping. The tensor quantity $R_{i j}(\boldsymbol{k})$ is defined below.
 
 **Helical turbulence.**
 From a symmetry point of view, helical turbulence can be understood as turbulence in a system (gyrotropic liquid) that is invariant under translations and rotations, but not under plane reflections. 
-This implies the non-vanishing of the helicity $\langle \boldsymbol{v} \cdot\text{curl }\boldsymbol{v} \rangle$, i.e. exist a correlation between the velocity $\boldsymbol{v}$ and the vorticity $\text{curl }\boldsymbol{v}$. Technically, the rejection of spatial parity conservation means that the correlator $\mathrm{D}_{i j}^v$ is a mixture of a tensor and a pseudotensor, i.e. $R_{i j}(\boldsymbol{k})$ is equal to the sum of the transverse projection operator $P_{i j} (\boldsymbol{k}) \equiv \delta_{i j} - k_i k_j/k^2$ and a so-called Helical term  $H_{i j} (\boldsymbol{k}) \equiv i \epsilon_{i j l} k_l/k$
+This implies the non-vanishing of the helicity $\langle \boldsymbol{v} \cdot\text{curl }\boldsymbol{v} \rangle$, i.e. exist a correlation between the velocity $\boldsymbol{v}$ and the vorticity $\text{curl }\boldsymbol{v}$. Technically, the rejection of spatial parity conservation means that the correlator $D_{i j}^v$ is a mixture of a tensor and a pseudotensor, i.e. $R_{i j}(\boldsymbol{k})$ is equal to the sum of the transverse projection operator $P_{i j} (\boldsymbol{k}) \equiv \delta_{i j} - k_i k_j/k^2$ and a so-called Helical term  $H_{i j} (\boldsymbol{k}) \equiv i \epsilon_{i j l} k_l/k$
 
 $$
 \begin{equation*} 
@@ -139,13 +139,13 @@ $$
 Here fields with primes (transverse) denote the response fields. Parameter ${\bf B}$ is a spatially homogeneous magnetic field that stabilizes the system. See the next section for more information.
 
 ### **Instability Mechanism and Computed Objects**
-Generally speaking, the transition from stochastic magnetohydrodynamics to the field formalism results in the action $\mathcal{S}$ at ${\bf B} = 0$. Let's consider correlation functions $\langle v_i^{~} v'_j \rangle$ and $\langle b_i^{~} b'_j \rangle$ in this model (with ${\bf B = 0}$).
+Generally speaking, the transition from stochastic magnetohydrodynamics to the field formalism results in the action $\mathcal{S}$ at ${\bf B} = 0$. Let's consider correlation functions $\langle v_i v'_j \rangle$ and $\langle b_i b'_j \rangle$ in this model (with ${\bf B = 0}$).
 They have the meaning of response functions characterizing the linear response of the system to an arbitrary perturbation by an external (nonrandom) force. Therefore, they must be retarded and ensure the damping of any perturbations in a stable system
 
 $$
 \begin{align*}
-&\langle v_i^{~} v'_j \rangle = \big[P_{ij}(-i \omega + {\nu}_0 p^2) - \Sigma_{ij}^{v'v}(\omega, p)\big]^{-1}, \\
-&\langle b_i^{~} b'_j \rangle = \big[P_{ij}(-i \omega + u_0{\nu}_0 p^2) - \Sigma_{ij}^{b'b}(\omega, p)\big]^{-1}, 
+&\langle v_i v_j' \rangle^{-1} = P_{i j}(-i \omega + \nu_0 p^2) - \Sigma_{i j}^{v' v}(\omega, p), \\
+&\langle b_i b_j' \rangle^{-1} = P_{i j}(-i \omega + u_0 \nu_0 p^2) - \Sigma_{ij}^{b' b}(\omega, p), 
 \end{align*}
 $$
 
@@ -153,9 +153,9 @@ where $\Sigma_{ij}^{v'v}$, $\Sigma_{ij}^{b'b}$ are self-energy corrections given
  
 According to the analysis carried out in [[1]](#references) at the level of one-loop perturbation theory, in a gyrotropic media $\Sigma_{ij}^{b' b}$ has contribution $\sim i\epsilon_{i l k} p_k T_{lj}$ (so-called "rotor" term because, in the coordinate representation, this term correspond to the addition of $\text{rot} \boldsymbol{b}$ to the r.h.s. of the corresponding "magnetic" equation of motion) that lead to instability. 
 This instability, in turn, leads to the appearance in the system of an anomalous large-scale homogeneous magnetic field ${\bf B} \equiv \langle\boldsymbol{b}\rangle \not = 0$. This phenomenon is called the turbulent dynamo. 
-The model under consideration differs from those typical for the theory of critical phenomena in that here the stationarity condition for the generating functional of 1-irreducible Green's functions (the 1-st Legendre transformation) $\delta_{\alpha}\text{Г}_{ij}^{b'b}(\alpha)\Big|_{\langle\boldsymbol{b'}\rangle = \langle\boldsymbol{v'}\rangle = 0} = 0$ does not fix the spatially homogeneous mean $\langle\boldsymbol{b}\rangle$ [1]. Therefore, to justify the appearance of the mean field ${\bf B} = \langle\boldsymbol{b}\rangle$ and the definition of ${\bf B}$ in our model, it was proposed to act differently, namely, straightforwardly: assuming the appearance of a mean field, let's see how it affects the "rotor" terms that cause instability. This results in an action $\mathcal{S}$. If it is possible to make them disappear by a suitable choice of ${\bf B}$, then this ${\bf B}$ will be the desired one.
+The model under consideration differs from those typical for the theory of critical phenomena in that here the stationarity condition for the generating functional of 1-irreducible Green's functions (the 1-st Legendre transformation) $\delta_{\alpha}\Gamma_{ij}^{b'b}(\alpha)\Big|_{\langle\boldsymbol{b'}\rangle = \langle\boldsymbol{v'}\rangle = 0} = 0$ does not fix the spatially homogeneous mean $\langle\boldsymbol{b}\rangle$ [1]. Therefore, to justify the appearance of the mean field ${\bf B} = \langle\boldsymbol{b}\rangle$ and the definition of ${\bf B}$ in our model, it was proposed to act differently, namely, straightforwardly: assuming the appearance of a mean field, let's see how it affects the "rotor" terms that cause instability. This results in an action $\mathcal{S}$. If it is possible to make them disappear by a suitable choice of ${\bf B}$, then this ${\bf B}$ will be the desired one.
 
-Two-loop calculations of the asymptotics $\Sigma_{ij}^{b' b}(0, \boldsymbol{p})|_{p\rightarrow 0} \sim i\epsilon_{i l k} p_k T_{lj}$ yields the following expression for $T_{lj}$
+Two-loop calculations of the asymptotics $\Sigma_{i j}^{b' b}(0, \boldsymbol{p}) \sim i \epsilon_{i j k} p_k T_{l j}$ for $p \rightarrow 0$ yields the following expression for $T_{l j}$
 
 $$
 T_{lj} = c_1 \delta_{lj} + c_2 B_l B_j = a\Lambda\delta_{lj} - b|{\bf B}|(\delta_{lj} + B_lB_j).
@@ -209,9 +209,9 @@ In the frequency–momentum representation, free propagators of the model with t
 
 $$
 \begin{align*}
-&{\langle v_i v_j \rangle}_0 = \frac{\beta(k, \omega)\beta^*(k, \omega)}{\xi(k, \omega)\xi^*(k, \omega)} \mathrm{D}^v(k) R_{ij}(\boldsymbol{k})& \qquad &{\langle b_i b_j \rangle}_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi(k, \omega)\xi^*(k, \omega)} \mathrm{D}^v(k) R_{ij}(\boldsymbol{k})& \\
-&{\langle v_i v'_j \rangle}_0 = {\langle v'_i v_j \rangle}_0^* = \frac{\beta^*(k, \omega)}{\xi^*(k, \omega)} P_{ij}(\boldsymbol{k})& \qquad &{\langle b_i b'_j \rangle}_0 = {\langle b'_i b_j \rangle}_0^* = \frac{\alpha^*(k, \omega)}{\xi^*(k, \omega)} P_{ij}(\boldsymbol{k})& \\
-&{\langle b_i v_j \rangle}_0 = {\langle v_i b_j \rangle}_0^* = i \frac{\beta(k, \omega)({\bf B} \cdot \boldsymbol{k})}{\xi(k, \omega)\xi^*(k, \omega)} \mathrm{D}^v(k) R_{ij}(\boldsymbol{k})& \qquad &{\langle b_i v'_j \rangle}_0 = {\langle b'_i v_j \rangle}_0^* = {\langle v_i b'_j \rangle}_0 = {\langle v'_i b_j \rangle}_0^* = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^*(k, \omega)} P_{ij}(\boldsymbol{k})\\
+&\langle v_i v_j \rangle_0 = \frac{\beta(k, \omega)\beta*(k, \omega)}{\xi(k, \omega) \xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \qquad &\langle b_i b_j \rangle_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi(k, \omega)\xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \\
+&\langle v_i v_j' \rangle = \langle v_i' v_j \rangle_0* = \frac{\beta*(k, \omega)}{\xi*(k, \omega)} P_{ij}(\boldsymbol{k})& \qquad &\langle b_i b_j' \rangle_0 = \langle b_i' b_j \rangle_0* = \frac{\alpha*(k, \omega)}{\xi*(k, \omega)} P_{ij}(\boldsymbol{k})& \\
+&\langle b_i v_j \rangle_0 = \langle v_i b_j \rangle_0* = i \frac{\beta(k, \omega)({\bf B} \cdot \boldsymbol{k})}{\xi(k, \omega)\xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \qquad &\langle b_i v_j' \rangle_0 = \langle b_i' v_j \rangle_0* = \langle v_i b_j' \rangle_0 = \langle v_i' b_j \rangle_0* = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi*(k, \omega)} P_{i j}(\boldsymbol{k})
 \end{align*}
 $$
 
@@ -234,17 +234,18 @@ A graphical representation of free propagators is displayed in <a href="README.m
 Figure 3. Graphical representation of all propagators of the model given by the quadratic part of the action $\mathcal{S}$.
 
 The theory under consideration includes three interaction vertices
-* $\mathcal{S}_{b'bv}:~\boldsymbol{b'} (\boldsymbol{b}\cdot \boldsymbol{\nabla})\boldsymbol{v} - \boldsymbol{b'} (\boldsymbol{v}\cdot \boldsymbol{\nabla})\boldsymbol{b} = b'_ib_jU_{ijl}v_l$
-* $\mathcal{S}_{v'vv}:~-\boldsymbol{v'} (\boldsymbol{v}\cdot \boldsymbol{\nabla})\boldsymbol{v} = v'_i v_j W_{ijl} v_l/2$
-* $\mathcal{S}_{v'bb}:~\boldsymbol{v'} (\boldsymbol{b}\cdot \boldsymbol{\nabla})\boldsymbol{b} = v'_ib_jU_{ijl}b_l/2$
+* $\mathcal{S_{b'bv}}:~\boldsymbol{b'} (\boldsymbol{b}\cdot \boldsymbol{\nabla})\boldsymbol{v} - \boldsymbol{b'} (\boldsymbol{v}\cdot \boldsymbol{\nabla})\boldsymbol{b} = b_i'b_jU_{ijl}v_l$
+* $\mathcal{S_{v'vv}}:~-\boldsymbol{v'} (\boldsymbol{v}\cdot \boldsymbol{\nabla})\boldsymbol{v} = v_i' v_j W_{ijl} v_l/2$
+* $\mathcal{S_{v'bb}}:~\boldsymbol{v'} (\boldsymbol{b}\cdot \boldsymbol{\nabla})\boldsymbol{b} = v_i'b_j U_{ijl}b_l/2$
 
 In the momentum–frequency representation, they are associated with the vertex factors
 
 $$
 \begin{equation*}
-U_{ijl}(\boldsymbol{k}) = -i(k_j \delta_{il} + k_l \delta_{ij}), \qquad W_{ijl}(\boldsymbol{k}) = i(k_j \delta_{il} + k_l \delta_{ij}), \qquad V_{ijl}(\boldsymbol{k}) = i(k_j \delta_{il} - k_l \delta_{ij}),
+U_{i j l}(\boldsymbol{k}) = -i(k_j \delta_{i l} + k_l \delta_{i j}), \qquad W_{i j l}(\boldsymbol{k}) = i(k_j \delta_{i l} + k_l \delta_{i j}), \qquad V_{i j l}(\boldsymbol{k}) = i(k_j \delta_{i l} - k_l \delta_{i j}),
 \end{equation*}
 $$
+
 where momentum $\boldsymbol{k}$ is flowing into through the corresponding auxiliary field ($\boldsymbol{v'}$ or $\boldsymbol{b'}$).
 
 A graphical representation of interaction vertices is displayed in <a href="README.md#vertex-factors">Figure 4</a>.
