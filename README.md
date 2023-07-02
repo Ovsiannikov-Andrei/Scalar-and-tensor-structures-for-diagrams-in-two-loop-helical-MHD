@@ -107,9 +107,10 @@ $$
 We consider the model of homogeneous and isotropic three-dimensional turbulence with the $\delta$-shaped pumping modeling energy injection to the system by infinitely large eddies. In this way, $\boldsymbol{F}$ is a zero-mean Gaussian random function whose correlator is given by 
 
 $$
-\begin{equation*}
-D_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle = \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2\pi)^{3}} d_F(k) R_{i j}(\boldsymbol{k}) e^{i\boldsymbol{k}(\boldsymbol{x} - \boldsymbol{x'})},
-\end{equation*}
+\begin{align*}
+D_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle &\\
+&= \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2\pi)^{3}} d_F(k) R_{i j}(\boldsymbol{k}) \text{exp}\left[i\boldsymbol{k}(\boldsymbol{x} - \boldsymbol{x'})\right],
+\end{align*}
 $$
 
 where $d_F(k) = g_0 \nu_0^3 k^{1 - 2 \varepsilon}$ is the so-called pump function of $k = |\boldsymbol{k}|$. Here $g_0$ is a coupling constant connected to the typical UV momentum scale $\Lambda$ through $g_0 \simeq \Lambda^{2 \varepsilon}$, $0 \leqslant \varepsilon \leqslant 2$ is the model parameter characterizing the type of pumping. In the limit  $\varepsilon \rightarrow 2$ function $d_F(k)$ can be understood as a power-law equivalent of $\delta$-shaped pumping. The tensor quantity $R_{i j}(\boldsymbol{k})$ is defined below.
@@ -209,9 +210,12 @@ In the frequency–momentum representation, free propagators of the model with t
 
 $$
 \begin{align*}
-&\langle v_i v_j \rangle_0 = \frac{\beta(k, \omega)\beta*(k, \omega)}{\xi(k, \omega) \xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \qquad &\langle b_i b_j \rangle_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi(k, \omega)\xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \\
-&\langle v_i v_j' \rangle = \langle v_i' v_j \rangle_0* = \frac{\beta*(k, \omega)}{\xi*(k, \omega)} P_{ij}(\boldsymbol{k})& \qquad &\langle b_i b_j' \rangle_0 = \langle b_i' b_j \rangle_0* = \frac{\alpha*(k, \omega)}{\xi*(k, \omega)} P_{ij}(\boldsymbol{k})& \\
-&\langle b_i v_j \rangle_0 = \langle v_i b_j \rangle_0* = i \frac{\beta(k, \omega)({\bf B} \cdot \boldsymbol{k})}{\xi(k, \omega)\xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \qquad &\langle b_i v_j' \rangle_0 = \langle b_i' v_j \rangle_0* = \langle v_i b_j' \rangle_0 = \langle v_i' b_j \rangle_0* = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi*(k, \omega)} P_{i j}(\boldsymbol{k})
+&\langle v_i v_j \rangle_0 = \frac{\beta(k, \omega)\beta*(k, \omega)}{\xi(k, \omega) \xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \\
+&\langle b_i b_j \rangle_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi(k, \omega)\xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \\
+&\langle v_i v_j' \rangle = \langle v_i' v_j \rangle_0* = \frac{\beta*(k, \omega)}{\xi*(k, \omega)} P_{ij}(\boldsymbol{k})& \\
+&\langle b_i b_j' \rangle_0 = \langle b_i' b_j \rangle_0* = \frac{\alpha*(k, \omega)}{\xi*(k, \omega)} P_{ij}(\boldsymbol{k})& \\
+&\langle b_i v_j \rangle_0 = \langle v_i b_j \rangle_0* = i \frac{\beta(k, \omega)({\bf B} \cdot \boldsymbol{k})}{\xi(k, \omega)\xi*(k, \omega)} D^v(k) R_{ij}(\boldsymbol{k})& \\
+&\langle b_i v_j' \rangle_0 = \langle b_i' v_j \rangle_0* = \langle v_i b_j' \rangle_0 = \langle v_i' b_j \rangle_0* = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi*(k, \omega)} P_{i j}(\boldsymbol{k})
 \end{align*}
 $$
 
