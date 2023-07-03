@@ -108,7 +108,7 @@ We consider the model of homogeneous and isotropic three-dimensional turbulence 
 
 $$
 \begin{align*}
-D_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle &\\
+&D_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x'}, t') \equiv \langle F_i (\boldsymbol{x}, t) F_j (\boldsymbol{x'}, t') \rangle \\
 &= \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2\pi)^{3}} d_F(k) R_{i j}(\boldsymbol{k}) \text{exp}\left[i\boldsymbol{k}(\boldsymbol{x} - \boldsymbol{x'})\right],
 \end{align*}
 $$
@@ -132,9 +132,10 @@ The stabilized (see below) stochastic helical MHD problem is equivalent to a mul
 renormalizable field-theoretic model with the set of fields $\Phi = \{ \boldsymbol{v}, \boldsymbol{b}, \boldsymbol{v'}, \boldsymbol{b'} \}$ [[1]](#references). Its field action is the corresponding Dominicis–Janssen MHD action functional has form
 
 $$
-\begin{equation*}
-\mathcal{S} = \frac{1}{2}  \boldsymbol{v'} \mathrm{D}^v \boldsymbol{v'} + \boldsymbol{v'} \left(-\nabla_t \boldsymbol{v} + {\nu}_0 \boldsymbol{\nabla}^2 \boldsymbol{v} + (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{b} + ({\bf B} \cdot \boldsymbol{\nabla}) \boldsymbol{b}\right) + \boldsymbol{b'}\left(-\nabla_t \boldsymbol{b} + u_0 {\nu}_0 \boldsymbol{\nabla}^2 \boldsymbol{b} +  (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{v} + ({\bf B} \cdot \boldsymbol{\nabla}) \boldsymbol{v} \right).
-\end{equation*}
+\begin{align*}
+\mathcal{S} = \frac{1}{2}  \boldsymbol{v'} \mathrm{D}^v \boldsymbol{v'}& + \boldsymbol{v'} \left(-\nabla_t \boldsymbol{v} + {\nu}_0 \boldsymbol{\nabla}^2 \boldsymbol{v} + (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{b} + ({\bf B} \cdot \boldsymbol{\nabla}) \boldsymbol{b}\right) \\
+& + \boldsymbol{b'}\left(-\nabla_t \boldsymbol{b} + u_0 {\nu}_0 \boldsymbol{\nabla}^2 \boldsymbol{b} +  (\boldsymbol{b} \cdot \boldsymbol{\nabla}) \boldsymbol{v} + ({\bf B} \cdot \boldsymbol{\nabla}) \boldsymbol{v} \right).
+\end{align*}
 $$
 
 Here fields with primes (transverse) denote the response fields. Parameter ${\bf B}$ is a spatially homogeneous magnetic field that stabilizes the system. See the next section for more information.
@@ -222,9 +223,11 @@ $$
 Here, the following abbreviations have been introduced 
 
 $$
-\begin{equation*}
-\alpha(k, \omega) = -i \omega + {\nu}_0 k^2, \qquad \beta(k, \omega) =  -i \omega + {\nu}_0 u_0 k^2, \qquad \xi(k, \omega) = ({\bf B} \cdot \boldsymbol{k})^2 + \alpha(k, \omega)\beta(k, \omega).
-\end{equation*}
+\begin{align*}
+\alpha(k, \omega) &= -i \omega + {\nu}_0 k^2, \\
+\beta(k, \omega) &=  -i \omega + {\nu}_0 u_0 k^2, \\
+\xi(k, \omega) &= ({\bf B} \cdot \boldsymbol{k})^2 + \alpha(k, \omega)\beta(k, \omega).
+\end{align*}
 $$
 
 A graphical representation of free propagators is displayed in <a href="README.md#free-propagators">Figure 3</a>.
@@ -245,9 +248,11 @@ The theory under consideration includes three interaction vertices
 In the momentum–frequency representation, they are associated with the vertex factors
 
 $$
-\begin{equation*}
-U_{i j l}(\boldsymbol{k}) = -i(k_j \delta_{i l} + k_l \delta_{i j}), \qquad W_{i j l}(\boldsymbol{k}) = i(k_j \delta_{i l} + k_l \delta_{i j}), \qquad V_{i j l}(\boldsymbol{k}) = i(k_j \delta_{i l} - k_l \delta_{i j}),
-\end{equation*}
+\begin{align*}
+&U_{i j l}(\boldsymbol{k}) = -i(k_j \delta_{i l} + k_l \delta_{i j}), \\
+&W_{i j l}(\boldsymbol{k}) = i(k_j \delta_{i l} + k_l \delta_{i j}), \\
+&V_{i j l}(\boldsymbol{k}) = i(k_j \delta_{i l} - k_l \delta_{i j}),
+\end{align*}
 $$
 
 where momentum $\boldsymbol{k}$ is flowing into through the corresponding auxiliary field ($\boldsymbol{v'}$ or $\boldsymbol{b'}$).
