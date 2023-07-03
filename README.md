@@ -27,7 +27,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <img src="images/Earth_final.jpg" alt="" width="500" height="500">
+  <img src="images/Earth_final.jpg" alt="" width="400" height="400">
 </div>
 
 
@@ -185,7 +185,7 @@ In this representation we use 0, 1, . . . , 9, A, B, C, . . . to number the inte
 An illustration of the introduced Nickel notation for $\Sigma_{ij}^{b' b}$ two-loop diagrams with different topological structures is shown in <a href="README.md#nickel-index-illustration">Fig. 1</a>.
 <br />
 <div align="center">
-  <img src="images/Nickel_index_notation_1.png" alt="" width="600" height="300">
+  <img src="images/Nickel_index_notation_1.png" alt="" width="400" height="200">
   <a id="nickel-index-illustration"></a>
 </div>
 
@@ -198,7 +198,7 @@ An illustration of the topological homeomorphism between the "e12|e3|33||" and "
 
 <br />
 <div align="center">
-  <img src="images/Nickel_index_equivalence_5.png" alt="" width="1000" height="150">
+  <img src="images/Nickel_index_equivalence_5.png" alt="" width="500" height="100">
   <a id="nickel-index-equivalence"></a>
 </div>
 
@@ -234,7 +234,7 @@ A graphical representation of free propagators is displayed in <a href="README.m
 
 <br />
 <div align="center">
-  <img src="images/free_propagators_2.png" alt="" width="1000" height="200">
+  <img src="images/free_propagators_2.png" alt="" width="500" height="100">
   <a id="free-propagators"></a>
 </div>
 
