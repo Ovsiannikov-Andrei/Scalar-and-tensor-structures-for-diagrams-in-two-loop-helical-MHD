@@ -1,0 +1,16 @@
+Feynman diagrams: Bb
+Digrams contribute to the $\Lambda$ term
+
+e12|e3|33||:0B_vv_bB|0b_Bb|bB_vv||  SC =  1
+e12|e3|33||:0B_bB_vV|0b_vV|vv_vv||  SC =  1/2
+e12|e3|33||:0B_bB_vV|0b_vv|vV_vv||  SC =  1
+e12|e3|33||:0B_bB_vv|0b_vV|Vv_vv||  SC =  1
+The total number of graphs for the given topology: 4
+
+
+e12|23|3|e|:0B_bB_vV|vv_bB|vv|0b|  SC =  1
+e12|23|3|e|:0B_bB_vv|vV_bB|vv|0b|  SC =  1
+e12|23|3|e|:0B_bB_vv|vv_bB|Vv|0b|  SC =  1
+e12|23|3|e|:0B_bB_vv|bB_vv|bB|0b|  SC =  1
+The total number of graphs for the given topology: 4
+
