@@ -204,7 +204,7 @@ $$
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
 \end{bmatrix}
-,  \quad \text{ where } A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}
+,  \quad \text{ where } A = \text{det }\mathrm{K}_{12}
 $$
 
 $$
@@ -262,8 +262,13 @@ In the frequency–momentum representation, free propagators of the model with t
 
 $$
 \begin{align*}
-&{\langle v_i v_j \rangle}_{0} = \beta \beta^{*}\xi \xi^{*} {\hat D^v} R_{ij}, \\
-
+&{\langle v_i v_j \rangle}_{0} = \frac{\beta \beta^{*}}{\xi \xi^{*}} {\hat D^v} R_{ij}, \\
+&{\langle b_i b_j \rangle}_{0} = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{*}} \hat D^v R_{ij}, \\
+&{\langle v_i^{~} v_j' \rangle}_{0} = {\langle v_i' v_j \rangle}_{0}^{*} = \frac{\beta^{*}}{\xi^{*}} P_{ij}, \\
+&{\langle b_i^{~} b_j' \rangle}_{0} = {\langle b_i' b_j \rangle}_{0}^{*} = \frac{\alpha^{*}}{\xi^{*}} P_{ij}, \\
+&{\langle b_i v_j \rangle}_{0} = {\langle v_i b_j \rangle}_0^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} D^v R_{ij}, \\
+&{\langle b_i^{~} v_j' \rangle}_{0} = {\langle b_i' v_j^{~} \rangle}_{0}^{*} = {\langle v_i^{~} b_j' \rangle}_{0} = \\
+&{\langle v_i' b_j^{~} \rangle}_{0}^{*} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{*}} P_{i j}.
 \end{align*}
 $$
 
