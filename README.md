@@ -196,7 +196,6 @@ $$
 \end{bmatrix}
 ,
 $$
-
 where $\mathrm{K}_{1 2}^{-1}$ and $\mathrm{K}_{2 2}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
 
 $$
