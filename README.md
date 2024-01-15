@@ -111,7 +111,7 @@ As in all RG models of the developed turbulence theory, the corresponding model 
 $$
 \begin{align*}
 &\mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x}', t') \equiv \langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \\
-& \delta (t - t') \int  ,
+& \delta (t - t') \int  \limits_{|\boldsymbol{k}| < \Lambda} ,
 \end{align*}
 $$
 
