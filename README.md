@@ -111,7 +111,7 @@ As in all RG models of the developed turbulence theory, the corresponding model 
 $$
 \begin{align*}
 &\mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x}', t') \equiv \langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \\
-&\delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{{(2 \pi)}^3} d_F(k) R_{i j}(\boldsymbol{k}) e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
+&\delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda}  d_F(k) R_{i j}(\boldsymbol{k}) e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
 \end{align*}
 $$
 
@@ -204,7 +204,7 @@ $$
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
 \end{bmatrix}
-,  \quad \text{ where } 
+,  \quad \text{ where } A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}
 $$
 
 $$
