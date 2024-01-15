@@ -186,13 +186,13 @@ Eventually, the instability can be eliminated by the appearance of a large-scale
 The last contribution in $T_{lj}$ does not generate the instability, but promotes the formation of 4specific long-lived pulses of the order of $\sim t \text{eхр}(— u_0{\nu}_0 k^2 t)$ Alfv\'en waves [[1]](#references).
 
 ### **Diagram Technique**
-Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for Green's functions, the latter being defined as functional averages of products of fields with weight $\exp(\mathcal{S})$. The lines in the diagrams (free propagators) are determined according to the general rule by the "free part" of the action $\mathcal{S}$: if we represent it in the form of a quadratic form $\Phi K \Phi/2$, then $\Delta \equiv K^{-1}$ is a $4\times4$ matrix of propagators of the following form
+Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for Green's functions, the latter being defined as functional averages of products of fields with weight $\exp(\mathcal{S})$. The lines in the diagrams (free propagators) are determined according to the general rule by the "free part" of the action $\mathcal{S}$: if we represent it in the form of a quadratic form $\Phi K \Phi/2$, then $\Delta \equiv K^{-1}$ is a $4 \times 4$ matrix of propagators of the following form
 
 $$
 \Delta =
 \begin{bmatrix}
 -\mathrm{K}_{1 2}^{-T} \mathrm{K}_{2 2} \mathrm{K}_{1 2}^{-1} & \mathrm{K}_{1 2}^{-T} \\
-\mathrm{K}_{1 2}^{-1} & \mathbb{0}
+\mathrm{K}_{1 2}^{-1} & \mathbb{O}
 \end{bmatrix},
 $$
 
@@ -200,10 +200,7 @@ where $\mathrm{K}_{1 2}^{-1}$ and $\mathrm{K}_{2 2}$ are given by the correspond
 
 $$
 \mathrm{K}_{12}^{-1} = \frac{\mathrm{\hat P}}{\text{det }\mathrm{K}_{12}}
-\begin{bmatrix}
--\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
--({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
-\end{bmatrix}, 
+, 
 $$
 
 $$
