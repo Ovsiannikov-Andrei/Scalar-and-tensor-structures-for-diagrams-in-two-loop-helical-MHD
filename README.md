@@ -125,7 +125,7 @@ The final definition of the correlator reduces to the definition of the tensor q
 We consider developed turbulence with helicity, which from a point of view of $\boldsymbol{F}^v$ means, for instance, turbulence in a rotating medium, generated to sense differences in angular velocity directions. The existence of nonzero helicity imposes additional conditions on the energy source of incompressible fluid flow, i.e. to the correlator $\mathrm{D}^v$.
 
 From a symmetry point of view, helical turbulence can be understood as turbulence in a system (chiral media) that is invariant under translations and rotations, but not under plane reflections. 
-This implies the non-vanishing of the helicity $\langle \boldsymbol{v} \cdot\text{curl }\boldsymbol{v} \rangle$, i.e. existense of the correlation between velocity $\boldsymbol{v}$ and vorticity $\text{curl }\boldsymbol{v}$. Thus, we consider a model with a less rich group of global symmetries than the Galilean group $\mathbb{G}(1,3)$ (here we mean precisely three-dimensional case). In our case, the parity symmetry $\mathbb{Z}_2^P \equiv \bigl\{  \mathbb{1}_3, P_3 \bigr\} = \mathbb{O}(3)/\mathbb{SO}(3)$, is somehow violated.
+This implies the non-vanishing of the helicity $\langle \boldsymbol{v} \cdot\text{curl }\boldsymbol{v} \rangle$, i.e. existense of the correlation between velocity $\boldsymbol{v}$ and vorticity $\text{curl }\boldsymbol{v}$. Thus, we consider a model with a less rich group of global symmetries than the Galilean group $\mathbb{G}(1,3)$ (here we mean precisely three-dimensional case). In our case, the parity symmetry $\mathbb{Z}_2^P \equiv \{  \mathbb{1}_3, P_3 \} = \mathbb{O}(3)/\mathbb{SO}(3)$, is somehow violated.
 
 Technically, the rejection of spatial parity conservation means that the correlator $\mathrm{D}_{i j}^v$ is a mixture of a parity-even (tensor) and a parity-odd (pseudotensor) contributions, i.e. in case of incompressible fluid $R_{i j}(\boldsymbol{k})$ is equal to the sum of the transverse projection operator $P_{i j} (\boldsymbol{k}) \equiv \delta_{i j} - k_i k_j/k^2$ and a so-called Helical term  $H_{i j} (\boldsymbol{k}) \equiv i \epsilon_{i j l} k_l/k$
 
@@ -172,12 +172,14 @@ This instability, in turn, leads to the appearance in the system of an anomalous
 It is also important to note that the model under consideration differs from those typical for QFT or theory of critical phenomena in that here the stationarity condition for the generating functional of 1-irreducible Green's functions (effective action) $\delta_{\alpha}\Gamma_{ij}^{b'b}(\alpha)\Big|_{\langle\boldsymbol{b'}\rangle = \langle\boldsymbol{v'}\rangle = 0} = 0$ does not fix the spatially homogeneous mean $\langle\boldsymbol{b}\rangle$ [[1]](#references). Therefore, to justify the appearance of the non-zero mean field ${\bf B}$ and to define it in our model, it was proposed to act differently, namely, straightforwardly: assuming the appearance of a mean field, let's see how it affects the solenoidal terms that cause instability. This program results in an action $\mathcal{S}$. If it is possible to make them disappear by a suitable choice of ${\bf B}$, then this ${\bf B}$ will be the desired one.
 
 From a general analysis of the tensor structure of self-energy graphs we can obtain the asymptotic behavior of $\Sigma_{ij}^{b' b}$ in the following form
+
 $$ 
 \begin{align*}
 &\Sigma_{i j}^{b' b}(0, \boldsymbol{p}) \sim i \epsilon_{i j k} p_k T_{l j} \quad \text{as} \quad p \rightarrow 0, \quad \text{where} \\
 &T_{lj} = (a\Lambda - b|{\bf B}|)\delta_{lj} + c\hat B_l \hat B_j, \quad \hat B \equiv {\bf B}/|{\bf B}|.
 \end{align*}
 $$
+
 Note that in our case of zero external momenta the procedure for reducing tensor integrals to scalar ones (Veltman-Passarino reduction) allows only tensor structures of the form of $\delta_{lj}$ and $\hat B_l \hat B_j$. In principle, a contribution of the form $\sim i (\boldsymbol{p} \cdot {\bf B})\epsilon_{i j k}B_k$ is still possible in $\Sigma_{ij}^{b' b}$, but it is equal to zero due to the assumption of transversality of ${\bf B }$.
 
 Eventually, the instability can be eliminated by the appearance of a large-scale uniform field ${\bf B}$ the absolute value of which is given by the expression $|{\bf B}| = a\Lambda/b$.
@@ -185,6 +187,7 @@ The last contribution in $T_{lj}$ does not generate the instability, but promote
 
 ### **Diagram Technique**
 Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for Green's functions, the latter being defined as functional averages of products of fields with weight $\exp(\mathcal{S})$. The lines in the diagrams (free propagators) are determined according to the general rule by the "free part" of the action $\mathcal{S}$: if we represent it in the form of a quadratic form $\Phi K \Phi/2$, then $\Delta \equiv K^{-1}$ is a $4\times4$ matrix of propagators of the following form
+
 $$
 \Delta =
 \begin{bmatrix}
@@ -193,7 +196,9 @@ $$
 \end{bmatrix}
 ,
 $$
+
 where $\mathrm{K}_{12}^{-1}$ and $\mathrm{K}_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
+
 $$
 \mathrm{K}_{12}^{-1} = \frac{\mathrm{\hat P}}{\text{det }\mathrm{K}_{12}}
 \begin{bmatrix}
@@ -201,6 +206,7 @@ $$
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0\boldsymbol{\nabla}^2
 \end{bmatrix}, 
 $$
+
 $$
 \mathrm{K}_{22} =
 \begin{bmatrix}
@@ -209,6 +215,7 @@ $$
 \end{bmatrix}
 , \quad \text{ where }
 $$
+
 $$
 \text{det }\mathrm{K}_{12} = \left(-\partial_t - u_0\nu_0\boldsymbol{\nabla}^2\right)\left(-\partial_t - \nu_0\boldsymbol{\nabla}^2) - ({\bf B} \cdot \boldsymbol{\nabla}\right)^2.
 $$
