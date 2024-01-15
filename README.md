@@ -111,7 +111,7 @@ As in all RG models of the developed turbulence theory, the corresponding model 
 $$
 \begin{align*}
 &\mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x}', t') \equiv \langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \\
-&\delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda}  d_F(k) R_{i j}(\boldsymbol{k}) e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
+&\delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{{(2 \pi)}^3} d_F(k) R_{i j}(\boldsymbol{k}) e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
 \end{align*}
 $$
 
@@ -262,13 +262,13 @@ In the frequency–momentum representation, free propagators of the model with t
 
 $$
 \begin{align*}
-&{\langle v_i v_j \rangle}_0 = \frac{\beta \beta^{*}}{\xi \xi^{*}} \hat D^v R_{ij}& \\
-&{\langle b_i b_j \rangle}_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{*}} \hat D^v R_{ij}& \\
-&{\langle v_i^{~} v_j' \rangle}_0 = {\langle v_i' v_j \rangle}_0^{*} = \frac{\beta^{*}}{\xi^{*}} P_{ij}& \\
-&{\langle b_i^{~} b_j' \rangle}_0 = {\langle b_i' b_j \rangle}_0^{*} = \frac{\alpha^{*}}{\xi^{*}} P_{ij}& \\
-&{\langle b_i v_j \rangle}_0 = {\langle v_i b_j \rangle}_0^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} D^v R_{ij}& \\
-&{\langle b_i^{~} v_j' \rangle}_0 = {\langle b_i' v_j^{~} \rangle}_0^{*} = {\langle v_i^{~} b_j' \rangle}_0 =\\
-&{\langle v_i' b_j^{~} \rangle}_0^{*} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{*}} P_{i j}
+&\langle v_i v_j \rangle_0 = \frac{\beta \beta^{*}}{\xi \xi^{*}} \hat D^v R_{ij}& \\
+&\langle b_i b_j \rangle_0 = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{*}} \hat D^v R_{ij}& \\
+&\langle v_i^{~} v_j' \rangle_0 = \langle v_i' v_j \rangle_0^{*} = \frac{\beta^{*}}{\xi^{*}} P_{ij}& \\
+&\langle b_i^{~} b_j' \rangle_0 = \langle b_i' b_j \rangle_0^{*} = \frac{\alpha^{*}}{\xi^{*}} P_{ij}& \\
+&\langle b_i v_j \rangle_0 = \langle v_i b_j \rangle_0^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} D^v R_{ij}& \\
+&\langle b_i^{~} v_j' \rangle_0 = \langle b_i' v_j^{~} \rangle_0^{*} = \langle v_i^{~} b_j' \rangle_0 =\\
+&\langle v_i' b_j^{~} \rangle_0^{*} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{*}} P_{i j}
 \end{align*}
 $$
 
