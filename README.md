@@ -107,6 +107,7 @@ The most striking manifestation of a turbulent dynamo is the generation of a mag
 
 **Correlator of the random force.** 
 As in all RG models of the developed turbulence theory, the corresponding model is determined by the choice of the random force correlator $\mathrm{D}^v$. We consider the model of homogeneous and isotropic three-dimensional turbulence with the $\delta$-shaped pumping modeling energy injection to the system by infinitely large eddies. In this way, $\boldsymbol{F}^v$ simulates the energy introduced into the system on a large scale. The statistics of the external force is assumed to be Gaussian with zero mean, uncorrelated in time with a given correlator
+
 $$
 \begin{align*}
 &\mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x}', t') \equiv \langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \\
