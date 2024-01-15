@@ -204,7 +204,7 @@ $$
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
 \end{bmatrix}
-,  \quad \text{ where } A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}
+,  \quad \text{ where } 
 $$
 
 $$
