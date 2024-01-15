@@ -193,7 +193,8 @@ $$
 \begin{bmatrix}
 -\mathrm{K}_{1 2}^{-T} \mathrm{K}_{2 2} \mathrm{K}_{1 2}^{-1} & \mathrm{K}_{1 2}^{-T} \\
 \mathrm{K}_{1 2}^{-1} & \mathbb{O}
-\end{bmatrix},
+\end{bmatrix}
+,
 $$
 
 where $\mathrm{K}_{1 2}^{-1}$ and $\mathrm{K}_{2 2}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
@@ -204,7 +205,7 @@ $$
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
 \end{bmatrix}
-,  \quad \text{ where } A = \text{det }\mathrm{K}_{12}
+,  \quad \text{ where } \quad A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}
 $$
 
 $$
