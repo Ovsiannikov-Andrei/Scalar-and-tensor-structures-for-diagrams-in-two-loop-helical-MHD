@@ -111,7 +111,7 @@ As in all RG models of the developed turbulence theory, the corresponding model 
 $$
 \begin{align*}
 &\mathrm{D}_{i j}^v(\boldsymbol{x}, t, \boldsymbol{x}', t') \equiv \langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \\
-& \delta (t - t') \int_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{(2 \pi)^3} d_F(k) R_{i j}(\boldsymbol{k}) e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
+&\delta (t - t') \int_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{{(2 \pi)}^3} d_F(k) R_{i j}(\boldsymbol{k}) e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
 \end{align*}
 $$
 
@@ -127,7 +127,7 @@ We consider developed turbulence with helicity, which from a point of view of $\
 From a symmetry point of view, helical turbulence can be understood as turbulence in a system (chiral media) that is invariant under translations and rotations, but not under plane reflections. 
 This implies the non-vanishing of the helicity $\langle \boldsymbol{v} \cdot\text{curl }\boldsymbol{v} \rangle$, i.e. existense of the correlation between velocity $\boldsymbol{v}$ and vorticity $\text{curl }\boldsymbol{v}$. Thus, we consider a model with a less rich group of global symmetries than the Galilean group $\mathbb{G}(1,3)$ (here we mean precisely three-dimensional case). In our case, the parity symmetry $\mathbb{Z}_2^P \equiv \{  \mathbb{1}_3, P_3 \} = \mathbb{O}(3)/\mathbb{SO}(3)$, is somehow violated.
 
-Technically, the rejection of spatial parity conservation means that the correlator $\mathrm{D}_{i j}^v$ is a mixture of a parity-even (tensor) and a parity-odd (pseudotensor) contributions, i.e. in case of incompressible fluid $R_{i j}(\boldsymbol{k})$ is equal to the sum of the transverse projection operator $P_{i j} (\boldsymbol{k}) \equiv \delta_{i j} - k_i k_j/k^2$ and a so-called Helical term  $H_{i j} (\boldsymbol{k}) \equiv i \epsilon_{i j l} k_l/k$
+Technically, the rejection of spatial parity conservation means that the correlator $ \mathrm{D}_{i j}^v $ is a mixture of a parity-even (tensor) and a parity-odd (pseudotensor) contributions, i.e. in case of incompressible fluid $R_{i j}(\boldsymbol{k})$ is equal to the sum of the transverse projection operator $P_{i j} (\boldsymbol{k}) \equiv \delta_{i j} - k_i k_j/k^2$ and a so-called Helical term  $H_{i j} (\boldsymbol{k}) \equiv i \epsilon_{i j l} k_l/k$
 
 $$
 \begin{equation*} 
@@ -191,10 +191,9 @@ Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for G
 $$
 \Delta =
 \begin{bmatrix}
--\mathrm{K}_{12}^{-\mathrm{T}}\mathrm{K}_{22}\mathrm{K}_{12}^{-1} & \mathrm{K}_{12}^{-\mathrm{T}}\\
+-\mathrm{K}_{12}^{-\mathrm{T}}\mathrm{K}_{22}\mathrm{K}_{12}^{-1} & \mathrm{K}_{12}^{-\mathrm{T}} \\
 \mathrm{K}_{12}^{-1} & \mathbb{O}
-\end{bmatrix}
-,
+\end{bmatrix},
 $$
 
 where $\mathrm{K}_{12}^{-1}$ and $\mathrm{K}_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
@@ -202,8 +201,8 @@ where $\mathrm{K}_{12}^{-1}$ and $\mathrm{K}_{22}$ are given by the correspondin
 $$
 \mathrm{K}_{12}^{-1} = \frac{\mathrm{\hat P}}{\text{det }\mathrm{K}_{12}}
 \begin{bmatrix}
--\partial_t - u_0\nu_0\boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
--({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0\boldsymbol{\nabla}^2
+-\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
+-({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
 \end{bmatrix}, 
 $$
 
