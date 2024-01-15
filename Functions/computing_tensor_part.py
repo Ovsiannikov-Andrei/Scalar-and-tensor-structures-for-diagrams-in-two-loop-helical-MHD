@@ -1,6 +1,8 @@
 import time
+import sympy as sym
 
 from sympy import *
+from typing import Any
 
 from Functions.Data_classes import *
 from Functions.SymPy_classes import *
@@ -11,46 +13,49 @@ from Functions.SymPy_classes import *
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def tensor_structure_term_classification(expr, list_for_expr_args):
+def tensor_structure_term_classification(expr: sym.core.add.Mul, list_for_expr_args: list):
     """
     This function compares expr (some kind of one multiplier) with a template
     and adds its arguments to the list.
     """
     match expr:
-        case hyb():
-            return list_for_expr_args.append(["hyb", list(expr.args)])
+        case mom():
+            return list_for_expr_args.append(["mom", list(expr.args)])
         case P():
             return list_for_expr_args.append(["P", list(expr.args)])
         case H():
             return list_for_expr_args.append(["H", list(expr.args)])
         case kd():
             return list_for_expr_args.append(["kd", list(expr.args)])
-        case _:  # symbols or numbers
+        # symbols or numbers
+        case _:
             return list_for_expr_args.append([expr])
 
 
-def get_tensor_structure_arguments_structure(expr):
+def get_tensor_structure_arguments_structure(expr: Any):
     """
-    This function returns the expr expression structure as [expr_term_1, expr_term_2, ...],
+    This function returns the expr structure as [expr_term_1, expr_term_2, ...],
     expr_term_1 = [term_multiplier_1, term_multiplier_2, ...], where, for example,
     term_multiplier_1 = ['P', [k, 2, 4]].
 
     ARGUMENTS:
 
-    expr -- expression containing functions hyb(), P(), H(), kd(), symbols rho, A, I and numbers
+    expr -- expression containing functions mom(), P(), H(), kd(), symbols rho, A, I and numbers
 
     OUTPUT DATA EXAMPLE:
 
-    expr = hyb(-q, 9)*kd(11, 10)*P(k, 2, 6) + A*hyb(-q, 10)*kd(11, 9) + kd(12, 9)
+    expr = mom(-q, 9)*kd(11, 10)*P(k, 2, 6) + A*mom(-q, 10)*kd(11, 9) + kd(12, 9)
 
     get_tensor_structure_arguments_structure(expr) =
     [
-    [-1, A, ['hyb', [q, 10]], ['kd', [11, 9]]], [-1, ['P', [k, 2, 6]], ['hyb', [q, 9]], ['kd', [11, 10]]],
+    [-1, A, ['mom', [q, 10]], ['kd', [11, 9]]], [-1, ['P', [k, 2, 6]], ['mom', [q, 9]], ['kd', [11, 10]]],
     [['kd', [12, 9]]]
     ]
 
     """
-    expr_new = expand(expr)  # a priori, open all brackets
+
+    # a priori, open all brackets
+    expr_new = expand(expr)
 
     list_for_term_multipliers = list()
 
@@ -60,14 +65,15 @@ def get_tensor_structure_arguments_structure(expr):
         term = expr_new.args[i]
 
         list_for_multiplier_args = list()
-        if term.is_Mul:  # adds its arguments to the list
+        # adds its arguments to the list
+        if term.is_Mul:
             number_of_multipliers_in_term = len(term.args)
 
             for j in range(number_of_multipliers_in_term):
                 multiplier = term.args[j]
                 tensor_structure_term_classification(multiplier, list_for_multiplier_args)
-
-        else:  # term in expr_new has one element
+        # term in expr_new has one element
+        else:
             tensor_structure_term_classification(term, list_for_multiplier_args)
 
         list_for_term_multipliers.append(list_for_multiplier_args)
@@ -99,7 +105,7 @@ def extract_B_and_nuo_depend_factor_from_tensor_part(tensor_convolution: Any):
 
     for i in range(len(tensor_part_numerator_args)):
         numerator_term = tensor_part_numerator_args[i]
-        if numerator_term.has(I) or numerator_term.has(rho) or numerator_term.has(hyb) or numerator_term.has(lcs):
+        if numerator_term.has(I) or numerator_term.has(rho) or numerator_term.has(mom) or numerator_term.has(lcs):
             field_and_nuo_depend_factor_in_tonsor_part *= numerator_term
         else:
             dimless_tensor_part_numerator *= numerator_term
@@ -123,7 +129,7 @@ def extract_B_and_nuo_depend_factor_from_tensor_part(tensor_convolution: Any):
         denomenator_order = Poly(tensor_part_denominator_after_subs, k, q).homogeneous_order()
         field_and_nuo_depend_factor_in_tonsor_part *= scale_parameter ** (numerator_order - denomenator_order)
     else:
-        sys.exit("An unexpected view of the tensor structure")
+        sys.exit("Tensor structure is not a homogeneous function")
 
     tensor_structure_separated_into_two_parts = IntegrandPrefactorAfterSubstitution(
         dimless_tensor_part_numerator / tensor_part_denominator, field_and_nuo_depend_factor_in_tonsor_part
@@ -132,10 +138,21 @@ def extract_B_and_nuo_depend_factor_from_tensor_part(tensor_convolution: Any):
     return tensor_structure_separated_into_two_parts
 
 
-def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
-    if ind_hod in zoznam:
-        return zoznam
-    elif ind_hod not in struktura:
+def external_index(tensor_structure: list, ext_index: int, index_list: int, position: int):
+    """
+    The function put the index of external field on the position in list, if the index of external
+    field is in the index_list. On the other hand, the result is sn empty list.
+
+    ARGUMENTS:
+
+    tensor_structure -- combination of index and momenta: [i, j, "q", l, "k", j, "p", -1, "k", -1, "q", -1]
+    ext_index  -- indexb or indexB
+    index_list -- list of index for momenta k or q
+    position   -- position on which the index is change to the ex_index
+    """
+    if ext_index in tensor_structure:
+        return tensor_structure
+    elif ext_index not in index_list:
         return list()
     elif tensor_structure[position] != -1:
         return list()
@@ -145,334 +162,292 @@ def dosad(zoznam, ind_hod, struktura, pozicia):  # ?????????
         return tensor_structure[:position] + [ext_index] + tensor_structure[position + 1 :]
 
 
-def computing_tensor_structures(diagram_data: DiagramData):
+def kronecker_transver_operator(tensor: Any, transver: list, kronecker: list):
     """
-    The function replace the Kronecker's delta function and transverse projector by the transverse projector.
-    For example: P(k, i, j) * kd(i, l) = P(k, l, j)
+    This function performs the following tensor convolution with
+    Kronecker delta function: P(k, i, j) * kd(i, l) = P(k, l, j).
 
     ARGUMENTS:
 
-    diagram_data is given by get_info_about_diagram()
-
-    OUTPUT DATA EXAMPLE:
-
+    tensor    -- Tenzor - projector, kronecker symbol and momenta
+    transver  -- P_structure - all possible transverse structure in Tensor
+    kronecker -- kd_structure - all possible kronecker structure in Tensor
     """
-    moznost = diagram_data.momentums_at_vertices
-    indexb = diagram_data.indexb
-    indexB = diagram_data.indexB
-    P_structure = diagram_data.P_structure
-    H_structure = diagram_data.H_structure
-    kd_structure = diagram_data.kd_structure
-    hyb_structure = diagram_data.momentum_structure
-    Tenzor = diagram_data.integrand_tensor_part
+    for kronecker_indices in kronecker:
+        updated_structure = []
+        kd_index1, kd_index2 = kronecker_indices
 
-    t = time.time()
-    # print(f"{Tenzor}")
-    Tenzor = expand(Tenzor)  # The final tesor structure from the diagram
+        for transver_args in transver:
+            P_arg, P_index1, P_index2 = transver_args
 
-    # print(f"{kd_structure}")
-    # print(f"{P_structure}")
-    # print(f"{H_structure}")
-    # exit()
+            substitution_term = P(P_arg, P_index1, P_index2) * kd(kd_index1, kd_index2)
+            substitution_result = None
 
-    # What I need from the Tenzor structure
-    Tenzor = rho * Tenzor.coeff(rho**stupen)
-    Tenzor = expand(Tenzor.subs(I**5, I))  # calculate the imaginary unit
-    # Tenzor = Tenzor.subs(A, 1)              # It depends on which part we want to calculate from the vertex Bbv
-    # print(Tenzor)
-    # We are interested in the leading (proportional to p) contribution to the diagram asymptotic, when p --> 0.
-    print(f"step 0: {round(time.time() - t, 1)} sec")
+            if P_index1 == kd_index1:
+                substitution_result = P(P_arg, kd_index2, P_index2)
+                updated_structure.append([P_arg, kd_index2, P_index2])
+            elif P_index1 == kd_index2:
+                substitution_result = P(P_arg, kd_index1, P_index2)
+                updated_structure.append([P_arg, kd_index1, P_index2])
+            elif P_index2 == kd_index1:
+                substitution_result = P(P_arg, P_index1, kd_index2)
+                updated_structure.append([P_arg, P_index1, kd_index2])
+            elif P_index2 == kd_index2:
+                substitution_result = P(P_arg, P_index1, kd_index1)
+                updated_structure.append([P_arg, P_index1, kd_index1])
 
-    structurep = list()
-    structureh = list()
+            if substitution_result is not None:
+                tensor = tensor.subs(substitution_term, substitution_result)
 
-    for in2 in kd_structure:
-        structurep = list()
-        for in1 in P_structure:
-            # calculation via Kronecker's delta function: P(k, i, j) kd(i, l) = P(k, l, j)
-            if in1[1] == in2[0]:
-                Tenzor = Tenzor.subs(
-                    P(in1[0], in1[1], in1[2]) * kd(in2[0], in2[1]),
-                    P(in1[0], in2[1], in1[2]),
-                )
-                structure.append([i[0], j[1], i[2]])
-            elif i[1] == j[1]:
-                tensor = tensor.subs(
-                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    P(i[0], j[0], i[2]),
-                )
-                structure.append([i[0], j[0], i[2]])
-            elif i[2] == j[0]:
-                tensor = tensor.subs(
-                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    P(i[0], i[1], j[1]),
-                )
-                structure.append([i[0], i[1], j[1]])
-            elif i[2] == j[1]:
-                tensor = tensor.subs(
-                    P(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    P(i[0], i[1], j[0]),
-                )
-                structure.append([i[0], i[1], j[0]])
-            if tensor.coeff(kd(j[0], j[1])) == 0:
+            if tensor.coeff(kd(kd_index1, kd_index2)) == 0:
                 break
 
-        for i in structure:
-            if i is not transver:
-                transver.append(i)
+        transver.extend(updated_structure)
 
     return [tensor, transver]
 
 
-def kronecker_helical_operator(tensor, helical, kronecker):
+def kronecker_helical_operator(tensor: Any, helical: list, kronecker: list):
     """
-    The function replace the Kronecker's delta function and helical projector by the helical projector
-    For example: H(k, i, j) * kd(i, l) = H(k, l, j)
+    This function performs the following tensor convolution with
+    Kronecker delta function: H(k, i, j) * kd(i, l) = H(k, l, j).
 
     ARGUMENTS:
 
-    tensor    - Tenzor - projector, kronecker symbol and momenta
-    helical   - H_structure - all possible transverse structure in Tensor
-    kronecker - kd_structure - all possible kronecker structure in Tensor
+    tensor    -- Tenzor - projector, kronecker symbol and momenta
+    helical   -- H_structure - all possible transverse structure in Tensor
+    kronecker -- kd_structure - all possible kronecker structure in Tensor
     """
+    for kronecker_indices in kronecker:
+        updated_structure = []
 
-    for j in kronecker:
-        structure = list()
-        for i in helical:
-            if i[1] == j[0]:
-                tensor = tensor.subs(
-                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    H(i[0], j[1], i[2]),
-                )
-                structure.append([i[0], j[1], i[2]])
-            elif i[1] == j[1]:
-                tensor = tensor.subs(
-                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    H(i[0], j[0], i[2]),
-                )
-                structure.append([i[0], j[0], i[2]])
-            elif i[2] == j[0]:
-                tensor = tensor.subs(
-                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    H(i[0], i[1], j[1]),
-                )
-                structure.append([i[0], i[1], j[1]])
-            elif i[2] == j[1]:
-                tensor = tensor.subs(
-                    H(i[0], i[1], i[2]) * kd(j[0], j[1]),
-                    H(i[0], i[1], j[0]),
-                )
-                structure.append([i[0], i[1], j[0]])
-            if tensor.coeff(kd(j[0], j[1])) == 0:
+        kd_index1, kd_index2 = kronecker_indices
+
+        for helical_args in helical:
+            H_arg, H_index1, H_index2 = helical_args
+
+            substitution_term = H(H_arg, H_index1, H_index2) * kd(kd_index1, kd_index2)
+            substitution_result = None
+
+            if H_index1 == kd_index1:
+                substitution_result = H(H_arg, kd_index2, H_index2)
+                updated_structure.append([H_arg, kd_index2, H_index2])
+            elif H_index1 == kd_index2:
+                substitution_result = H(H_arg, kd_index1, H_index2)
+                updated_structure.append([H_arg, kd_index1, H_index2])
+            elif H_index2 == kd_index1:
+                substitution_result = H(H_arg, H_index1, kd_index2)
+                updated_structure.append([H_arg, H_index1, kd_index2])
+            elif H_index2 == kd_index2:
+                substitution_result = H(H_arg, H_index1, kd_index1)
+                updated_structure.append([H_arg, H_index1, kd_index1])
+
+            if substitution_result is not None:
+                tensor = tensor.subs(substitution_term, substitution_result)
+
+            if tensor.coeff(kd(kd_index1, kd_index2)) == 0:
                 break
 
-        for i in structure:
-            if i is not helical:
-                helical.append(i)
+        helical.extend(updated_structure)
 
     return [tensor, helical]
 
 
-def momenta_transver_operator(tensor, transver):
+def momenta_transver_operator(tensor: Any, transver: list):
     """
-    The function replace the momentum and transver projector with the same index by 0.
-    For example: P(k, i, j) * hyb(k, i) = 0
+    This function performs the following tensor identity:
+    P(k, i, j) * mom(k, i) = 0.
 
     ARBUMENTS:
 
-    tensor    - Tenzor - projector, kronecker symbol and momenta
-    transver  - P_structure - all possible transverse structure in Tensor
+    tensor   -- Tenzor - projector, kronecker symbol and momenta
+    transver -- P_structure - all possible transverse structure in Tensor
     """
+    P_position_in_transver = 0
 
-    i = 0
-    while i < len(transver):
-        j = transver[i]
-        if tensor.coeff(hyb(j[0], j[1])) != 0:
-            tensor = tensor.subs(P(j[0], j[1], j[2]) * hyb(j[0], j[1]), 0)
-        elif tensor.coeff(hyb(-j[0], j[1])) != 0:
-            tensor = tensor.subs(P(j[0], j[1], j[2]) * hyb(-j[0], j[1]), 0)
-        if tensor.coeff(hyb(j[0], j[2])) != 0:
-            tensor = tensor.subs(P(j[0], j[1], j[2]) * hyb(j[0], j[2]), 0)
-        elif tensor.coeff(hyb(-j[0], j[2])) != 0:
-            tensor = tensor.subs(P(j[0], j[1], j[2]) * hyb(-j[0], j[2]), 0)
-        if tensor.coeff(P(j[0], j[1], j[2])) == 0:
-            transver.remove(j)
+    while P_position_in_transver < len(transver):
+        P_args = transver[P_position_in_transver]
+        P_arg, P_index1, P_index2 = P_args
+
+        if tensor.coeff(mom(P_arg, P_index1)) != 0:
+            tensor = tensor.subs(P(P_arg, P_index1, P_index2) * mom(P_arg, P_index1), 0)
+        if tensor.coeff(mom(P_arg, P_index2)) != 0:
+            tensor = tensor.subs(P(P_arg, P_index1, P_index2) * mom(P_arg, P_index2), 0)
+        if tensor.coeff(P(P_arg, P_index1, P_index2)) == 0:
+            transver.remove(P_args)
         else:
-            if j[0] == -k or j[0] == -q:
-                # Replace in the tensor structure the projection operators:  P(-k,i,j) = P(k,i,j)
-                tensor = tensor.subs(P(j[0], j[1], j[2]), P(-j[0], j[1], j[2]))
-                transver[i][0] = -j[0]
-            i += 1
+            P_position_in_transver += 1
 
     return [tensor, transver]
 
 
-def momenta_helical_operator(tensor, helical):
+def momenta_helical_operator(tensor: Any, helical: list):
     """
-    The function replace the momentum and helical operator with the same index by 0.
-    For example: H(k, i, j) * hyb(k, i) = 0
+    This function performs the following tensor identity:
+    H(k, i, j) * mom(k, i) = 0. It follows from the antisymmetry
+    of the tensor operator H(k, i, j).
 
     ARBUMENTS:
 
-    tensor    - Tenzor - projector, kronecker symbol and momenta
-    helical   - H_structure - all possible helical structure in Tensor
+    tensor  -- Tenzor - projector, kronecker symbol and momenta
+    helical -- H_structure - all possible helical structure in Tensor
     """
+    H_position_in_helical = 0
 
-    i = 0
-    while i < len(helical):
-        j = helical[i]
-        if tensor.coeff(hyb(j[0], j[1])) != 0:
-            tensor = tensor.subs(H(j[0], j[1], j[2]) * hyb(j[0], j[1]), 0)
-        elif tensor.coeff(hyb(-j[0], j[1])) != 0:
-            tensor = tensor.subs(H(j[0], j[1], j[2]) * hyb(-j[0], j[1]), 0)
-        if tensor.coeff(hyb(j[0], j[2])) != 0:
-            tensor = tensor.subs(H(j[0], j[1], j[2]) * hyb(j[0], j[2]), 0)
-        elif tensor.coeff(hyb(-j[0], j[2])) != 0:
-            tensor = tensor.subs(H(j[0], j[1], j[2]) * hyb(-j[0], j[2]), 0)
-        if tensor.coeff(H(j[0], j[1], j[2])) == 0:
-            helical.remove(j)
+    while H_position_in_helical < len(helical):
+        H_args = helical[H_position_in_helical]
+        H_arg, H_index1, H_index2 = H_args
+
+        if tensor.coeff(mom(H_arg, H_index1)) != 0:
+            tensor = tensor.subs(H(H_arg, H_index1, H_index2) * mom(H_arg, H_index1), 0)
+        if tensor.coeff(mom(H_arg, H_index2)) != 0:
+            tensor = tensor.subs(H(H_arg, H_index1, H_index2) * mom(H_arg, H_index2), 0)
+        if tensor.coeff(H(H_arg, H_index1, H_index2)) == 0:
+            helical.remove(H_args)
         else:
-            i += 1
+            H_position_in_helical += 1
 
     return [tensor, helical]
 
 
-def transfer_helical_operator(tensor, transver, helical):
+def transfer_helical_operator(tensor: Any, transver: list, helical: list):
     """
-    The function replace the product between transver and helical operator with a same momenta and one a same index by helical operator.
-    For example: P(k, i, j) * H(k, i, l) = H (k, l, j)
+    This function performs the following tensor convolution:
+    P(k, i, j) * H(k, i, l) = H (k, l, j).
 
     ARGUMENTS:
 
-    tensor    - Tenzor - projector, kronecker symbol and momenta
-    helical   - H_structure - all possible helical structure in Tensor
-    transver  - P_structure - all possible transver structure in Tensor
+    tensor   -- Tenzor - projector, kronecker symbol and momenta
+    helical  -- H_structure - all possible helical structure in Tensor
+    transver -- P_structure - all possible transver structure in Tensor
     """
+    H_position_in_helical = 0
 
-    i = 0
-    while len(helical) > i:
-        j = helical[i]
-        for in2 in transver:
-            if j[0] == in2[0] and tensor.coeff(H(j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2])) != 0:
-                if j[1] == in2[1]:
-                    tensor = tensor.subs(
-                        H(j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
-                        H(j[0], in2[2], j[2]),
-                    )
-                    helical += [[j[0], in2[2], j[2]]]
-                elif j[1] == in2[2]:
-                    tensor = tensor.subs(
-                        H(j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
-                        H(j[0], in2[1], j[2]),
-                    )
-                    helical += [[j[0], in2[1], j[2]]]
-                elif j[2] == in2[1]:
-                    tensor = tensor.subs(
-                        H(j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
-                        H(j[0], j[1], in2[2]),
-                    )
-                    helical += [[j[0], j[1], in2[2]]]
-                elif j[2] == in2[2]:
-                    tensor = tensor.subs(
-                        H(j[0], j[1], j[2]) * P(in2[0], in2[1], in2[2]),
-                        H(j[0], j[1], in2[1]),
-                    )
-                    helical += [[j[0], j[1], in2[1]]]
-        if tensor.coeff(H(j[0], j[1], j[2])) == 0:
-            helical.remove(j)
+    while H_position_in_helical < len(helical):
+        H_args = helical[H_position_in_helical]
+        H_arg, H_index1, H_index2 = H_args
+
+        for transver_args in transver:
+            P_arg, P_index1, P_index2 = transver_args
+
+            substitution_term = H(H_arg, H_index1, H_index2) * P(P_arg, P_index1, P_index2)
+            substitution_result = None
+
+            if H_arg == P_arg and tensor.coeff(substitution_term) != 0:
+                if H_index1 == P_index1:
+                    substitution_result = H(H_arg, P_index2, H_index2)
+                    helical.append([H_arg, P_index2, H_index2])
+                elif H_index1 == P_index2:
+                    substitution_result = H(H_arg, P_index1, H_index2)
+                    helical.append([H_arg, P_index1, H_index2])
+                elif H_index2 == P_index1:
+                    substitution_result = H(H_arg, H_index1, P_index2)
+                    helical.append([H_arg, H_index1, P_index2])
+                elif H_index2 == P_index2:
+                    substitution_result = H(H_arg, H_index1, P_index1)
+                    helical.append([H_arg, H_index1, P_index1])
+
+                if substitution_result is not None:
+                    tensor = tensor.subs(substitution_term, substitution_result)
+
+        if tensor.coeff(H(H_arg, H_index1, H_index2)) == 0:
+            helical.remove(H_args)
         else:
-            i += 1
+            H_position_in_helical += 1
 
     return [tensor, helical]
 
 
-def transver_transver_operator(tensor, transver):
+def transver_transver_operator(tensor: Any, transver: list):
     """
-    The function replace the product between transver and transver operator with a same momenta and one a same index by transver operator.
-    For example: P(k, i, j) * P(k, i, l) = P (k, l, j)
+    This function performs the following tensor convolution:
+    P(k, i, j) * P(k, i, l) = P (k, l, j).
 
     ARGUMENTS:
 
-    tensor    - Tenzor - projector, kronecker symbol and momenta
-    transver  - P_structure - all possible transver structure in Tensor
+    tensor   -- Tenzor - projector, kronecker symbol and momenta
+    transver -- P_structure - all possible transver structure in Tensor
     """
+    P_position_in_transver = 0
 
-    i = 0
-    while len(transver) > i:
-        in1 = transver[i]
-        structure = list()
-        for j in range(i + 1, len(transver)):
-            in2 = transver[j]
-            if in1[0] == in2[0] and tensor.coeff(P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2])) != 0:
-                if in1[1] == in2[1]:
-                    tensor = tensor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in2[2], in1[2]),
-                    )
-                    structure.append([in1[0], in2[2], in1[2]])
-                elif in1[1] == in2[2]:
-                    tensor = tensor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in2[1], in1[2]),
-                    )
-                    structure.append([in1[0], in2[1], in1[2]])
-                elif in1[2] == in2[1]:
-                    tensor = tensor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in1[1], in2[2]),
-                    )
-                    structure.append([in1[0], in1[1], in2[2]])
-                elif in1[2] == in2[2]:
-                    tensor = tensor.subs(
-                        P(in1[0], in1[1], in1[2]) * P(in2[0], in2[1], in2[2]),
-                        P(in1[0], in1[1], in2[1]),
-                    )
-                    structure.append([in1[0], in1[1], in2[1]])
-        if tensor.coeff(P(in1[0], in1[1], in1[2])) == 0:
-            transver.remove(in1)
+    while P_position_in_transver < len(transver):
+        updated_structure = []
+
+        P1_args = transver[P_position_in_transver]
+        P1_arg, P1_index1, P1_index2 = P1_args
+
+        for j in range(P_position_in_transver + 1, len(transver)):
+            P2_args = transver[j]
+            P2_arg, P2_index1, P2_index2 = P2_args
+
+            substitution_term = P(P1_arg, P1_index1, P1_index2) * P(P2_arg, P2_index1, P2_index2)
+            substitution_result = None
+
+            if P1_arg == P2_arg and tensor.coeff(substitution_term) != 0:
+                if P1_index1 == P2_index1:
+                    substitution_result = P(P1_arg, P2_index2, P1_index2)
+                    updated_structure.append([P1_arg, P2_index2, P1_index2])
+                elif P1_index1 == P2_index2:
+                    substitution_result = P(P1_arg, P2_index1, P1_index2)
+                    updated_structure.append([P1_arg, P2_index1, P1_index2])
+                elif P1_index2 == P2_index1:
+                    substitution_result = P(P1_arg, P1_index1, P2_index2)
+                    updated_structure.append([P1_arg, P1_index1, P2_index2])
+                elif P1_index2 == P2_index2:
+                    substitution_result = P(P1_arg, P1_index1, P2_index1)
+                    updated_structure.append([P1_arg, P1_index1, P2_index1])
+
+                if substitution_result is not None:
+                    tensor = tensor.subs(substitution_term, substitution_result)
+
+        if tensor.coeff(P(P1_arg, P1_index1, P1_index2)) == 0:
+            transver.remove(P1_args)
         else:
-            i += 1
-        transver = transver + structure
+            P_position_in_transver += 1
+
+        transver.extend(updated_structure)
 
     return [tensor, transver]
 
 
-def kronecker_momenta(tensor, structure):
+def kronecker_momenta(tensor: Any, kronecker: list):
     """
-    The function replace the kronecker symbol and momentum with a same index by momentum.
-    For example: hyb( k, i) * kd(i, j) = hyb(k, j)
+    This function performs the following tensor convolution with
+    Kronecker delta function: mom( k, i) * kd(i, j) = mom(k, j).
 
     ARGUMENTS:
 
-    tensor     - Tenzor - projector, kronecker symbol and momenta
-    kronecker  - kd_structure - all possible transver structure in Tensor
+    tensor    -- Tenzor - projector, kronecker symbol and momenta
+    kronecker -- kd_structure - all possible transver structure in Tensor
     """
 
     i = 0
     while i == 0:
-        for j in structure:
-            part = tensor.coeff(kd(j[0], j[1]))
-            if part != 0:
-                if part.coeff(hyb(k, j[0])) != 0:
-                    tensor = tensor.subs(kd(j[0], j[1]) * hyb(k, j[0]), hyb(k, j[1]))
+        for kronecker_indices in kronecker:
+            kd_index1, kd_index2 = kronecker_indices
+            kd_part = tensor.coeff(kd(kd_index1, kd_index2))
+
+            if kd_part != 0:
+                if kd_part.coeff(mom(k, kd_index1)) != 0:
+                    tensor = tensor.subs(kd(kd_index1, kd_index2) * mom(k, kd_index1), mom(k, kd_index2))
                     i += 1
-                if part.coeff(hyb(k, j[1])) != 0:
-                    tensor = tensor.subs(kd(j[0], j[1]) * hyb(k, j[1]), hyb(k, j[0]))
+                if kd_part.coeff(mom(k, kd_index2)) != 0:
+                    tensor = tensor.subs(kd(kd_index1, kd_index2) * mom(k, kd_index2), mom(k, kd_index1))
                     i += 1
-                if part.coeff(hyb(q, j[0])) != 0:
-                    tensor = tensor.subs(kd(j[0], j[1]) * hyb(q, j[0]), hyb(q, j[1]))
+                if kd_part.coeff(mom(q, kd_index1)) != 0:
+                    tensor = tensor.subs(kd(kd_index1, kd_index2) * mom(q, kd_index1), mom(q, kd_index2))
                     i += 1
-                if part.coeff(hyb(q, j[1])) != 0:
-                    tensor = tensor.subs(kd(j[0], j[1]) * hyb(q, j[1]), hyb(q, j[0]))
+                if kd_part.coeff(mom(q, kd_index2)) != 0:
+                    tensor = tensor.subs(kd(kd_index1, kd_index2) * mom(q, kd_index2), mom(q, kd_index1))
                     i += 1
-                if part.coeff(hyb(p, j[0])) != 0:
-                    tensor = tensor.subs(kd(j[0], j[1]) * hyb(p, j[0]), hyb(p, j[1]))
+                if kd_part.coeff(mom(p, kd_index1)) != 0:
+                    tensor = tensor.subs(kd(kd_index1, kd_index2) * mom(p, kd_index1), mom(p, kd_index2))
                     i += 1
-                if part.coeff(hyb(p, j[1])) != 0:
-                    tensor = tensor.subs(kd(j[0], j[1]) * hyb(p, j[1]), hyb(p, j[0]))
+                if kd_part.coeff(mom(p, kd_index2)) != 0:
+                    tensor = tensor.subs(kd(kd_index1, kd_index2) * mom(p, kd_index2), mom(p, kd_index1))
                     i += 1
             else:
-                structure.remove(j)
+                kronecker.remove(kronecker_indices)
                 i = 1
                 break
         if i != 0:
@@ -480,39 +455,44 @@ def kronecker_momenta(tensor, structure):
         else:
             break
 
-    return [tensor, structure]
+    return [tensor, kronecker]
 
 
-def momenta_momenta_helical_operator(tensor, helical):
+def momenta_momenta_helical_operator(tensor: Any, helical: list):
     """
-    The function replace the product among helical term and two same momenta with by the 0.
-    For example: H( k, i, j) * hyb( q, i) * hyb( q, j) = 0
+    This function performs the following tensor identity:
+    H( k, i, j) * mom( q, i) * mom( q, j) = 0. It follows
+    from the antisymmetry of the tensor operator H(k, i, j).
 
     ARGUMENTS:
 
-    tensor    - Tenzor - projector, kronecker symbol and momenta
-    helical   - H_structure - all possible transverse structure in Tensor
+    tensor  -- Tenzor - projector, kronecker symbol and momenta
+    helical -- H_structure - all possible transverse structure in Tensor
     """
 
-    i = 0
-    while len(helical) > i:  # calculation for helical term
-        j = helical[i]
-        part = tensor.coeff(H(j[0], j[1], j[2]))
-        if j[0] == k and part.coeff(hyb(q, j[1]) * hyb(q, j[2])) != 0:
-            tensor = tensor.subs(H(k, j[1], j[2]) * hyb(q, j[1]) * hyb(q, j[2]), 0)
-        if j[0] == q and part.coeff(hyb(k, j[1]) * hyb(k, j[2])) != 0:
-            tensor = tensor.subs(H(q, j[1], j[2]) * hyb(k, j[1]) * hyb(k, j[2]), 0)
+    H_position_in_helical = 0
+    # calculation for helical term
+    while H_position_in_helical < len(helical):
+        H_args = helical[H_position_in_helical]
+        H_arg, H_index1, H_index2 = H_args
 
-        i += 1
+        H_part = tensor.coeff(H(H_arg, H_index1, H_index2))
+
+        if H_arg == k and H_part.coeff(mom(q, H_index1) * mom(q, H_index2)) != 0:
+            tensor = tensor.subs(H(k, H_index1, H_index2) * mom(q, H_index1) * mom(q, H_index2), 0)
+        if H_arg == q and H_part.coeff(mom(k, H_index1) * mom(k, H_index2)) != 0:
+            tensor = tensor.subs(H(q, H_index1, H_index2) * mom(k, H_index1) * mom(k, H_index2), 0)
+
+        H_position_in_helical += 1
 
     return [tensor, helical]
 
 
-def four_indices_external_fields(helical, indexb, indexB, k_indices, q_indices):
+def four_indices_external_fields(helical: list, indexb: int, indexB: int, k_indices: list, q_indices: list):
     """
     The function looking for the index structure in the helical part with four internal momenta. The result is the list with momenta and indices
-    For Example: H(k, i_b, j) hyb(q, j) hyb(k, indexB) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_]
-    H(q, i_b, j) hyb(k, j) hyb(k, indexB) ... -> [i_b, j, l, "q", l, "k", j, "p", -2, "k", i_B, "q", -1]
+    For Example: H(k, i_b, j) mom(q, j) mom(k, indexB) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_]
+    H(q, i_b, j) mom(k, j) mom(k, indexB) ... -> [i_b, j, l, "q", l, "k", j, "p", -2, "k", i_B, "q", -1]
 
     ARGUMENTS:
     helical   - is helical term H(k, i, j) = epsilon(i,j,l) k_l /k
@@ -544,6 +524,9 @@ def four_indices_external_fields(helical, indexb, indexB, k_indices, q_indices):
     if structure_new not in structure_old:
         structure_old += structure_new
 
+    if list() in structure_old:
+        structure_old.remove(list())
+
     structure_new = list()
     for i in structure_old:
         structure_new.append(external_index(i, indexb, k_indices, 10))
@@ -559,92 +542,318 @@ def four_indices_external_fields(helical, indexb, indexB, k_indices, q_indices):
 def four_indices_external_momentum(structure, p_indices, k_indices, q_indices):
     """
     The function give the specified indecies structure for index of external momentum among four momenta and helical term in a tensor structure.
-    For Example: H(k, i_b, j) hyb(q, j) hyb(k, indexB)  hyb(p, i) hyb(q, i) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_p]
+    For Example: H(k, i_b, j) mom(q, j) mom(k, indexB)  mom(p, i) mom(q, i) -> [i_b, j, "k", l, "q", j, "p", i_p, "k", i_B, "q", i_p]
 
     ARGUMENTS:
-    structure   - the structure what it is needed to be replace with
-    p_indices - list all indices for external momentum
-    k_indices - list all indices for k momentum
-    q_indices - list all indices for q momentum
+    structure -- the structure what it is needed to be replace with
+    p_indices -- list all indices for external momentum
+    k_indices -- list all indices for k momentum
+    q_indices -- list all indices for q momentum
     """
 
     i = structure.index(-1)
     result = list()
-    if i == 4:
-        if (structure[0] in p_indices) and (structure[1] in k_indices):
-            result += [structure[0:4] + [structure[1]] + structure[5:8] + [structure[0]] + structure[9:13]]
-        if (structure[1] in p_indices) and (structure[0] in k_indices):
-            result += [structure[0:4] + [structure[0]] + structure[5:8] + [structure[1]] + structure[9:13]]
-    if i == 6:
-        if p_indices.count(structure[0]) == 1 and q_indices.count(structure[1]) == 1:
-            result += [structure[0:6] + [structure[1]] + structure[7:8] + [structure[0]] + structure[9:13]]
-        if p_indices.count(structure[1]) == 1 and q_indices.count(structure[0]) == 1:
-            result += [structure[0:6] + [structure[0]] + structure[7:8] + [structure[1]] + structure[9:13]]
-    if i == 10:
-        indices = list(set(p_indices).intersection(k_indices))
-        for j in indices:
-            result += [structure[0:8] + [j] + structure[9:10] + [j] + structure[11:13]]
-    if i == 12:
-        indices = list(set(p_indices).intersection(q_indices))
-        for j in indices:
-            result += [structure[0:8] + [j] + structure[9:12] + [j]]
+
+    match i:
+        case 4:
+            if (structure[0] in p_indices) and (structure[1] in k_indices):
+                result += [structure[0:4] + [structure[1]] + structure[5:8] + [structure[0]] + structure[9:13]]
+            if (structure[1] in p_indices) and (structure[0] in k_indices):
+                result += [structure[0:4] + [structure[0]] + structure[5:8] + [structure[1]] + structure[9:13]]
+        case 6:
+            if p_indices.count(structure[0]) == 1 and q_indices.count(structure[1]) == 1:
+                result += [structure[0:6] + [structure[1]] + structure[7:8] + [structure[0]] + structure[9:13]]
+            if p_indices.count(structure[1]) == 1 and q_indices.count(structure[0]) == 1:
+                result += [structure[0:6] + [structure[0]] + structure[7:8] + [structure[1]] + structure[9:13]]
+        case 10:
+            indices = list(set(p_indices).intersection(k_indices))
+            for j in indices:
+                result += [structure[0:8] + [j] + structure[9:10] + [j] + structure[11:13]]
+        case 12:
+            indices = list(set(p_indices).intersection(q_indices))
+            for j in indices:
+                result += [structure[0:8] + [j] + structure[9:12] + [j]]
 
     return result
 
 
-def scalar_result(momenta, part):
+def scalar_result(momentum: Any, part: str):
     """
-    The function replace the momenta the equivalent form proportional Lambda or B magnetic field.
+    The function replace the momentum the equivalent form proportional Lambda or B field.
 
     ARGUMENTS:
 
-    momenta  - the structure of momenta
-    part     - lambda or B field
+    momentum -- the momentum structure
+    part     -- keyword (lambda or Bfield)
     """
+    kq_dot_product = k * q * z
+    kB_dot_product = B * k * z_k
+    qB_dot_product = B * q * z_q
 
-    if momenta == k**2 * q**2:
+    if momentum == k**2 * q**2:
         if part == "lambda":
-            return q**2 * k**2 * (1 - z**2) / d / (d + 2)
+            return q**2 * k**2 * (1 - z**2) / d / (d - 1)
         if part == "Bfield":
-            return (
-                2 * (B * k * z_k) * (B * q * z_q) * (k * q * z)
-                - (B * q * z_q) ** 2 * k**2
-                - (B * k * z_k) ** 2 * q**2
-                + B**2 * (k**2 * q**2 - (k * q * z) ** 2)
-            ) / (B**2 * (d - 2) * (d - 1))
-    if momenta == k**2:
+            term1 = 2 * (kB_dot_product) * (qB_dot_product) * (kq_dot_product)
+            term2 = (qB_dot_product) ** 2 * k**2
+            term3 = (kB_dot_product) ** 2 * q**2
+            term4 = B**2 * (k**2 * q**2 - (kq_dot_product) ** 2)
+            return (term1 - term2 - term3 + term4) / (B**2 * (d - 2) * (d - 1))
+    elif momentum == k**2:
         if part == "lambda":
             return k**2 / d
         if part == "Bfield":
-            return (k**2 - (B * k * z_k) ** 2 / B**2) / (d - 1)
-    if momenta == q**2:
+            return (k**2 - (kB_dot_product) ** 2 / B**2) / (d - 1)
+    elif momentum == q**2:
         if part == "lambda":
             return q**2 / d
         if part == "Bfield":
-            return (q**2 - (B * q * z_q) ** 2 / B**2) / (d - 1)
-    if momenta == k * q:
+            return (q**2 - (qB_dot_product) ** 2 / B**2) / (d - 1)
+    elif momentum == k * q:
         if part == "lambda":
-            return k * q * z / d
+            return kq_dot_product / d
         if part == "Bfield":
-            return (k * q * z - (B * k * z_k) * (B * q * z_q) / B**2) / (d - 1)
+            return (kq_dot_product - (kB_dot_product) * (qB_dot_product) / B**2) / (d - 1)
 
 
-def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structure, kd_structure, hyb_structure, Tenzor):
+def H_structure_calculation_part_1(
+    Tenzor: Any,
+    H_structure: Any,
+    indexB: Any,
+    indexb: Any,
+    p_structure: list,
+    k_structure: list,
+    q_structure: list,
+    keyword: str,
+):
     """
-    This function calculates the integrand of the corresponding diagram in terms of tensor and scalar parts.
+    calculation of H structure - For this particular case, one of the external indices (p_s, b_i or B_j) is paired with a helicity term.
+    we will therefore use the information that, in addition to the helicity term H( , i,j), they can be multiplied by a maximum of three internal momenta.
+    For examle: H(k, indexb, j) mom(q, j) mom(k, indexB) mom(q, i) mom(p, i) and thus in this step I will calculate all possible combinations for this structure.
+    In this case, helical term H(k, i, j) = epsilon(i,j,s) k_s /k
 
     ARGUMENTS:
 
-    moznost
-    indexb, indexB
-    P_structure
-    H_structure
-    kd_structure
-    hyb_structure
-    Tenzor
+    OUTPUT DATA EXAMPLE:
+
+    """
+
+    y = 0
+    while y < len(H_structure):
+        combination = four_indices_external_fields(H_structure[y], indexb, indexB, k_structure, q_structure)
+        combination_new = list()
+        for x in combination:
+            combination_new += four_indices_external_momentum(x, p_structure, k_structure, q_structure)
+
+        for x in combination_new:
+            if x[8] == x[12]:
+                if x[1] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * mom(q, x[6]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        -mom(p, s) * lcs(s, x[0], x[10]) * scalar_result(k**2 * q**2, keyword) / k,
+                    )
+                if x[1] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * mom(k, x[4]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        mom(p, s) * lcs(s, x[0], x[10]) * scalar_result(k**2 * q**2, keyword) / q,
+                    )
+                if x[0] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * mom(q, x[6]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        mom(p, s) * lcs(s, x[1], x[10]) * scalar_result(k**2 * q**2, keyword) / k,
+                    )
+                if x[0] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * mom(k, x[4]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        -mom(p, s) * lcs(s, x[1], x[10]) * scalar_result(k**2 * q**2, keyword) / q,
+                    )
+            if x[8] == x[10]:
+                if x[1] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * mom(q, x[6]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        mom(p, s) * lcs(s, x[0], x[12]) * scalar_result(k**2 * q**2, keyword) / k,
+                    )
+                if x[1] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * mom(k, x[4]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        -mom(p, s) * lcs(s, x[0], x[12]) * scalar_result(k**2 * q**2, keyword) / q,
+                    )
+                if x[0] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * mom(q, x[6]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        -mom(p, s) * lcs(s, x[1], x[12]) * scalar_result(k**2 * q**2, keyword) / k,
+                    )
+                if x[0] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * mom(k, x[4]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        mom(p, s) * lcs(s, x[1], x[12]) * scalar_result(k**2 * q**2, keyword) / q,
+                    )
+            if x[8] == x[0]:
+                if x[1] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * mom(q, x[6]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        -mom(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, keyword) / k,
+                    )
+                if x[1] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * mom(k, x[4]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        mom(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, keyword) / q,
+                    )
+            if x[8] == x[1]:
+                if x[0] == x[6]:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[0], x[1]) * mom(q, x[6]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        mom(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, keyword) / k,
+                    )
+                if x[0] == x[4]:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[0], x[1]) * mom(k, x[4]) * mom(p, x[8]) * mom(k, x[10]) * mom(q, x[12]),
+                        -mom(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, keyword) / q,
+                    )
+        y += 1
+
+    return Tenzor
+
+
+def H_structure_calculation_part_2(
+    Tenzor: Any,
+    H_structure: Any,
+    indexB: Any,
+    indexb: Any,
+    p_structure: list,
+    keyword: str,
+):
+    """
+    calculate the structure where there are two external momentums: H(momentum, i, indexB)* p(i) mom( , indexb) and other combinations except H(momentum, indexB, indexb) mom(p, i) mom(k, i)
+
+    ARGUMENTS:
 
     OUTPUT DATA EXAMPLE:
+
     """
+
+    for x in H_structure:
+        if Tenzor.coeff(H(x[0], x[1], x[2])) != 0:
+            if x[1] in p_structure and x[2] == indexb:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], indexb) * mom(p, x[1]) * mom(k, indexB),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, keyword) / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], indexb) * mom(p, x[1]) * mom(q, indexB),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / k,
+                    )
+                if x[0] == q:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexb) * mom(p, x[1]) * mom(q, indexB),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, keyword) / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexb) * mom(p, x[1]) * mom(k, indexB),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / q,
+                    )
+            if x[2] in p_structure and x[1] == indexb:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, indexb, x[2]) * mom(p, x[2]) * mom(k, indexB),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, keyword) / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, indexb, x[2]) * mom(p, x[2]) * mom(q, indexB),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / k,
+                    )
+                if x[0] == q:
+                    Tenzor = Tenzor.subs(
+                        H(q, indexb, x[2]) * mom(p, x[2]) * mom(q, indexB),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, keyword) / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, indexb, x[2]) * mom(p, x[2]) * mom(k, indexB),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / q,
+                    )
+            if x[1] in p_structure and x[2] == indexB:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], indexB) * mom(p, x[1]) * mom(k, indexb),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, keyword) / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], indexB) * mom(p, x[1]) * mom(q, indexb),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / k,
+                    )
+                if x[0] == q:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexB) * mom(p, x[1]) * mom(q, indexb),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, keyword) / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], indexB) * mom(p, x[1]) * mom(k, indexb),
+                        -mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / q,
+                    )
+            if x[2] in p_structure and x[1] == indexB:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, indexB, x[2]) * mom(p, x[2]) * mom(k, indexb),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, keyword) / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, indexB, x[2]) * mom(p, x[2]) * mom(q, indexb),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / k,
+                    )
+                else:
+                    Tenzor = Tenzor.subs(
+                        H(q, indexB, x[2]) * mom(p, x[2]) * mom(q, indexb),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, keyword) / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, indexB, x[2]) * mom(p, x[2]) * mom(k, indexb),
+                        mom(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, keyword) / q,
+                    )
+        if Tenzor.coeff(H(x[0], x[1], x[2])) != 0:
+            for y in p_structure:
+                if x[0] == k:
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], x[2]) * mom(p, y) * mom(k, y),
+                        mom(p, s) * lcs(s, x[1], x[2]) * scalar_result(k**2, keyword) / k,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(k, x[1], x[2]) * mom(p, y) * mom(q, y),
+                        mom(p, s) * lcs(s, x[1], x[2]) * scalar_result(k * q, keyword) / k,
+                    )
+                if x[0] == q:
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], x[2]) * mom(p, y) * mom(q, y),
+                        mom(p, s) * lcs(s, x[1], x[2]) * scalar_result(q**2, keyword) / q,
+                    )
+                    Tenzor = Tenzor.subs(
+                        H(q, x[1], x[2]) * mom(p, y) * mom(k, y),
+                        mom(p, s) * lcs(s, x[1], x[2]) * scalar_result(k * q, keyword) / q,
+                    )
+
+    return Tenzor
+
+
+def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criterion: bool):
+    """
+    The function replace the Kronecker's delta function and transverse projector by the transverse projector.
+    For example: P(k, i, j) * kd(i, l) = P(k, l, j)
+
+    ARGUMENTS:
+
+    diagram_data is given by get_info_about_diagram()
+
+    OUTPUT DATA EXAMPLE:
+
+    """
+    moznost = diagram_data.momentums_at_vertices
+    indexb = diagram_data.indexb
+    indexB = diagram_data.indexB
+    P_structure = diagram_data.P_structure
+    H_structure = diagram_data.H_structure
+    kd_structure = diagram_data.kd_structure
+    mom_structure = diagram_data.momentum_structure
+    Tenzor = diagram_data.integrand_tensor_part
 
     t = time.time()
     # print(f"{Tenzor}")
@@ -657,6 +866,7 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     # What I need from the Tenzor structure
     Tenzor = rho * Tenzor.coeff(rho**stupen)
+    # print(Tenzor)
     Tenzor = expand(Tenzor.subs(I**5, I))  # calculate the imaginary unit
     # Tenzor = Tenzor.subs(A, 1)              # It depends on which part we want to calculate from the vertex Bbv
     # print(Tenzor)
@@ -681,25 +891,25 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 4: {round(time.time() - t, 1)} sec")
 
-    for i in hyb_structure:  # replace: hyb(-k+q, i) = -hyb(k, i) + hyb(q, i)
+    for i in mom_structure:  # replace: mom(-k+q, i) = -mom(k, i) + mom(q, i)
         k_c = i[0].coeff(k)
         q_c = i[0].coeff(q)
         if k_c != 0 or q_c != 0:
-            Tenzor = Tenzor.subs(hyb(i[0], i[1]), (k_c * hyb(k, i[1]) + q_c * hyb(q, i[1])))
+            Tenzor = Tenzor.subs(mom(i[0], i[1]), (k_c * mom(k, i[1]) + q_c * mom(q, i[1])))
 
     Tenzor = expand(Tenzor)
     [Tenzor, P_structure] = momenta_transver_operator(Tenzor, P_structure)
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
 
     kd_structure = list()
-    for i in P_structure:  # Define transverse projection operator P(k,i,j) = kd(i,j) - hyb(k,i)*hyb(k,j)/k^2
+    for i in P_structure:  # Define transverse projection operator P(k,i,j) = kd(i,j) - mom(k,i)*mom(k,j)/k^2
         k_c = i[0].coeff(k)
         q_c = i[0].coeff(q)
         Tenzor = Tenzor.subs(
             P(i[0], i[1], i[2]),
             kd(i[1], i[2])
-            - (k_c * hyb(k, i[1]) + q_c * hyb(q, i[1]))
-            * (k_c * hyb(k, i[2]) + q_c * hyb(q, i[2]))
+            - (k_c * mom(k, i[1]) + q_c * mom(q, i[1]))
+            * (k_c * mom(k, i[2]) + q_c * mom(q, i[2]))
             / (k_c**2 * k**2 + q_c**2 * q**2 + 2 * k_c * q_c * k * q * z),
         )
         kd_structure.append([i[1], i[2]])
@@ -717,9 +927,9 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
 
     print(f"step 7: {round(time.time() - t, 1)} sec")
 
-    Tenzor = Tenzor.subs(hyb(q, indexb) * hyb(q, indexB), 0)
-    # delete zero values in the Tenzor: H( ,i,j) hyb(p, i) hyb( ,j) hyb(k, indexB) hyb(k, indexb) = 0
-    Tenzor = Tenzor.subs(hyb(k, indexb) * hyb(k, indexB), 0)
+    Tenzor = Tenzor.subs(mom(q, indexb) * mom(q, indexB), 0)
+    # delete zero values in the Tenzor: H( ,i,j) mom(p, i) mom( ,j) mom(k, indexB) mom(k, indexb) = 0
+    Tenzor = Tenzor.subs(mom(k, indexb) * mom(k, indexB), 0)
 
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
     [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
@@ -747,208 +957,62 @@ def computing_tensor_structures(moznost, indexb, indexB, P_structure, H_structur
     q_structure = list()  # list of indeces for momentum q in Tenzor
     # It combines quantities with matching indices.
     for in1 in range(len(moznost)):
-        Tenzor = Tenzor.subs(hyb(k, in1) ** 2, k**2)
-        Tenzor = Tenzor.subs(hyb(q, in1) ** 2, q**2)
-        Tenzor = Tenzor.subs(hyb(q, in1) * hyb(k, in1), k * q * z)
+        Tenzor = Tenzor.subs(mom(k, in1) ** 2, k**2)
+        Tenzor = Tenzor.subs(mom(q, in1) ** 2, q**2)
+        Tenzor = Tenzor.subs(mom(q, in1) * mom(k, in1), k * q * z)
         # k.q = k q z, where z = cos(angle) = k . q/ |k| /|q|
-        if Tenzor.coeff(hyb(p, in1)) != 0:
-            # H( , j, s) hyb( ,j) hyb( ,s) hyb( , indexb) hyb(p, i) hyb(q, i) hyb(q, indexB) = 0
-            # or H( , j, indexb) hyb( ,j) hyb(p, i) hyb(q, i) hyb(q, indexB) = 0
-            Tenzor = Tenzor.subs(hyb(p, in1) * hyb(q, in1) * hyb(q, indexB), 0)
-            Tenzor = Tenzor.subs(hyb(p, in1) * hyb(k, in1) * hyb(k, indexB), 0)
-            Tenzor = Tenzor.subs(hyb(p, in1) * hyb(q, in1) * hyb(q, indexb), 0)
-            Tenzor = Tenzor.subs(hyb(p, in1) * hyb(k, in1) * hyb(k, indexb), 0)
+        if Tenzor.coeff(mom(p, in1)) != 0:
+            # H( , j, s) mom( ,j) mom( ,s) mom( , indexb) mom(p, i) mom(q, i) mom(q, indexB) = 0
+            # or H( , j, indexb) mom( ,j) mom(p, i) mom(q, i) mom(q, indexB) = 0
+            Tenzor = Tenzor.subs(mom(p, in1) * mom(q, in1) * mom(q, indexB), 0)
+            Tenzor = Tenzor.subs(mom(p, in1) * mom(k, in1) * mom(k, indexB), 0)
+            Tenzor = Tenzor.subs(mom(p, in1) * mom(q, in1) * mom(q, indexb), 0)
+            Tenzor = Tenzor.subs(mom(p, in1) * mom(k, in1) * mom(k, indexb), 0)
             p_structure += [in1]  # list correspond to the index of momentum
-        if Tenzor.coeff(hyb(q, in1)) != 0:
+        if Tenzor.coeff(mom(q, in1)) != 0:
             q_structure += [in1]
-        if Tenzor.coeff(hyb(k, in1)) != 0:
+        if Tenzor.coeff(mom(k, in1)) != 0:
             k_structure += [in1]
 
     print(f"step 9: {round(time.time() - t, 1)} sec")
 
-    y = 0
-    while y < len(H_structure):
-        combination = four_indices_external_fields(H_structure[y], indexb, indexB, k_structure, q_structure)
-        combination_new = list()
-        for x in combination:
-            combination_new += four_indices_external_momentum(x, p_structure, k_structure, q_structure)
-        Lambda_term = q**2 * k**2 * (1 - z**2) / d / (d + 2)
-        B_term = k * q
-        for x in combination_new:
-            if x[8] == x[12]:
-                if x[1] == x[6]:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        -hyb(p, s) * lcs(s, x[0], x[10]) * scalar_result(k**2 * q**2, "Bfield") / k,
-                    )
-                if x[1] == x[4]:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        hyb(p, s) * lcs(s, x[0], x[10]) * scalar_result(k**2 * q**2, "Bfield") / q,
-                    )
-                if x[0] == x[6]:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        hyb(p, s) * lcs(s, x[1], x[10]) * scalar_result(k**2 * q**2, "Bfield") / k,
-                    )
-                if x[0] == x[4]:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        -hyb(p, s) * lcs(s, x[1], x[10]) * scalar_result(k**2 * q**2, "Bfield") / q,
-                    )
-            if x[8] == x[10]:
-                if x[1] == x[6]:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        hyb(p, s) * lcs(s, x[0], x[12]) * scalar_result(k**2 * q**2, "Bfield") / k,
-                    )
-                if x[1] == x[4]:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        -hyb(p, s) * lcs(s, x[0], x[12]) * scalar_result(k**2 * q**2, "Bfield") / q,
-                    )
-                if x[0] == x[6]:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        -hyb(p, s) * lcs(s, x[1], x[12]) * scalar_result(k**2 * q**2, "Bfield") / k,
-                    )
-                if x[0] == x[4]:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        hyb(p, s) * lcs(s, x[1], x[12]) * scalar_result(k**2 * q**2, "Bfield") / q,
-                    )
-            if x[8] == x[0]:
-                if x[1] == x[6]:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        -hyb(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, "Bfield") / k,
-                    )
-                if x[1] == x[4]:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        hyb(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, "Bfield") / q,
-                    )
-            if x[8] == x[1]:
-                if x[0] == x[6]:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[0], x[1]) * hyb(q, x[6]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        hyb(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, "Bfield") / k,
-                    )
-                if x[0] == x[4]:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[0], x[1]) * hyb(k, x[4]) * hyb(p, x[8]) * hyb(k, x[10]) * hyb(q, x[12]),
-                        -hyb(p, s) * lcs(s, x[10], x[12]) * scalar_result(k**2 * q**2, "Bfield") / q,
-                    )
-        y += 1
+    if UV_convergence_criterion == False:
+        Tenzor_Lambda = H_structure_calculation_part_1(
+            Tenzor, H_structure, indexB, indexb, p_structure, k_structure, q_structure, "lambda"
+        )
+        Tenzor_B = H_structure_calculation_part_1(
+            Tenzor, H_structure, indexB, indexb, p_structure, k_structure, q_structure, "Bfield"
+        )
+    else:
+        Tenzor_B = H_structure_calculation_part_1(
+            Tenzor, H_structure, indexB, indexb, p_structure, k_structure, q_structure, "Bfield"
+        )
 
     print(f"step 10: {round(time.time() - t, 1)} sec")
 
-    for x in H_structure:
-        if Tenzor.coeff(H(x[0], x[1], x[2])) != 0:
-            if x[1] in p_structure and x[2] == indexb:
-                if x[0] == k:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[1], indexb) * hyb(p, x[1]) * hyb(k, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, "Bfield") / k,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, x[1], indexb) * hyb(p, x[1]) * hyb(q, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / k,
-                    )
-                if x[0] == q:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[1], indexb) * hyb(p, x[1]) * hyb(q, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, "Bfield") / q,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(q, x[1], indexb) * hyb(p, x[1]) * hyb(k, indexB),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / q,
-                    )
-            if x[2] in p_structure and x[1] == indexb:
-                if x[0] == k:
-                    Tenzor = Tenzor.subs(
-                        H(k, indexb, x[2]) * hyb(p, x[2]) * hyb(k, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, "Bfield") / k,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, indexb, x[2]) * hyb(p, x[2]) * hyb(q, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / k,
-                    )
-                if x[0] == q:
-                    Tenzor = Tenzor.subs(
-                        H(q, indexb, x[2]) * hyb(p, x[2]) * hyb(q, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, "Bfield") / q,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(q, indexb, x[2]) * hyb(p, x[2]) * hyb(k, indexB),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / q,
-                    )
-            if x[1] in p_structure and x[2] == indexB:
-                if x[0] == k:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[1], indexB) * hyb(p, x[1]) * hyb(k, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, "Bfield") / k,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, x[1], indexB) * hyb(p, x[1]) * hyb(q, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / k,
-                    )
-                if x[0] == q:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[1], indexB) * hyb(p, x[1]) * hyb(q, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, "Bfield") / q,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(q, x[1], indexB) * hyb(p, x[1]) * hyb(k, indexb),
-                        -hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / q,
-                    )
-            if x[2] in p_structure and x[1] == indexB:
-                if x[0] == k:
-                    Tenzor = Tenzor.subs(
-                        H(k, indexB, x[2]) * hyb(p, x[2]) * hyb(k, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k**2, "Bfield") / k,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, indexB, x[2]) * hyb(p, x[2]) * hyb(q, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / k,
-                    )
-                else:
-                    Tenzor = Tenzor.subs(
-                        H(q, indexB, x[2]) * hyb(p, x[2]) * hyb(q, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(q**2, "Bfield") / q,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(q, indexB, x[2]) * hyb(p, x[2]) * hyb(k, indexb),
-                        hyb(p, s) * lcs(s, indexb, indexB) * scalar_result(k * q, "Bfield") / q,
-                    )
-        if Tenzor.coeff(H(x[0], x[1], x[2])) != 0:
-            for y in p_structure:
-                if x[0] == k:
-                    Tenzor = Tenzor.subs(
-                        H(k, x[1], x[2]) * hyb(p, y) * hyb(k, y),
-                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result(k**2, "Bfield") / k,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(k, x[1], x[2]) * hyb(p, y) * hyb(q, y),
-                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result(k * q, "Bfield") / k,
-                    )
-                if x[0] == q:
-                    Tenzor = Tenzor.subs(
-                        H(q, x[1], x[2]) * hyb(p, y) * hyb(q, y),
-                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result(q**2, "Bfield") / q,
-                    )
-                    Tenzor = Tenzor.subs(
-                        H(q, x[1], x[2]) * hyb(p, y) * hyb(k, y),
-                        hyb(p, s) * lcs(s, x[1], x[2]) * scalar_result(k * q, "Bfield") / q,
-                    )
+    if UV_convergence_criterion == False:
+        Tenzor_Lambda = H_structure_calculation_part_2(
+            Tenzor_Lambda, H_structure, indexB, indexb, p_structure, "lambda"
+        )
+        Tenzor_B = H_structure_calculation_part_2(Tenzor_B, H_structure, indexB, indexb, p_structure, "Bfield")
 
-    # lcs( i, j, l) - Levi-Civita symbol
-    Tenzor = Tenzor.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
+        # lcs( i, j, l) - Levi-Civita symbol
+        Tenzor_Lambda = Tenzor_Lambda.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
+        Tenzor_Lambda = simplify(Tenzor_Lambda)
+        Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
+        Tenzor_B = simplify(Tenzor_B)
 
-    Tenzor = simplify(Tenzor)
+        print(f"step 11: {round(time.time() - t, 1)} sec")
 
-    print(f"step 11: {round(time.time() - t, 1)} sec")
+        Tensor_data = IntegrandTensorStructure(Tenzor_Lambda, Tenzor_B)
+    else:
+        Tenzor_B = H_structure_calculation_part_2(Tenzor_B, H_structure, indexB, indexb, p_structure, "Bfield")
+        # lcs( i, j, l) - Levi-Civita symbol
+        Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
+        Tenzor_B = simplify(Tenzor_B)
 
-    print(f"\nDiagram tensor structure after computing tensor convolutions: \n{Tenzor}")
+        print(f"step 11: {round(time.time() - t, 1)} sec")
 
-    return Tenzor
+        Tensor_data = IntegrandTensorStructure(None, Tenzor_B)
+
+    return Tensor_data

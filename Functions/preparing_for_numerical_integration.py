@@ -90,7 +90,8 @@ def nintegrand_to_WfMath_format(integrand_str: str):
     too long
     """
 
-    replace_function(integrand_str, "sqrt", "Sqrt")
+    integrand_str = replace_function(integrand_str, "sqrt", "Sqrt")
+    integrand_str = replace_function(integrand_str, "Abs", "Abs")
     integrand_str = integrand_str.replace("**", "^")
 
     # theta_k = ToExpression[SubscriptBox[\[Theta], 1]] in WfMath format
@@ -102,7 +103,7 @@ def nintegrand_to_WfMath_format(integrand_str: str):
     sin_q_str = "Sin[theta_q]"
 
     integrand_str = integrand_str.replace("z_k", cos_k_str).replace("z_q", cos_q_str)
-    integrand_str = integrand_str.replace("z", f"{sin_q_str}*{sin_k_str}*{cos_2u_str} + {cos_k_str}*{cos_q_str}")
+    integrand_str = integrand_str.replace("z", f"({sin_q_str}*{sin_k_str}*{cos_2u_str} + {cos_k_str}*{cos_q_str})")
 
     # print(pretty(Tenzor, use_unicode=False))
     # peint("\n"+ pretty(Tenzor, use_unicode=False) + "\n")
@@ -117,13 +118,13 @@ def preparing_diagram_for_numerical_integration(
     eps_input: int,
     d_input: int,
     A_input: int,
+    uo_default: float,
     list_with_uo_values: list,
     output_in_WfMath_format: str,
     UV_convergence_criterion: bool,
 ):
     """
     The function finally prepares the integrand for numerical integration.
-    Works only with converging diagrams.
 
     ARGUMENTS:
 
@@ -141,69 +142,155 @@ def preparing_diagram_for_numerical_integration(
 
     OUTPUT DATA EXAMPLE:
 
-    field_and_nuo_depend_factor = 4*I*pi**2*go**2*nuo**11*rho*lcs(s, 0, 9)*hyb(p, s)/B**10
+    field_and_nuo_depend_factor = 4*I*pi**2*go**2*nuo**11*rho*lcs(s, 0, 9)*mom(p, s)/B**10
 
     list_with_integrands = too long
     """
+
+    Feynman_graph = open(f"Detailed Results/{output_file_name}", "a+")
+    Final_integrand_for_numeric_calc = open(f"Final Results (just copy and integrate)/{output_file_name}", "a+")
+    Feynman_graph.write(f"\nCalculation of the final expression for the integrand. \n")
+
     if UV_convergence_criterion == True:
-        dimless_tensor_part = diagram_integrand_data.tensor_convolution_dimensionless_part
-        dim_factor_from_tensor_part = diagram_integrand_data.tensor_convolution_field_and_nuo_factor
-        dim_factor_from_scalar_part = diagram_integrand_data.scalar_part_field_and_nuo_factor
-        dimless_scalar_part = diagram_integrand_data.scalar_part_depending_only_on_uo
+        momentum_depend_tensor_part_B = diagram_integrand_data.tensor_convolution_B_momentum_depend_part
+        momentum_depend_scalar_part_B = diagram_integrand_data.convergent_scalar_part_depending_only_on_uo
 
-        tensor_part_numerator = fraction(dimless_tensor_part)[0]
-        tensor_part_denominator = fraction(dimless_tensor_part)[1]
-        scalar_part_numerator = fraction(dimless_scalar_part)[0]
-        scalar_part_denominator = fraction(dimless_scalar_part)[1]
+        common_multiplier_from_tensor_part_B = diagram_integrand_data.tensor_convolution_B_field_and_nuo_factor
+        common_multiplier_from_scalar_part_B = diagram_integrand_data.scalar_part_field_and_nuo_factor
 
-        dim_factor_from_scalar_part = dim_factor_from_scalar_part * dim_factor_from_tensor_part
-        integrand_denominator = scalar_part_denominator * tensor_part_denominator
-        integrand_numerator = scalar_part_numerator * tensor_part_numerator
-        integrand = integrand_numerator / integrand_denominator
+        complete_common_factor = simplify(common_multiplier_from_scalar_part_B * common_multiplier_from_tensor_part_B)
+        convergent_integrand = momentum_depend_tensor_part_B * momentum_depend_scalar_part_B
 
-        Feynman_graph = open(f"Results/{output_file_name}", "a+")
+        Feynman_graph.write(f"\nF = C_int*F1*T1_ij, where C_int = C_F*C_T.")
+
         Feynman_graph.write(
-            f"\nThe integrand of the diagram in a form suitable for numerical calculations, i.e. integrand = F1*T1_ij: \n{integrand}\n"
-            f"\nDimensional multiplier before the integrand, i.e. C_int = C_F*C_T: \n{dim_factor_from_scalar_part}\n"
+            f"\nDimensional multiplier before the integrand, i.e. C_int: \n{complete_common_factor}\n"
+            f"\nThe UV-convergent part of the integrand without C_int, i.e. F1*T1_ij: \n{convergent_integrand}\n"
         )
 
-        integrand_for_numerical_calc = integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
-        dim_factor_from_scalar_part = dim_factor_from_scalar_part.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
-
-        Feynman_graph.write(
-            f"\nInput parameter values: d = {d_input}, eps = {eps_input}, and A = {A_input}.\n"
-            f"\nDiagram integrand for input parameters: \n{integrand_for_numerical_calc}\n"
+        Final_integrand_for_numeric_calc.write(
+            f"The UV-convergent part of the integrand without C_int: \n{nintegrand_to_WfMath_format(str(convergent_integrand))}\n"
+            f"\nDimensional multiplier before the integrand, i.e. C_int: \n{complete_common_factor}\n"
         )
 
         if output_in_WfMath_format == "y":
             print(f"\nConverting the result to Wolfram Mathematica format.")
 
-            WF_integrand_without_parameters = nintegrand_to_WfMath_format(str(integrand))
-            WF_integrand_with_parameters = nintegrand_to_WfMath_format(str(integrand_for_numerical_calc))
+            WF_integrand_without_parameters = nintegrand_to_WfMath_format(str(convergent_integrand))
 
             Feynman_graph.write(
                 f"\nExpression for F1*T1_ij in Wolfram Mathematica format: \n{WF_integrand_without_parameters}\n"
-                f"\nExpression for F1*T1_ij with input parameter values in Wolfram Mathematica format: \n{WF_integrand_with_parameters}\n"
             )
 
-        if list_with_uo_values[0] != None:
-            list_with_integrands = list()
+        integrand_for_numerical_calc = convergent_integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
+
+        list_with_integrands = list()
+
+        Feynman_graph.write(
+            f"\nOne-loop reciprocal magnetic Prandtl number at the fixed point {uo} = {uo_default}."
+            f"\nThe entered values of the bare magnetic Prandtl number {uo}: {list_with_uo_values}"
+            f"\nBelow are the integrands corresponding to the entered values of {uo}.\n"
+        )
+
+        for i in range(len(list_with_uo_values)):
+            uo_value = list_with_uo_values[i]
+            list_with_integrands.append(integrand_for_numerical_calc.subs(uo, uo_value))
+            integrand = list_with_integrands[i]
+            Feynman_graph.write(f"\nDiagram integrand for {uo} = {uo_value}: \n{integrand} \n")
+            if output_in_WfMath_format == "y":
+                integrand_in_Wolfram_format = nintegrand_to_WfMath_format(str(integrand))
+                Feynman_graph.write(
+                    f"\nDiagram integrand for {uo} = {uo_value} in Wolfram Mathematica format: "
+                    f"\n{integrand_in_Wolfram_format} \n"
+                )
+
+    else:
+        momentum_depend_tensor_part_lambda = diagram_integrand_data.tensor_convolution_lambda_momentum_depend_part
+        momentum_depend_scalar_part_lambda = diagram_integrand_data.divergent_scalar_part_depending_only_on_uo
+        momentum_depend_tensor_part_B = diagram_integrand_data.tensor_convolution_B_momentum_depend_part
+        momentum_depend_scalar_part_B = diagram_integrand_data.convergent_scalar_part_depending_only_on_uo
+
+        common_multiplier_from_tensor_part_lambda = (
+            diagram_integrand_data.tensor_convolution_lambda_field_and_nuo_factor
+        )
+        common_multiplier_from_tensor_part_B = diagram_integrand_data.tensor_convolution_B_field_and_nuo_factor
+        common_multiplier_from_scalar_part = diagram_integrand_data.scalar_part_field_and_nuo_factor
+
+        complete_common_factor_lambda = simplify(
+            common_multiplier_from_scalar_part * common_multiplier_from_tensor_part_lambda
+        )
+        complete_common_factor_B = simplify(common_multiplier_from_scalar_part * common_multiplier_from_tensor_part_B)
+        convergent_integrand = momentum_depend_tensor_part_B * momentum_depend_scalar_part_B
+        divergent_integrand = momentum_depend_tensor_part_lambda * momentum_depend_scalar_part_lambda
+
+        dimension_test = simplify(complete_common_factor_lambda - complete_common_factor_B)
+
+        assert dimension_test == 0, "Incorrect dimension of the integrand."
+
+        Feynman_graph.write(
+            f"\nF = C_int*F1(B = 0)*T1_lambda_ij + C_int*(F1 - F1(B = 0))*T1_B_ij, \n"
+            f"where C_int = C_F*C_lambda_T = C_F*C_B_T.\n"
+        )
+
+        Feynman_graph.write(
+            f"\nDimensional multiplier before the integrand, i.e. C_int: \n{complete_common_factor_lambda}\n"
+            f"\nThe UV-divergent part of the integrand without C_int, i.e. F1(B = 0)*T1_lambda_ij: \n{divergent_integrand}\n"
+            f"\nThe UV-convergent part of the integrand without C_int, i.e. (F1 - F1(B = 0))*T1_B_ij: \n{convergent_integrand}\n"
+        )
+
+        Final_integrand_for_numeric_calc.write(
+            f"The UV-divergent part of the integrand without C_int: \n{nintegrand_to_WfMath_format(str(divergent_integrand))}\n"
+            f"\nThe UV-convergent part of the integrand without C_int: \n{nintegrand_to_WfMath_format(str(convergent_integrand))}\n"
+            f"\nDimensional multiplier before the integrand, i.e. C_int: \n{complete_common_factor_lambda}\n"
+        )
+
+        if output_in_WfMath_format == "y":
+            print(f"\nConverting the result to Wolfram Mathematica format.")
+
+            WF_divergent_integrand_without_parameters = nintegrand_to_WfMath_format(str(divergent_integrand))
+            WF_convergent_integrand_without_parameters = nintegrand_to_WfMath_format(str(convergent_integrand))
 
             Feynman_graph.write(
-                f"\nThe entered values of the bare magnetic Prandtl number uo: {list_with_uo_values}"
-                f"\nBelow are the integrands corresponding to the entered values of uo.\n"
+                f"\nExpression for F1(B = 0)*T1_lambda_ij in Wolfram Mathematica format: \n{WF_divergent_integrand_without_parameters}\n"
+                f"\nExpression for (F1 - F1(B = 0))*T1_B_ij with input parameter values in Wolfram Mathematica format: \n{WF_convergent_integrand_without_parameters}\n"
             )
 
-            for i in range(len(list_with_uo_values)):
-                uo_value = list_with_uo_values[i]
-                list_with_integrands.append(integrand_for_numerical_calc.subs(uo, uo_value))
-                integrand = list_with_integrands[i]
-                Feynman_graph.write(f"\nDiagram integrand for uo = {uo_value}: \n{integrand} \n")
-                if output_in_WfMath_format == "y":
-                    integrand_in_Wolfram_format = nintegrand_to_WfMath_format(str(integrand))
-                    Feynman_graph.write(
-                        f"\nDiagram integrand for uo = {uo_value} in Wolfram Mathematica format: "
-                        f"\n{integrand_in_Wolfram_format} \n"
-                    )
+        divergent_integrand_for_numerical_calc = (
+            divergent_integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
+        )
+        convergent_integrand_for_numerical_calc = (
+            convergent_integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
+        )
 
-        Feynman_graph.close()
+        list_with_divergent_integrands = list()
+        list_with_convergent_integrands = list()
+
+        Feynman_graph.write(
+            f"\nOne-loop reciprocal magnetic Prandtl number at the fixed point {uo} = {uo_default}."
+            f"\nThe entered values of the bare magnetic Prandtl number {uo}: {list_with_uo_values}."
+            f"\nBelow are the integrands corresponding to the entered values of {uo}.\n"
+        )
+
+        for i in range(len(list_with_uo_values)):
+            uo_value = list_with_uo_values[i]
+            list_with_divergent_integrands.append(divergent_integrand_for_numerical_calc.subs(uo, uo_value))
+            list_with_convergent_integrands.append(convergent_integrand_for_numerical_calc.subs(uo, uo_value))
+            divergent_integrand = list_with_divergent_integrands[i]
+            convergent_integrand = list_with_convergent_integrands[i]
+            Feynman_graph.write(
+                f"\nDiagram integrand's divergent part for {uo} = {uo_value}: \n{divergent_integrand} \n"
+            )
+            Feynman_graph.write(
+                f"\nDiagram integrand's convergent part for {uo} = {uo_value}: \n{convergent_integrand} \n"
+            )
+            if output_in_WfMath_format == "y":
+                divergent_integrand_in_Wolfram_format = nintegrand_to_WfMath_format(str(divergent_integrand))
+                convergent_integrand_in_Wolfram_format = nintegrand_to_WfMath_format(str(convergent_integrand))
+                Feynman_graph.write(
+                    f"\nDiagram integrand's divergent part for {uo} = {uo_value} in Wolfram Mathematica format: "
+                    f"\n{divergent_integrand_in_Wolfram_format} \n"
+                    f"\nDiagram integrand's convergent part for {uo} = {uo_value} in Wolfram Mathematica format: "
+                    f"\n{convergent_integrand_in_Wolfram_format} \n"
+                )
+
+    Feynman_graph.close()

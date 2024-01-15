@@ -28,13 +28,15 @@ s reserved to denote the component of the external momentum p
 d the spatial dimension of the system, its physical value is equal to 3
 """
 
-[z, z_k, z_q, Lambda_cutoff, B] = symbols("z z_k z_q Lambda_cutoff B", real=True)
+[z, z_k, z_q, Lambda_cutoff, B, b] = symbols("z z_k z_q Lambda_cutoff B b", real=True)
 """
 z = cos(angle between k and q) = dot_product(k, q)/ (abs(k) * abs(q))
 z_k = cos(angle between k and B) = dot_product(k, B)/ (abs(k) * abs(B))
 z_q = cos(angle between q and B) = dot_product(q, B)/ (abs(q * abs(B))
 
-B is a field proportional to the magnetic induction vector
+B is a field proportional to the magnetic induction vector, b is an auxiliary parameter equal 
+to 0 or 1. It is needed in order to formally preserve the form of all expressions (with square 
+roots) at all stages of calculations of UV-divergent parts of the diagrams.
 
 Attention! 
 Do not confuse the field B (in the notation [1] it is theta') and <B> is a 

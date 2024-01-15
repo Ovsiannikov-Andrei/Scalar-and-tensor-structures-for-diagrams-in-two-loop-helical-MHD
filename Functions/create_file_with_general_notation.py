@@ -75,33 +75,36 @@ The first loop corresponds to the pair {k, w_k} and the second to the pair {q, w
         )
 
         [i, j, l] = symbols("i j l", integer=True)
-        empty_integrand_scalar_and_tensor_parts = IntegrandPropagatorProduct()
 
-        all_fields_glued_into_propagators = get_propagators_from_list_of_fields(all_nonzero_propagators)
-
-        info_about_propagators = list()
-        for m in range(len(all_nonzero_propagators)):
-            propagator_product = define_propagator_product(
-                empty_integrand_scalar_and_tensor_parts, all_nonzero_propagators[m], k, w_k, i, j
-            )
-            info_about_propagators.append([propagator_product.scalar_part, propagator_product.tensor_part])
-
-            propagator_without_tensor_structure = info_about_propagators[m][0]
-            tensor_structure_of_propagator = info_about_propagators[m][1]
-            Notation_file.write(
-                f"\n{all_fields_glued_into_propagators[m]}{k, q, i, j} = "
-                f"{propagator_without_tensor_structure*tensor_structure_of_propagator}"
-            )  # write the propagator definition into file
+        # write the propagator definition into file
+        Notation_file.write(
+            f""" 
+{Pvv(k, w, i, j)} = {Pvv(k, w, i, j).doit()}
+{PVv(k, w, i, j)} = {PVv(k, w, i, j).doit()}
+{PVv(k, w, i, j)} = {PVv(k, w, i, j).doit()}
+{PbB(k, w, i, j)} = {PbB(k, w, i, j).doit()}
+{PBb(k, w, i, j)} = {PBb(k, w, i, j).doit()}
+{Pvb(k, w, i, j)} = {Pvb(k, w, i, j).doit()}
+{Pbv(k, w, i, j)} = {Pbv(k, w, i, j).doit()}
+{Pbb(k, w, i, j)} = {Pbb(k, w, i, j).doit()}
+{PVb(k, w, i, j)} = {PVb(k, w, i, j).doit()}
+{PbV(k, w, i, j)} = {PbV(k, w, i, j).doit()}
+{PBv(k, w, i, j)} = {PBv(k, w, i, j).doit()}
+{PvB(k, w, i, j)} = {PvB(k, w, i, j).doit()}
+"""
+        )
 
         Notation_file.write(
-            f"""\n\nVertex factors:
+            f"""\nVertex factors:
 
-vertex_factor_Bbv(k, i, j, l) = {vertex_factor_Bbv(k, i, j, l).doit()}
-vertex_factor_Vvv(k, i, j, l) = {vertex_factor_Vvv(k, i, j, l).doit()}
-vertex_factor_Vbb(k, i, j, l) = {vertex_factor_Vvv(k, i, j, l).doit()}
+vertex_factor_Bbv(k, index_B, index_b, index_v) = I * (mom(k, index_v) * kd(index_B, index_b) -
+    A * mom(k, index_b) * kd(index_B, index_v))
+vertex_factor_Vvv(k, index_V, index1_v, index2_v) = -I * (mom(k, index1_v) * kd(index_V, index2_v) +
+    mom(k, index2_v) * kd(index_V, index1_v))
+vertex_factor_Vbb(k, index_V, index1_b, index2_b) = I * (mom(k, index1_b) * kd(index_V, index2_b) +
+    mom(k, index2_b) * kd(index_V, index1_b))
 
-Here arguments i, j, l are indices of corresonding fields in corresponding vertex 
-(for example, in the Bbv-vertex i denotes index of {B}, i - index of b, and l - index ob v).\n"""
+Here arguments i, j, l are indices of corresonding fields in corresponding vertex.\n"""
         )  # write vertex factors
 
         Notation_file.write(
@@ -113,7 +116,7 @@ Index {s} reserved to denote the component of the external momentum {p}, {d} the
 (its physical value is equal to 3), function {sc_prod}(. , .) denotes the standard dot product of vectors in R**d
 (its arguments are always vectors!). 
 
-Function {hyb(k, i)} denotes i-th component of vector {k} (i = 1, ..., {d}), functions {kd(i, j)} and {lcs(i, j, l)} 
+Function {mom(k, i)} denotes i-th component of vector {k} (i = 1, ..., {d}), functions {kd(i, j)} and {lcs(i, j, l)} 
 denotes the Kronecker delta and Levi-Civita symbols.
 
 The rest of the model numeric parameters are {nuo} -- renormalized kinematic viscosity, {go} -- coupling constant,

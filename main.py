@@ -30,7 +30,7 @@ from Functions.preparing_for_numerical_integration import *
 
 def main():
     """
-    The program reads the Nickel indices line by line from a special external file (0),
+    The program reads the Nickel indices line by line from a special external file "Two-loop MHD self-energy diagrams.txt",
     performs calculations and writes the output data about the diagram to the created file.
 
     The output data includes the topology of the diagram, the distribution of momenta and frequencies, and
@@ -38,9 +38,14 @@ def main():
     calculated up to the level of taking integrals over frequencies and calculating tensor convolutions.
     """
 
-    # create the Results folder if it doesn't already exist
-    if not os.path.isdir("Results"):
-        os.mkdir("Results")
+    # create the Detailed Results folder, if it doesn't already exist
+    if not os.path.isdir("Detailed Results"):
+        os.mkdir("Detailed Results")
+
+    # create the Final Results folder for integrends for numerical calculations,
+    # if it doesn't already exist
+    if not os.path.isdir("Final Results (just copy and integrate)"):
+        os.mkdir("Final Results (just copy and integrate)")
 
     # create a file with decoding of all notations and additional information
     create_file_with_info_and_supplementary_matherials()
@@ -50,57 +55,52 @@ def main():
 
     print(f"PROGRAM START")
 
-    print(
-        f"\nProgram default parameters: coordinate space dimension d = 3,"
-        f"regularization parameter epsilon = 0, and model type A = 1 (MHD). \n"
-    )
-
     # default value of coordinate space dimension
     d_default = 3
     # default value of the regularization parameter eps
     eps_default = 0
     # default value of the model parameter A (MHD corresponds to A = 1)
     A_MHD = 1
+    # one-loop reciprocal magnetic Prandtl number at the fixed point
+    uo_default = round((sqrt(43 / 3) - 1) / 2, 3)
 
-    model_parameters = input("Would you like to change the default parameter values? (y/n) ")
+    print(
+        f"""\nDefault parameters: 
+coordinate space dimension d = {d_default}, 
+one-loop reciprocal magnetic Prandtl number at the fixed point uo = {uo_default}, 
+regularization parameter epsilon = {eps_default}, and model type A = {A_MHD} (MHD). \n"""
+    )
+
+    model_parameters = input(
+        f"""Would you like to change other default parameter values or obtain integrand expressions 
+for uo values different from the default? (y/n) """
+    )
+
+    list_with_uo_values = []
 
     if model_parameters == "y":
-        d_input = input("Enter a space dimension: d = ")
-        eps_input = input("Enter value of the regularization parameter: epsilon = ")
-        A_input = input("Enter model type (valid values are A = 0, A = 1): A = ")
+        d_input = input(f"Enter a space dimension: d = ")
+        eps_input = input(f"Enter value of the regularization parameter: epsilon = ")
+        A_input = input(f"Enter model type (valid values are A = 0, A = 1): A = ")
+        entered_list_with_uo = input(f"Enter a list of desired magnetic Prandtl numbers separated by spaces: ").split()
+        list_with_uo_values = [float(i) for i in entered_list_with_uo]
     else:
         d_input = d_default
         eps_input = eps_default
         A_input = A_MHD
-
-    # dimension factor before the diagram to check the result
-    # (all diagrams must have the same dimension)
-    dimensional_factor_for_test = go**2 * nuo**11 * (B / nuo) ** (-2 * d - 4 * eps + 8) / B**10
-
-    calc_with_uo = input(
-        "\nWould you like to get integrands for specific values of the magnetic Prandtl number? (y/n) "
-    )
+        list_with_uo_values.append(uo_default)
 
     output_in_WfMath_format = input(
-        "\nWould you also like to get results in a format suitable for use in Wolfram Mathematica? (y/n) "
+        f"\nWould you also like to get results in a format suitable for use in Wolfram Mathematica? (y/n) "
     )
-    list_with_uo_values = []
 
-    if calc_with_uo == "y":
-        entered_list_with_uo = input("Enter a list of desired magnetic Prandtl numbers separated by spaces: ").split()
-        list_with_uo_values = [float(i) for i in entered_list_with_uo]
-    else:
-        list_with_uo_values.append(None)
-
-    with open("Two-loop MHD diagrams.txt", "r") as MHD_diagrams_file:
-        for diagram in MHD_diagrams_file.readlines():
+    with open("Two-loop MHD self-energy diagrams.txt", "r") as MHD_diagrams_file:
+        for Nickel_index in MHD_diagrams_file.readlines():
             print(f"\nCALCULATION {number_of_counted_diagrams + 1} BEGIN")
 
-            diagram_data = get_info_about_diagram(diagram, output_in_WfMath_format, number_of_counted_diagrams + 1)
+            diagram_data = get_info_about_diagram(Nickel_index, output_in_WfMath_format, number_of_counted_diagrams + 1)
 
-            diagram_integrand_data = diagram_integrand_calculation(
-                diagram_data, dimensional_factor_for_test, output_in_WfMath_format
-            )
+            diagram_integrand_data = diagram_integrand_calculation(diagram_data, output_in_WfMath_format)
 
             preparing_diagram_for_numerical_integration(
                 diagram_data.output_file_name,
@@ -108,6 +108,7 @@ def main():
                 eps_input,
                 d_input,
                 A_input,
+                uo_default,
                 list_with_uo_values,
                 output_in_WfMath_format,
                 diagram_data.expression_UV_convergence_criterion,

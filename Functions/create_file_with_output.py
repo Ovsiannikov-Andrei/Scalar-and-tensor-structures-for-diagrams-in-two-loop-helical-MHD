@@ -17,8 +17,8 @@ def get_information_from_Nickel_index(line_with_info: str, diagram_number: int):
 
     OUTPUT DATA EXAMPLE:
 
-    File name example: "Diagram__e12-23-3-e+0B_bB_vv-vB_bb-bV-0b.txt"
-    (all "|" are replaced by -, ":" is replaced by +)
+    File name example: "Diagram__e12_23_3_e__0B_bB_vv__vB_bb__bV__0b.txt"
+    (all "|" are replaced by __, ":" is replaced by __)
 
     Nickel index examples: e12|23|3|e|:0B_bB_vv|vB_bb|bV|0b|, e12|e3|33||:0B_bV_vb|0b_bV|Bv_vv||
 
@@ -38,7 +38,7 @@ def get_information_from_Nickel_index(line_with_info: str, diagram_number: int):
     nickel_index_info = NickelIndexInfo(
         f"{diagram_number}.Diagram__{nickel_topology.strip()}__{nickel_lines.strip()}.txt",
         nickel_index.strip(),
-        int(symmetry_factor.strip()),
+        str(symmetry_factor.strip()),
     )
 
     return nickel_index_info

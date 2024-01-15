@@ -9,6 +9,7 @@ class DiagramData:
 
     ARGUMENTS:
 
+    nickel_index -- here we save a Nickel index from the line with the data,
     output_file_name -- the name of the file with results,
     momentums_at_vertices -- distribution of momentums at the vertices,
     indexb -- index of the inflowing field,
@@ -22,6 +23,7 @@ class DiagramData:
     expression_UV_convergence_criterion -- corresponding integral is convergent (True/False)
     """
 
+    nickel_index: str
     output_file_name: str
     momentums_at_vertices: list
     indexb: int
@@ -53,10 +55,13 @@ class IntegrandData:
     """
 
     scalar_part_without_replacement: Any
-    scalar_part_depending_only_on_uo: Any
+    convergent_scalar_part_depending_only_on_uo: Any
+    divergent_scalar_part_depending_only_on_uo: Any
     scalar_part_field_and_nuo_factor: Any
-    tensor_convolution_dimensionless_part: Any
-    tensor_convolution_field_and_nuo_factor: Any
+    tensor_convolution_lambda_momentum_depend_part: Any
+    tensor_convolution_lambda_field_and_nuo_factor: Any
+    tensor_convolution_B_momentum_depend_part: Any
+    tensor_convolution_B_field_and_nuo_factor: Any
 
 
 @dataclass
@@ -179,6 +184,7 @@ class IntegrandPropagatorProduct:
 
     ARGUMENTS:
 
+    propagator -- here we save the full product of propagators
     scalar_part -- here we save the product of propagators (without tensor structure),
     tensor_part -- here we save the tensor structures (P_ij, H_ij, vertex factors),
     P_data -- here we save all indices of the projctors in the form [[momentum, index1, index2]],
@@ -187,6 +193,7 @@ class IntegrandPropagatorProduct:
     (for Wolfram Mathematica file),
     """
 
+    propagator_prod: Any = 1
     scalar_part: Any = 1
     tensor_part: Any = 1
     P_data: list = field(default_factory=list)
@@ -258,9 +265,26 @@ class IntegrandPrefactorAfterSubstitution:
 
     ARGUMENTS:
 
-    dimensionless_factor -- term depending on k and q
-    dim_factor -- term depending on dimensional factors (B, nuo, ...)
+    momentum_depend_factor -- term depending on k and q
+    momentum_independ_factor -- term depending on dimensional factors (B, nuo, ...)
     """
 
-    dimensionless_factor: Any
-    dim_factor: Any
+    momentum_depend_factor: Any
+    momentum_independ_factor: Any
+
+
+@dataclass
+class IntegrandTensorStructure:
+    """
+    After calculating the tensor structure, the Parisi-Waltman scalarization
+    procedure is performed separately for the divergent part (proportional to Lambda)
+    and the convergent part (proportional to B).
+
+    ARGUMENTS:
+
+    lambda_proportional_term -- result for divergent part
+    B_proportional_term -- result for convergent part
+    """
+
+    lambda_proportional_term: Any
+    B_proportional_term: Any

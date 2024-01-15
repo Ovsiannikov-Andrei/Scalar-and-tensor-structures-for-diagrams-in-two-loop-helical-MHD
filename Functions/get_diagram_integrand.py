@@ -41,205 +41,213 @@ def define_propagator_product(
 
     in1, in2 -- indices of the propagator tensor structure
     """
+    propagator = empty_propagator_product_scalar_and_tensor_parts.propagator_prod
     projector_argument_list = empty_propagator_product_scalar_and_tensor_parts.P_data
     helical_argument_list = empty_propagator_product_scalar_and_tensor_parts.H_data
     product_of_tensor_operators = empty_propagator_product_scalar_and_tensor_parts.tensor_part
-    product_of_propagators = empty_propagator_product_scalar_and_tensor_parts.scalar_part
-    interspace = empty_propagator_product_scalar_and_tensor_parts.WfMath_propagators_prod
+    product_of_propagators_scalar_parts = empty_propagator_product_scalar_and_tensor_parts.scalar_part
+    WfMath_propagators_prod = empty_propagator_product_scalar_and_tensor_parts.WfMath_propagators_prod
 
     match fields_in_propagator:
         case ["v", "v"]:
-            product_of_tensor_operators *= P(momentum_arg, index1, index2) + I * rho * H(momentum_arg, index1, index2)
-            interspace = interspace + f"Pvv[{momentum_arg}, {frequency_arg}]*"
+            propagator *= Pvv(momentum_arg, frequency_arg, index1, index2)
+            product_of_tensor_operators *= R(momentum_arg, index1, index2).doit()
+            WfMath_propagators_prod = WfMath_propagators_prod + f"Pvv[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
             helical_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= (
-                beta(nuo, momentum_arg, frequency_arg)
-                * beta_star(nuo, momentum_arg, frequency_arg)
-                * D_v(momentum_arg)
-                / (xi(momentum_arg, frequency_arg) * xi_star(momentum_arg, frequency_arg))
-            )
+            product_of_propagators_scalar_parts *= Pvv_scalar_part(momentum_arg, frequency_arg).doit()
 
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["v", "V"]:
+            propagator *= PvV(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PvV[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PvV[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= beta_star(nuo, momentum_arg, frequency_arg) / xi_star(momentum_arg, frequency_arg)
+            product_of_propagators_scalar_parts *= PvV_scalar_part(momentum_arg, frequency_arg).doit()
 
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["V", "v"]:
+            # Vv = complex_conjugate(vV)
+            propagator *= PVv(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PbB[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PbB[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= beta_star(nuo, momentum_arg, frequency_arg) / xi_star(momentum_arg, frequency_arg)
+            product_of_propagators_scalar_parts *= PVv_scalar_part(momentum_arg, frequency_arg).doit()
 
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["b", "B"]:
+            propagator *= PbB(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PbB[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PbB[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= alpha_star(nuo, momentum_arg, frequency_arg) / xi_star(
-                momentum_arg, frequency_arg
-            )
+            product_of_propagators_scalar_parts *= PbB_scalar_part(momentum_arg, frequency_arg).doit()
 
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["B", "b"]:
+            # Bb = complex_conjugate(bB)
+            propagator *= PBb(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PBb[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PBb[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= alpha_star(nuo, momentum_arg, frequency_arg) / xi_star(
-                momentum_arg, frequency_arg
-            )
+            product_of_propagators_scalar_parts *= PBb_scalar_part(momentum_arg, frequency_arg).doit()
+
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["v", "b"]:
-            product_of_tensor_operators *= P(momentum_arg, index1, index2) + I * rho * H(momentum_arg, index1, index2)
-            interspace = interspace + f"Pvb[{momentum_arg}, {frequency_arg}]*"
+            propagator *= Pvb(momentum_arg, frequency_arg, index1, index2)
+            product_of_tensor_operators *= R(momentum_arg, index1, index2).doit()
+            WfMath_propagators_prod = WfMath_propagators_prod + f"Pvb[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
             helical_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= (
-                I
-                * A
-                * beta(nuo, momentum_arg, frequency_arg)
-                * sc_prod(B, momentum_arg)
-                * D_v(momentum_arg)
-                / (xi(momentum_arg, frequency_arg) * xi_star(momentum_arg, frequency_arg))
-            )
+            product_of_propagators_scalar_parts *= Pvb_scalar_part(momentum_arg, frequency_arg).doit()
+
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["b", "v"]:
-            product_of_tensor_operators *= P(momentum_arg, index1, index2) + I * rho * H(momentum_arg, index1, index2)
-            interspace = interspace + f"Pbv[{momentum_arg}, {frequency_arg}]*"
+            # bv = complex_conjugate(vb)
+            propagator *= Pbv_scalar_part(momentum_arg, frequency_arg, index1, index2)
+            product_of_tensor_operators *= R(momentum_arg, index1, index2).doit()
+            WfMath_propagators_prod = WfMath_propagators_prod + f"Pbv[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
             helical_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= (
-                I
-                * A
-                * beta(nuo, momentum_arg, frequency_arg)
-                * sc_prod(B, momentum_arg)
-                * D_v(momentum_arg)
-                / (xi(momentum_arg, frequency_arg) * xi_star(momentum_arg, frequency_arg))
-            )
+            product_of_propagators_scalar_parts *= Pbv_scalar_part(momentum_arg, frequency_arg).doit()
+
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["b", "b"]:
-            product_of_tensor_operators *= P(momentum_arg, index1, index2) + I * rho * H(momentum_arg, index1, index2)
-            interspace = interspace + f"Pbb[{momentum_arg}, {frequency_arg}]*"
+            propagator *= Pbb(momentum_arg, frequency_arg, index1, index2)
+            product_of_tensor_operators *= R(momentum_arg, index1, index2).doit()
+            WfMath_propagators_prod = WfMath_propagators_prod + f"Pbb[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
             helical_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= (
-                A**2
-                * sc_prod(B, momentum_arg) ** 2
-                * D_v(momentum_arg)
-                / (xi(momentum_arg, frequency_arg) * xi_star(momentum_arg, frequency_arg))
-            )
+            product_of_propagators_scalar_parts *= Pbb_scalar_part(momentum_arg, frequency_arg).doit()
+
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["V", "b"]:
+            propagator *= PVb(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + "PVb[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + "PVb[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= I * A * sc_prod(B, momentum_arg) / xi_star(momentum_arg, frequency_arg)
+            product_of_propagators_scalar_parts *= PVb_scalar_part(momentum_arg, frequency_arg).doit()
+
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["b", "V"]:
+            # bV = complex_conjugate(Vb)
+            propagator *= PbV(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PbV[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PbV[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= I * A * sc_prod(B, momentum_arg) / xi_star(momentum_arg, frequency_arg)
+            product_of_propagators_scalar_parts *= PbV_scalar_part(momentum_arg, frequency_arg).doit()
+
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["B", "v"]:
+            propagator *= PBv(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PBv[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PBv[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= I * sc_prod(B, momentum_arg) / xi_star(momentum_arg, frequency_arg)
+            product_of_propagators_scalar_parts *= PBv_scalar_part(momentum_arg, frequency_arg).doit()
 
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case ["v", "B"]:
+            # vB = complex_conjugate(Bv)
+            propagator *= PvB(momentum_arg, frequency_arg, index1, index2)
             product_of_tensor_operators *= P(momentum_arg, index1, index2)
-            interspace = interspace + f"PvB[{momentum_arg}, {frequency_arg}]*"
+            WfMath_propagators_prod = WfMath_propagators_prod + f"PvB[{momentum_arg}, {frequency_arg}]*"
             projector_argument_list += [[momentum_arg, index1, index2]]
-            product_of_propagators *= I * sc_prod(B, momentum_arg) / xi_star(momentum_arg, frequency_arg)
+            product_of_propagators_scalar_parts *= PvB_scalar_part(momentum_arg, frequency_arg).doit()
 
             integrand_data = IntegrandPropagatorProduct(
-                product_of_propagators,
+                propagator,
+                product_of_propagators_scalar_parts,
                 product_of_tensor_operators,
                 projector_argument_list,
                 helical_argument_list,
-                interspace,
+                WfMath_propagators_prod,
             )
             return integrand_data
         case _:
@@ -362,6 +370,7 @@ def adding_vertex_factors_to_product_of_propagators(
     distribution_of_momentums_over_vertices is given by the function
     momentum_and_frequency_distribution_at_vertexes()
     """
+    propagator_product = integrand_scalar_and_tensor_parts.propagator_prod
     product_of_tensor_operators = integrand_scalar_and_tensor_parts.tensor_part
     Kronecker_delta_structure = integrand_scalar_and_tensor_parts.kd_data
     momentum_structure = integrand_scalar_and_tensor_parts.mom_data
@@ -382,9 +391,10 @@ def adding_vertex_factors_to_product_of_propagators(
                 in1 = 3 * vertex_number + vertex_triple.index("B")
                 in2 = 3 * vertex_number + vertex_triple.index("b")
                 in3 = 3 * vertex_number + vertex_triple.index("v")
-                Bbv = vertex_factor_Bbv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3).doit()
+                Bbv = vertex_factor_Bbv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3)
 
-                product_of_tensor_operators = product_of_tensor_operators * Bbv
+                propagator_product *= Bbv
+                product_of_tensor_operators = product_of_tensor_operators * Bbv.doit()
                 Kronecker_delta_structure.append([in1, in2])
                 Kronecker_delta_structure.append([in1, in3])
                 momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in3])
@@ -397,9 +407,10 @@ def adding_vertex_factors_to_product_of_propagators(
                 index_set.remove(in1)
                 in2 = index_set[0]
                 in3 = index_set[1]
-                Vvv = vertex_factor_Vvv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3).doit()
+                Vvv = vertex_factor_Vvv(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3)
 
-                product_of_tensor_operators = product_of_tensor_operators * Vvv
+                propagator_product *= Vvv
+                product_of_tensor_operators = product_of_tensor_operators * Vvv.doit()
                 Kronecker_delta_structure.append([in1, in3])
                 Kronecker_delta_structure.append([in1, in2])
                 momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
@@ -413,9 +424,10 @@ def adding_vertex_factors_to_product_of_propagators(
                 in2 = index_set[0]
                 in3 = index_set[1]
                 # vertex_factor_Vvv = -vertex_factor_Vbb
-                Vbb = vertex_factor_Vbb(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3).doit()
+                Vbb = vertex_factor_Vbb(distribution_of_momentums_over_vertices[in1][2], in1, in2, in3)
 
-                product_of_tensor_operators = product_of_tensor_operators * Vbb
+                propagator_product *= Vbb
+                product_of_tensor_operators = product_of_tensor_operators * Vbb.doit()
                 Kronecker_delta_structure.append([in1, in3])
                 Kronecker_delta_structure.append([in1, in2])
                 momentum_structure.append([distribution_of_momentums_over_vertices[in1][2], in2])
@@ -424,6 +436,7 @@ def adding_vertex_factors_to_product_of_propagators(
                 sys.exit("Unknown vertex type")
 
     tensor_and_scalar_parts_of_integrand = IntegrandScalarAndTensorParts(
+        propagator_prod=propagator_product,
         scalar_part=integrand_scalar_and_tensor_parts.scalar_part,
         tensor_part=product_of_tensor_operators,
         P_data=integrand_scalar_and_tensor_parts.P_data,

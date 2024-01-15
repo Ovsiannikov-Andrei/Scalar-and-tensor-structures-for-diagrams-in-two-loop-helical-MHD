@@ -39,9 +39,9 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
 
     mom_data = [[p, 2], [p, 1], [-k, 4], [-k, 5], [-k - q, 6], [-k - q, 8], [-q, 9], [-q, 10]]
 
-    tensor_part = (-kd(11, 9)*hyb(q, 10) - kd(11, 10)*hyb(q, 9))*(I*rho*H(k, 2, 6) + P(k, 2, 6))*
-    (I*rho*H(q, 5, 10) + P(q, 5, 10))*(-A*(-hyb(k, 8) - hyb(q, 8))*kd(7, 6) + (-hyb(k, 6) - hyb(q, 6))*
-    kd(7, 8))*(-A*kd(0, 2)*hyb(p, 1) + kd(0, 1)*hyb(p, 2))*(A*kd(3, 4)*hyb(k, 5) - kd(3, 5)*hyb(k, 4))*
+    tensor_part = (-kd(11, 9)*mom(q, 10) - kd(11, 10)*mom(q, 9))*(I*rho*H(k, 2, 6) + P(k, 2, 6))*
+    (I*rho*H(q, 5, 10) + P(q, 5, 10))*(-A*(-mom(k, 8) - mom(q, 8))*kd(7, 6) + (-mom(k, 6) - mom(q, 6))*
+    kd(7, 8))*(-A*kd(0, 2)*mom(p, 1) + kd(0, 1)*mom(p, 2))*(A*kd(3, 4)*mom(k, 5) - kd(3, 5)*mom(k, 4))*
     P(k, 1, 3)*P(q, 8, 11)*P(k + q, 4, 7)
 
     scalar_part = A**3*(-sc_prod(B, k) - sc_prod(B, q))*D_v(k)*D_v(q)*alpha(nuo, k, w_k)*beta(nuo, k, w_k)*
@@ -58,7 +58,7 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     information_from_Nickel_index = get_information_from_Nickel_index(Nickel_index, counter)
 
     # creating a file with all output data for the corresponding diagram
-    Feynman_graph = open(f"Results/{information_from_Nickel_index.result_file_name}", "w")
+    Feynman_graph = open(f"Detailed Results/{information_from_Nickel_index.result_file_name}", "w")
 
     # display the Nickel index of the diagram
     print(f"\nNickel index of the Feynman diagram: {information_from_Nickel_index.nickel_index}")
@@ -194,6 +194,7 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     )
 
     propagator_product_scalar_and_tensor_parts = IntegrandScalarAndTensorParts(
+        propagator_prod=structure_of_propagator_product.propagator_prod,
         scalar_part=structure_of_propagator_product.scalar_part,
         tensor_part=structure_of_propagator_product.tensor_part,
         P_data=structure_of_propagator_product.P_data,
@@ -202,52 +203,53 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
         # delete last symbol "*"
     )
 
-    if output_in_WfMath_format == "y":
-        Feynman_graph.write(
-            f"\nArgument structure in the product of propagator scalar parts "
-            f" in a Wolfram Mathematica-friendly format: "
-            f"\n{propagator_product_scalar_and_tensor_parts.WfMath_propagators_prod}\n"
-        )
-
-    Feynman_graph.write(
-        f"\nThe calculation of the integrand is divided into two stages: "
-        f"the calculation of the tensor structure T_ij and the calculation of the scalar part F "
-        f"(see file General_notation.txt for details).\n"
-    )
-
-    Feynman_graph.write(f"\nExpression for the scalar function F: \n{structure_of_propagator_product.scalar_part}\n")
-
-    print(f"\nProduct of propagators without tensor structure: \n{structure_of_propagator_product.scalar_part}")
-
     tensor_and_scalar_parts_of_integrand = adding_vertex_factors_to_product_of_propagators(
         propagator_product_scalar_and_tensor_parts,
         number_int_vert,
         distribution_of_diagram_parameters_over_vertices,
     )
 
+    print(f"\nDiagram integrand: \n{tensor_and_scalar_parts_of_integrand.propagator_prod}")
+    print(f"\nProduct of propagators without tensor structure: \n{structure_of_propagator_product.scalar_part}")
     print(
         f"\nDiagram tensor structure before computing tensor convolutions: "
         f"\n{tensor_and_scalar_parts_of_integrand.tensor_part}"
     )
+
+    Feynman_graph.write(f"\nDiagram integrand: \n{tensor_and_scalar_parts_of_integrand.propagator_prod}\n")
+
+    Feynman_graph.write(
+        f"\nThe calculation of the integrand is divided into two stages: \n"
+        f"1. The calculation of the tensor structure T_ij \n"
+        f"2. The calculation of the scalar part F \n"
+        f"See file General_notation.txt for details.\n"
+    )
+
+    Feynman_graph.write(f"\nExpression for the scalar function F: \n{structure_of_propagator_product.scalar_part}\n")
 
     Feynman_graph.write(
         f"\nExpression for the tensor function T_ij (numbers for vector indices instead of alphabetic [1]): "
         f"\n{tensor_and_scalar_parts_of_integrand.tensor_part}\n"
     )
 
+    if output_in_WfMath_format == "y":
+        Feynman_graph.write(
+            f"\nScalar part of the propagator product "
+            f" in a Wolfram Mathematica-friendly format: "
+            f"\n{propagator_product_scalar_and_tensor_parts.WfMath_propagators_prod}\n"
+        )
+
     # Attention!!!
-    # Here we introduce an effective criterion for the of a diagram convergence is that it must
+    # Here we introduce AN EFFECTIVE criterion for the diagram's convergence is that it must
     # consist of propagators proportional to B, i.e. Product(B = 0) = 0.
 
     # define the parameter responsible for replacing the variables k, q --> B*k/nuo, B*q/nuo
     if tensor_and_scalar_parts_of_integrand.scalar_part.subs(B, 0) == 0:
         is_diagram_convergent = True
-        Feynman_graph.write(f"\nThe diagram is convergent: diagram_is_convergent = {is_diagram_convergent}\n")
+        Feynman_graph.write(f"\nThe diagram is UV-convergent: \n{is_diagram_convergent}\n")
     else:
         is_diagram_convergent = False
-        Feynman_graph.write(
-            f"\nThe diagram contains divergent contributions: diagram_is_convergent = {is_diagram_convergent}\n"
-        )
+        Feynman_graph.write(f"\nThe diagram is UV-convergent: \n{is_diagram_convergent}\n")
 
     # After the change of variables, the diagram depends only on the parameter uo and can be calculated numerically.
 
@@ -257,6 +259,7 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     Feynman_graph.close()
 
     diagram_data = DiagramData(
+        information_from_Nickel_index.nickel_index,
         information_from_Nickel_index.result_file_name,
         distribution_of_diagram_parameters_over_vertices.momentums_at_vertices,
         distribution_of_diagram_parameters_over_vertices.indexb,

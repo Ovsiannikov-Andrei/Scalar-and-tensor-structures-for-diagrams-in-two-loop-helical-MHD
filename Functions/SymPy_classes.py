@@ -7,7 +7,7 @@ from Functions.Global_variables import *
 
 # All functions here are given in momentum-frequency representation
 
-# ATTENTION!!! The sign of the Fourier transform was chosen to be the same as in [1] (see main file)
+# ATTENTION!!! The sign of the Fourier transform was chosen to be the same as in [2] (see main file)
 
 
 class D_v(Function):
@@ -52,6 +52,138 @@ class D_v(Function):
         if deep:
             mom = mom.doit(deep=deep, **hints)
         return go * nuo**3 * mom ** (4 - d - 2 * eps)
+
+
+class k_plus_q_square(Function):
+    """
+    Just the squared norm of the sum of two vectors.
+
+    k_plus_q_square(k, q) = k**2 + 2*k*q*z + q**2
+
+    ARGUMENTS:
+
+    k, q -- absolute value of momentums
+
+    PARAMETERS:
+
+    z -- cosine of the angle between vectors k and q
+
+    PROPERTIES:
+
+    k_plus_q_square(k, q) -- non-negative function
+    """
+
+    # # the squared norm of the sum of two vectors is always non-negative
+    # is_nonnegative = True
+
+    def _eval_is_nonnegative(self):
+        # the squared norm of the sum of two vectors is always non-negative
+        mom1, mom2 = self.args
+        if mom1.is_real is True and mom2.is_real is True:
+            return True
+
+    def doit(self, deep=True, **hints):
+        mom1, mom2 = self.args
+
+        global z
+
+        if deep:
+            mom1 = mom1.doit(deep=deep, **hints)
+            mom2 = mom2.doit(deep=deep, **hints)
+        return mom1**2 + 2 * mom1 * mom2 * z + mom2**2
+
+
+class k_plus_q_square_square(Function):
+    """
+    Just the norm of the sum of vectors to the fourth power.
+
+    k_plus_q_square_square(k, q) = k_plus_q_square(k, q)**2
+
+    ARGUMENTS:
+
+    k, q -- absolute value of momentums
+
+    PROPERTIES:
+
+    k_plus_q_square_square(k, q) -- non-negative function
+    """
+
+    def _eval_is_nonnegative(self):
+        # the the norm of the sum of vectors to the fourth power is always non-negative
+        mom1, mom2 = self.args
+        if mom1.is_real is True and mom2.is_real is True:
+            return True
+
+    def doit(self, deep=True, **hints):
+        mom1, mom2 = self.args
+
+        if deep:
+            mom1 = mom1.doit(deep=deep, **hints)
+            mom2 = mom2.doit(deep=deep, **hints)
+        return k_plus_q_square(mom1, mom2) ** 2
+
+
+class k_minus_q_square(Function):
+    """
+    Just the squared norm of the difference between two vectors.
+
+    k_minus_q_square(k, q) = k**2 - 2*k*q*z + q**2
+
+    ARGUMENTS:
+
+    k, q -- absolute value of momentums
+
+    PARAMETERS:
+
+    z -- cosine of the angle between vectors k and q
+
+    PROPERTIES:
+
+    k_minus_q_square(k, q) -- non-negative function
+    """
+
+    # the squared norm of the difference between two vectors is always non-negative
+    is_nonnegative = True
+
+    def doit(self, deep=True, **hints):
+        mom1, mom2 = self.args
+
+        global z
+
+        if deep:
+            mom1 = mom1.doit(deep=deep, **hints)
+            mom2 = mom2.doit(deep=deep, **hints)
+        return mom1**2 - 2 * mom1 * mom2 * z + mom2**2
+
+
+class k_minus_q_square_square(Function):
+    """
+    Just the norm of the sum of vectors to the fourth power.
+
+    k_minus_q_square_square(k, q) = k_minus_q_square(k, q)**2
+
+    ARGUMENTS:
+
+    k, q -- absolute value of momentums
+
+    PROPERTIES:
+
+    k_minus_q_square_square(k, q) -- non-negative function
+    """
+
+    def _eval_is_nonnegative(self):
+        # the the norm of the difference between two vectors to the fourth power is always non-negative
+        mom1, mom2 = self.args
+        if mom1.is_real is True and mom2.is_real is True:
+            return True
+
+    def doit(self, deep=True, **hints):
+        mom1, mom2 = self.args
+
+        if deep:
+            mom1 = mom1.doit(deep=deep, **hints)
+            mom2 = mom2.doit(deep=deep, **hints)
+        return k_minus_q_square(mom1, mom2) ** 2
 
 
 class alpha(Function):
@@ -145,9 +277,9 @@ class alpha(Function):
             mom2 = momentums_for_helicity_propagators[1]
 
             if mom == mom1 + mom2:
-                return I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+                return I * freq + nuo * k_plus_q_square(mom1, mom2).doit()
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+                return I * freq + nuo * k_minus_q_square(mom1, mom2).doit()
             else:
                 return I * freq + nuo * mom**2
 
@@ -253,9 +385,9 @@ class alpha_star(Function):
             mom2 = momentums_for_helicity_propagators[1]
 
             if mom == mom1 + mom2:
-                return -I * freq + nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+                return -I * freq + nuo * k_plus_q_square(mom1, mom2).doit()
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return -I * freq + nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+                return -I * freq + nuo * k_minus_q_square(mom1, mom2).doit()
             else:
                 return -I * freq + nuo * mom**2
 
@@ -363,9 +495,9 @@ class beta(Function):
             mom2 = momentums_for_helicity_propagators[1]
 
             if mom == mom1 + mom2:
-                return I * freq + uo * nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+                return I * freq + uo * nuo * k_plus_q_square(mom1, mom2).doit()
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return I * freq + uo * nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+                return I * freq + uo * nuo * k_minus_q_square(mom1, mom2).doit()
             else:
                 return I * freq + uo * nuo * mom**2
 
@@ -475,9 +607,9 @@ class beta_star(Function):
             mom2 = momentums_for_helicity_propagators[1]
 
             if mom == mom1 + mom2:
-                return -I * freq + uo * nuo * (mom1**2 + 2 * mom1 * mom2 * z + mom2**2)
+                return -I * freq + uo * nuo * k_plus_q_square(mom1, mom2).doit()
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return -I * freq + uo * nuo * (mom1**2 - 2 * mom1 * mom2 * z + mom2**2)
+                return -I * freq + uo * nuo * k_minus_q_square(mom1, mom2).doit()
             else:
                 return -I * freq + uo * nuo * mom**2
 
@@ -493,11 +625,12 @@ class sc_prod(Function):
     """
     This auxiliary function denotes the standard dot product of vectors in R**d.
 
-    sc_prod(B, k) = B*k*z_k
+    sc_prod(B, k) = B*b*k*z_k
 
     ARGUMENTS:
 
-    B -- external magnetic field, k -- momentum, z_k = cos(angle between B and k)
+    B -- external magnetic field, k -- momentum, z_k = cos(angle between B and k),
+    b is an auxiliary parameter equal to 0 or 1
 
     PROPERTIES:
 
@@ -507,13 +640,13 @@ class sc_prod(Function):
 
     sc_prod(0, k) = sc_prod(B, 0) = 0
 
-    sc_prod(B, k*B/nuo) = B**2*sc_prod(1, k)/nuo
+    sc_prod(B, k*B/nuo) = B**2*sc_prod(b, k)/nuo
     """
 
     @classmethod
     def eval(cls, field, mom):
         global momentums_for_helicity_propagators
-        global B
+        global B, b
 
         mom1 = momentums_for_helicity_propagators[0]
         mom2 = momentums_for_helicity_propagators[1]
@@ -529,11 +662,11 @@ class sc_prod(Function):
         # define scaling properties
 
         if field == B and mom == B * mom1 / nuo:
-            return B**2 * cls(1, mom1) / nuo
+            return B**2 * cls(b, mom1) / nuo
         if field == B and mom == B * mom2 / nuo:
-            return B**2 * cls(1, mom2) / nuo
+            return B**2 * cls(b, mom2) / nuo
         if field == B and mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, mom1 + mom2) / nuo
+            return B**2 * cls(b, mom1 + mom2) / nuo
 
         # function is linear with respect to the second argument by definition
         if mom.is_Add:
@@ -546,7 +679,7 @@ class sc_prod(Function):
     def doit(self, deep=True, **hints):
         field, mom = self.args
 
-        global momentums_for_helicity_propagators
+        global momentums_for_helicity_propagators, b
 
         mom1 = momentums_for_helicity_propagators[0]
         mom2 = momentums_for_helicity_propagators[1]
@@ -555,9 +688,9 @@ class sc_prod(Function):
             mom = mom.doit(deep=deep, **hints)
             field = field.doit(deep=deep, **hints)
             if mom == mom1:
-                return field * mom * z_k
+                return b * field * mom * z_k
             elif mom == mom2:
-                return field * mom * z_q
+                return b * field * mom * z_q
             else:
                 return NameError
 
@@ -582,18 +715,19 @@ class D(Function):
 
     uo -- bare reciprocal magnetic Prandtl number, nuo -- bare kinematic viscosity
     sc_prod(B, k) -- dot product of external magnetic field B and momentum k,
+    b is an auxiliary parameter equal to 0 or 1
 
     PROPERTIES:
 
     D(B, nuo, k) = D(B, nuo, -k)
 
-    D(B, nuo, k*B/nuo) = B**4*D(1, 1, k)/nuo**2
+    D(B, nuo, k*B/nuo) = B**4*D(b, 1, k)/nuo**2
     """
 
     @classmethod
     def eval(cls, field, visc, mom):
         global momentums_for_helicity_propagators
-        global B, nuo
+        global B, nuo, b
 
         mom1 = momentums_for_helicity_propagators[0]
         mom2 = momentums_for_helicity_propagators[1]
@@ -606,15 +740,15 @@ class D(Function):
         # define scaling properties
 
         if mom == B * mom1 / nuo:
-            return B**2 * cls(1, 1, mom1) / nuo
+            return B**2 * cls(b, 1, mom1) / nuo
         elif mom == B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom2) / nuo
+            return B**2 * cls(b, 1, mom2) / nuo
         elif mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom1 + mom2) / nuo
+            return B**2 * cls(b, 1, mom1 + mom2) / nuo
         elif mom == B * (mom1 - mom2) / nuo or mom == B * mom1 / nuo - B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom1 - mom2) / nuo
+            return B**2 * cls(b, 1, mom1 - mom2) / nuo
         elif mom == B * (-mom1 + mom2) / nuo or mom == -B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, 1, -mom1 + mom2) / nuo
+            return B**2 * cls(b, 1, -mom1 + mom2) / nuo
 
     is_integer = True
     is_negative = False
@@ -634,13 +768,11 @@ class D(Function):
 
             if mom == mom1 + mom2:
                 return (
-                    -4 * A * sc_prod(field, mom) ** 2
-                    + (mom1**2 + 2 * mom1 * mom2 * z + mom2**2) ** 2 * visc**2 * (uo - 1) ** 2
+                    -4 * A * sc_prod(field, mom) ** 2 + k_plus_q_square_square(mom1, mom2) * visc**2 * (uo - 1) ** 2
                 )
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
                 return (
-                    -4 * A * sc_prod(field, mom) ** 2
-                    + (mom1**2 - 2 * mom1 * mom2 * z + mom2**2) ** 2 * visc**2 * (uo - 1) ** 2
+                    -4 * A * sc_prod(field, mom) ** 2 + k_minus_q_square_square(mom1, mom2) * visc**2 * (uo - 1) ** 2
                 )
             else:
                 return -4 * A * sc_prod(field, mom) ** 2 + mom**4 * visc**2 * (uo - 1) ** 2
@@ -652,9 +784,9 @@ class f_1(Function):
     integrals over frequencies (using the residue theorem). It returns the first root of the equation
     xi(k, w) = 0 with respect to w (see below).
 
-    f_1(B, nuo, k) = -I*(sqrt(D(B, nuo, k)) + k**2*nuo*(uo + 1))/2
+    f_1(B, nuo, k) = I*(sqrt(D(B, nuo, k)) + k**2*nuo*(uo + 1))/2
 
-    f_1(B, nuo, k + q) = -I*(sqrt(D(B, nuo, k + q)) + (k**2 + 2*k*q*z + q**2)*nuo*(uo + 1))/2
+    f_1(B, nuo, k + q) = I*(sqrt(D(B, nuo, k + q)) + (k**2 + 2*k*q*z + q**2)*nuo*(uo + 1))/2
 
     ARGUMENTS:
     B -- external field, nuo -- bare kinematic viscosity, k -- momentum
@@ -662,19 +794,20 @@ class f_1(Function):
     PARAMETERS:
 
     uo -- bare reciprocal magnetic Prandtl number,
-    sc_prod(B, k) -- dot product of external magnetic field B and momentum k
+    sc_prod(B, k) -- dot product of external magnetic field B and momentum k,
+    b is an auxiliary parameter equal to 0 or 1
 
     PROPERTIES:
 
     f_1(B, nuo, k) = f_1(B, nuo, -k)
 
-    f_1(B, nuo, k*B/nuo) = B**2*f_1(1, 1, k)/nuo
+    f_1(B, nuo, k*B/nuo) = B**2*f_1(b, 1, k)/nuo
     """
 
     @classmethod
     def eval(cls, field, visc, mom):
         global momentums_for_helicity_propagators
-        global B, nuo
+        global B, nuo, b
 
         mom1 = momentums_for_helicity_propagators[0]
         mom2 = momentums_for_helicity_propagators[1]
@@ -688,15 +821,15 @@ class f_1(Function):
         # define scaling properties
 
         if mom == B * mom1 / nuo:
-            return B**2 * cls(1, 1, mom1) / nuo
+            return B**2 * cls(b, 1, mom1) / nuo
         elif mom == B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom2) / nuo
+            return B**2 * cls(b, 1, mom2) / nuo
         elif mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom1 + mom2) / nuo
+            return B**2 * cls(b, 1, mom1 + mom2) / nuo
         elif mom == B * (mom1 - mom2) / nuo or mom == B * mom1 / nuo - B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom1 - mom2) / nuo
+            return B**2 * cls(b, 1, mom1 - mom2) / nuo
         elif mom == B * (-mom1 + mom2) / nuo or mom == -B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, 1, -mom1 + mom2) / nuo
+            return B**2 * cls(b, 1, -mom1 + mom2) / nuo
 
     def doit(self, deep=True, **hints):
         field, visc, mom = self.args
@@ -713,19 +846,34 @@ class f_1(Function):
             field = field.doit(deep=deep, **hints)
 
             if mom == mom1 + mom2:
-                return (
-                    -I
-                    * (sqrt(D(field, visc, mom)) + (mom1**2 + 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
-                    / 2
-                )
+                if field == 0:
+                    return I * visc * k_plus_q_square(mom1, mom2).doit() * (uo + 1 + Abs(uo - 1)) / 2
+                else:
+                    return (
+                        I
+                        * (
+                            powdenest(sqrt(D(field, visc, mom)), force=True)
+                            + k_plus_q_square(mom1, mom2).doit() * visc * (uo + 1)
+                        )
+                        / 2
+                    )
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return (
-                    -I
-                    * (sqrt(D(field, visc, mom)) + (mom1**2 - 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
-                    / 2
-                )
+                if field == 0:
+                    return I * visc * k_minus_q_square(mom1, mom2).doit() * (uo + 1 + Abs(uo - 1)) / 2
+                else:
+                    return (
+                        I
+                        * (
+                            powdenest(sqrt(D(field, visc, mom)), force=True)
+                            + k_minus_q_square(mom1, mom2).doit() * visc * (uo + 1)
+                        )
+                        / 2
+                    )
             else:
-                return -I * (sqrt(D(field, visc, mom)) + mom**2 * visc * (uo + 1)) / 2
+                if field == 0:
+                    return I * visc * mom**2 * (uo + 1 + Abs(uo - 1)) / 2
+                else:
+                    return I * (powdenest(sqrt(D(field, visc, mom)), force=True) + mom**2 * visc * (uo + 1)) / 2
 
 
 class f_2(Function):
@@ -734,9 +882,9 @@ class f_2(Function):
     integrals over frequencies (using the residue theorem). It returns the second root of the equation
     xi(k, w) = 0 with respect to w (see below).
 
-    f_2(B, nuo, k) = -I*( - sqrt(D(B, nuo, k)) + k**2*nuo*(uo + 1))/2
+    f_2(B, nuo, k) = I*( - sqrt(D(B, nuo, k)) + k**2*nuo*(uo + 1))/2
 
-    f_2(B, nuo, k + q) = -I*( - sqrt(D(B, nuo, k + q)) + (k**2) + 2*k*q*z + q**2)*nuo*(uo + 1))/2
+    f_2(B, nuo, k + q) = I*( - sqrt(D(B, nuo, k + q)) + (k**2) + 2*k*q*z + q**2)*nuo*(uo + 1))/2
 
     Note:
     f_2(B, nuo, k) differs from f_1(B, nuo, k) by sign before the square root
@@ -747,7 +895,8 @@ class f_2(Function):
     PARAMETERS:
 
     uo -- bare reciprocal magnetic Prandtl number,
-    sc_prod(B, k) -- dot product of external magnetic field B and momentum k
+    sc_prod(B, k) -- dot product of external magnetic field B and momentum k,
+    b is an auxiliary parameter equal to 0 or 1
 
     PROPERTIES:
 
@@ -755,13 +904,13 @@ class f_2(Function):
 
     conjugate(f_2(B, nuo, k)) = - f_1(B, nuo, k)  ==>  conjugate(f_1(B, nuo, k)) = - f_2(B, nuo, k),
 
-    f_2(B, nuo, k*B/nuo) = B**2*f_2(1, 1, k)/nuo
+    f_2(B, nuo, k*B/nuo) = B**2*f_2(b, 1, k)/nuo
     """
 
     @classmethod
     def eval(cls, field, visc, mom):
         global momentums_for_helicity_propagators
-        global B, nuo
+        global B, nuo, b
 
         mom1 = momentums_for_helicity_propagators[0]
         mom2 = momentums_for_helicity_propagators[1]
@@ -775,15 +924,15 @@ class f_2(Function):
         # define scaling properties
 
         if mom == B * mom1 / nuo:
-            return B**2 * cls(1, 1, mom1) / nuo
+            return B**2 * cls(b, 1, mom1) / nuo
         elif mom == B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom2) / nuo
+            return B**2 * cls(b, 1, mom2) / nuo
         elif mom == B * (mom1 + mom2) / nuo or mom == B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom1 + mom2) / nuo
+            return B**2 * cls(b, 1, mom1 + mom2) / nuo
         elif mom == B * (mom1 - mom2) / nuo or mom == B * mom1 / nuo - B * mom2 / nuo:
-            return B**2 * cls(1, 1, mom1 - mom2) / nuo
+            return B**2 * cls(b, 1, mom1 - mom2) / nuo
         elif mom == B * (-mom1 + mom2) / nuo or mom == -B * mom1 / nuo + B * mom2 / nuo:
-            return B**2 * cls(1, 1, -mom1 + mom2) / nuo
+            return B**2 * cls(b, 1, -mom1 + mom2) / nuo
 
     def doit(self, deep=True, **hints):
         field, visc, mom = self.args
@@ -799,19 +948,34 @@ class f_2(Function):
             field = field.doit(deep=deep, **hints)
 
             if mom == mom1 + mom2:
-                return (
-                    -I
-                    * (-sqrt(D(field, visc, mom)) + (mom1**2 + 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
-                    / 2
-                )
+                if field == 0:
+                    return I * visc * k_plus_q_square(mom1, mom2).doit() * (uo + 1 - Abs(uo - 1)) / 2
+                else:
+                    return (
+                        I
+                        * (
+                            -powdenest(sqrt(D(field, visc, mom)), force=True)
+                            + k_plus_q_square(mom1, mom2).doit() * visc * (uo + 1)
+                        )
+                        / 2
+                    )
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return (
-                    -I
-                    * (-sqrt(D(field, visc, mom)) + (mom1**2 - 2 * mom1 * mom2 * z + mom2**2) * visc * (uo + 1))
-                    / 2
-                )
+                if field == 0:
+                    return I * visc * k_minus_q_square(mom1, mom2).doit() * (uo + 1 - Abs(uo - 1)) / 2
+                else:
+                    return (
+                        I
+                        * (
+                            -powdenest(sqrt(D(field, visc, mom)), force=True)
+                            + k_minus_q_square(mom1, mom2).doit() * visc * (uo + 1)
+                        )
+                        / 2
+                    )
             else:
-                return -I * (-sqrt(D(field, visc, mom)) + mom**2 * visc * (uo + 1)) / 2
+                if field == 0:
+                    return I * visc * mom**2 * (uo + 1 - Abs(uo - 1)) / 2
+                else:
+                    return I * (-powdenest(sqrt(D(field, visc, mom)), force=True) + mom**2 * visc * (uo + 1)) / 2
 
 
 class chi_1(Function):
@@ -886,7 +1050,7 @@ class xi(Function):
     """
     The function xi(k, w) is defined by the equality
 
-    xi(k, w) = A*sc_prod(B, k)**2 + alpha(k, w)*beta(k, w)
+    xi(k, w) = A*sc_prod(B, k)**2 + alpha(nuo, k, w)*beta(nuo, k, w)
 
     ARGUMENTS:
     k -- momentum, w -- frequency
@@ -924,7 +1088,8 @@ class xi_star(Function):
     """
     The function xi_star(k, w) is defined by the equality
 
-    xi_star(k, w) = conjugate(xi(k, w)) = A*sc_prod(B, k)**2 + alpha_star(k, w)*beta_star(k, w)
+    xi_star(k, w) = conjugate(xi(k, w)) = A*sc_prod(B, k)**2 +
+                    alpha_star(nuo, k, w)*beta_star(nuo, k, w)
 
     ARGUMENTS:
     k -- momentum, w -- frequency
@@ -974,9 +1139,9 @@ class kd(Function):
     """
 
 
-class hyb(Function):
+class mom(Function):
     """
-    hyb(k, index) returns the momentum index-th component
+    mom(k, index) returns the momentum index-th component
 
     ARGUMENTS:
     k -- momentum, index -- positive integer enumerates the components k
@@ -1008,8 +1173,8 @@ class vertex_factor_Bbv(Function):
     The vertex_factor_Bbv(k, index_B, index_b, index_v) function determines the corresponding
     vertex multiplier (Bbv) of the diagram.
 
-    vertex_factor_Bbv(k, index_B, index_b, index_v) = I * (hyb(k, index_v) * kd(index_B, index_b) -
-    A * hyb(k, index_b) * kd(index_B, index_v))
+    vertex_factor_Bbv(k, index_B, index_b, index_v) = I * (mom(k, index_v) * kd(index_B, index_b) -
+    A * mom(k, index_b) * kd(index_B, index_v))
 
     ARGUMENTS:
     k -- momentum, index_B, index_b, index_v -- positive integers
@@ -1018,7 +1183,7 @@ class vertex_factor_Bbv(Function):
     @classmethod
     def eval(cls, k, index_B, index_b, index_v):
         if isinstance(k, Number) and all(isinstance(m, Integer) for m in [index_B, index_b, index_v]):
-            return I * (hyb(k, index_v) * kd(index_B, index_b) - A * hyb(k, index_b) * kd(index_B, index_v))
+            return cls(k, index_B, index_b, index_v)
 
     def doit(self, deep=True, **hints):
         k, index_B, index_b, index_v = self.args
@@ -1029,7 +1194,7 @@ class vertex_factor_Bbv(Function):
             index_b = index_b.doit(deep=deep, **hints)
             index_v = index_v.doit(deep=deep, **hints)
 
-        return I * (hyb(k, index_v) * kd(index_B, index_b) - A * hyb(k, index_b) * kd(index_B, index_v))
+        return I * (mom(k, index_v) * kd(index_B, index_b) - A * mom(k, index_b) * kd(index_B, index_v))
 
 
 class vertex_factor_Vvv(Function):
@@ -1037,8 +1202,8 @@ class vertex_factor_Vvv(Function):
     The vertex_factor_Vvv(k, index_V, index1_v, index2_v) function determines the corresponding
     vertex multiplier (Vvv) of the diagram.
 
-    vertex_factor_Vvv(k, index_V, index1_v, index2_v) = I * (hyb(k, index1_v) * kd(index_V, index2_v) +
-    hyb(k, index2_v) * kd(index_V, index1_v))
+    vertex_factor_Vvv(k, index_V, index1_v, index2_v) = -I * (mom(k, index1_v) * kd(index_V, index2_v) +
+    mom(k, index2_v) * kd(index_V, index1_v))
 
     ARGUMENTS:
     k -- momentum, index_V, index1_v, index2_v -- positive integers
@@ -1047,7 +1212,7 @@ class vertex_factor_Vvv(Function):
     @classmethod
     def eval(cls, k, index_V, index1_v, index2_v):
         if isinstance(k, Number) and all(isinstance(m, Integer) for m in [index_V, index1_v, index2_v]):
-            return I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
+            return cls(k, index_V, index1_v, index2_v)
 
     def doit(self, deep=True, **hints):
         k, index_V, index1_v, index2_v = self.args
@@ -1058,7 +1223,7 @@ class vertex_factor_Vvv(Function):
             index1_v = index1_v.doit(deep=deep, **hints)
             index2_v = index2_v.doit(deep=deep, **hints)
 
-        return I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
+        return -I * (mom(k, index1_v) * kd(index_V, index2_v) + mom(k, index2_v) * kd(index_V, index1_v))
 
 
 class vertex_factor_Vbb(Function):
@@ -1066,8 +1231,8 @@ class vertex_factor_Vbb(Function):
     The vertex_factor_Vbb(k, index_V, index1_b, index2_b) function determines the corresponding
     vertex multiplier (Vbb) of the diagram.
 
-    vertex_factor_Vbb(k, index_V, index1_b, index2_b) = -I * (hyb(k, index1_b) * kd(index_V, index2_b) +
-    hyb(k, index2_b) * kd(index_V, index1_b))
+    vertex_factor_Vbb(k, index_V, index1_b, index2_b) = I * (mom(k, index1_b) * kd(index_V, index2_b) +
+    mom(k, index2_b) * kd(index_V, index1_b))
 
     ARGUMENTS:
     k -- momentum, index_V, index1_b, index2_b -- positive integers
@@ -1080,23 +1245,25 @@ class vertex_factor_Vbb(Function):
     @classmethod
     def eval(cls, k, index_V, index1_b, index2_b):
         if isinstance(k, Number) and all(isinstance(m, Integer) for m in [index_V, index1_b, index2_b]):
-            return -I * (hyb(k, index1_b) * kd(index_V, index2_b) + hyb(k, index2_b) * kd(index_V, index1_b))
+            return cls(k, index_V, index1_b, index2_b)
 
     def doit(self, deep=True, **hints):
-        k, index_V, index1_v, index2_v = self.args
+        k, index_V, index1_b, index2_b = self.args
 
         if deep:
             k = k.doit(deep=deep, **hints)
             index_V = index_V.doit(deep=deep, **hints)
-            index1_v = index1_v.doit(deep=deep, **hints)
-            index2_v = index2_v.doit(deep=deep, **hints)
+            index1_b = index1_b.doit(deep=deep, **hints)
+            index2_b = index2_b.doit(deep=deep, **hints)
 
-        return -I * (hyb(k, index1_v) * kd(index_V, index2_v) + hyb(k, index2_v) * kd(index_V, index1_v))
+        return I * (mom(k, index1_b) * kd(index_V, index2_b) + mom(k, index2_b) * kd(index_V, index1_b))
 
 
 class P(Function):
     """
-    Transverse projection operator
+    Transverse projection operator.
+
+    P(k, index1, index2) = kd(index1, index2) - mom(k, index1)*mom(k, index2)/k**2
     """
 
     @classmethod
@@ -1108,5 +1275,635 @@ class P(Function):
 
 class H(Function):
     """
-    Helical term
+    Helical term.
+
+    H(k, index1, index2) = lcs(index1, index2, index3)*mom(k, index3)
     """
+
+
+class R(Function):
+    """
+    Tensor part of the velocity field correlator.
+    The function R(k, index1, index2) is defined by the equality
+
+    R(k, index1, index2) = P(k, index1, index2) + I*rho*H(k, index1, index2)
+
+    ARGUMENTS:
+    k -- momentum, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, index1, index2 = self.args
+
+        global rho
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) + I * rho * H(k, index1, index2)
+
+
+class Pvv_scalar_part(Function):
+    """
+    Scalar part of the propagator <vv>.
+    The function Pvv_scalar_part(k, w) is defined by the equality
+
+    Pvv_scalar_part(k, w) = beta(nuo, k, w)*beta_star(nuo, k, w)*D_v(k)/(xi(k, w)*xi_star(k, w))
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return beta(nuo, k, w) * beta_star(nuo, k, w) * D_v(k) / (xi(k, w) * xi_star(k, w))
+
+
+class Pvv(Function):
+    """
+    Propagator <vv>.
+    The function Pvv(k, w, index_1, index_2) is defined by the equality
+
+    Pvv(k, w, index_1, index_2) = R(k, index1, index2)*Pvv_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return R(k, index1, index2) * Pvv_scalar_part(k, w).doit()
+
+
+class PvV_scalar_part(Function):
+    """
+    Scalar part of the propagator <vV>.
+    The function PvV_scalar_part(k, w) is defined by the equality
+
+    PvV_scalar_part(k, w) = beta_star(nuo, k, w) / xi_star(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return beta_star(nuo, k, w) / xi_star(k, w)
+
+
+class PvV(Function):
+    """
+    Propagator <vV>.
+    The function  Pvv(k, w, index_1, index_2) is defined by the equality
+
+    Pvv(k, w, index_1, index_2) = P(k, index1, index2)*PvV_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PvV_scalar_part(k, w).doit()
+
+
+class PVv_scalar_part(Function):
+    """
+    Scalar part of the propagator <vv>.
+    The function  PVv_scalar_part(k, w) is defined by the equality
+
+    PVv_scalar_part(k, w) = beta(nuo, k, w) / xi(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    PVv_scalar_part(k, w) = complex_conjugate(PvV_scalar_part(k, w))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return beta(nuo, k, w) / xi(k, w)
+
+
+class PVv(Function):
+    """
+    Propagator <Vv>.
+    The function  PVv(k, w, index_1, index_2) is defined by the equality
+
+    PVv(k, w, index_1, index_2) = P(k, index1, index2)*PVv_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+
+    PROPERTIES:
+
+    PVv(k, w, index_1, index_2) = complex_conjugate(PVv(k, w, index_1, index_2))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PVv_scalar_part(k, w).doit()
+
+
+class PbB_scalar_part(Function):
+    """
+    Scalar part of the propagator <bB>.
+    The function  PbB_scalar_part(k, w) is defined by the equality
+
+    PbB_scalar_part(k, w) = alpha_star(nuo, k, w) / xi_star(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return alpha_star(nuo, k, w) / xi_star(k, w)
+
+
+class PbB(Function):
+    """
+    Propagator <bB>.
+    The function  PbB(k, w, index_1, index_2) is defined by the equality
+
+    PbB(k, w, index_1, index_2) = P(k, index1, index2)*PbB_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PbB_scalar_part(k, w).doit()
+
+
+class PBb_scalar_part(Function):
+    """
+    Scalar part of the propagator <Bb>.
+    The function  PBb_scalar_part(k, w) is defined by the equality
+
+    PBb_scalar_part(k, w) = alpha(nuo, k, w) / xi(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    PBb_scalar_part(k, w) = complex_conjugate(PbB_scalar_part(k, w))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return alpha(nuo, k, w) / xi(k, w)
+
+
+class PBb(Function):
+    """
+    Propagator <Bb>.
+    The function  PBb(k, w, index_1, index_2) is defined by the equality
+
+    PBb(k, w, index_1, index_2) = P(k, index1, index2)*PBb_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+
+    PROPERTIES:
+
+    PBb(k, w, index_1, index_2) = complex_conjugate(PbB(k, w, index_1, index_2))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PBb_scalar_part(k, w).doit()
+
+
+class Pvb_scalar_part(Function):
+    """
+    Scalar part of the propagator <vb>.
+    The function  Pvb_scalar_part(k, w) is defined by the equality
+
+    Pvb_scalar_part(k, w) = -I*A*beta_star(nuo, k, w)*sc_prod(B, k)*D_v(k)/(xi(k, w)*xi_star(k, w))
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo, B, A
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return -I * A * beta_star(nuo, k, w) * sc_prod(B, k) * D_v(k) / (xi(k, w) * xi_star(k, w))
+
+
+class Pvb(Function):
+    """
+    Propagator <vb>.
+    The function  Pvb(k, w, index_1, index_2) is defined by the equality
+
+    Pvb(k, w, index_1, index_2) = R(k, index1, index2)*Pvb_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return R(k, index1, index2) * Pvb_scalar_part(k, w).doit()
+
+
+class Pbv_scalar_part(Function):
+    """
+    Scalar part of the propagator <bv>.
+    The function  Pbv_scalar_part(k, w) is defined by the equality
+
+    Pbv_scalar_part(k, w) = I*A*beta(nuo, k, w)*sc_prod(B, k)*D_v(k)/(xi(k, w)*xi_star(k, w))
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    Pbv_scalar_part(k, w) = complex_conjugate(Pvb_scalar_part(k, w))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global nuo, B, A
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return I * A * beta(nuo, k, w) * sc_prod(B, k) * D_v(k) / (xi(k, w) * xi_star(k, w))
+
+
+class Pbv(Function):
+    """
+    Propagator <bv>.
+    The function  Pbv(k, w, index_1, index_2) is defined by the equality
+
+    Pbv(k, w, index_1, index_2) = R(k, index1, index2)*Pbv_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+
+    PROPERTIES:
+
+    Pbv(k, w, index_1, index_2) = complex_conjugate(Pvb(k, w, index_1, index_2))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return R(k, index1, index2) * Pbv_scalar_part(k, w).doit()
+
+
+class Pbb_scalar_part(Function):
+    """
+    Scalar part of the propagator <bb>.
+    The function  Pbb_scalar_part(k, w) is defined by the equality
+
+    Pbb_scalar_part(k, w) = A**2*sc_prod(B, k)**2*D_v(k)/(xi(k, w)*xi_star(k, w))
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global A, B
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return A**2 * sc_prod(B, k) ** 2 * D_v(k) / (xi(k, w) * xi_star(k, w))
+
+
+class Pbb(Function):
+    """
+    Propagator <bb>.
+    The function  Pbb(k, w, index_1, index_2) is defined by the equality
+
+    Pbb(k, w, index_1, index_2) = R(k, index1, index2)*Pbb_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return R(k, index1, index2) * Pbb_scalar_part(k, w).doit()
+
+
+class PVb_scalar_part(Function):
+    """
+    Scalar part of the propagator <Vb>.
+    The function  PVb_scalar_part(k, w) is defined by the equality
+
+    PVb_scalar_part(k, w) = -I * A * sc_prod(B, k) / xi(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global A, B
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return -I * A * sc_prod(B, k) / xi(k, w)
+
+
+class PVb(Function):
+    """
+    Propagator <Vb>.
+    The function  PVb(k, w, index_1, index_2) is defined by the equality
+
+    PVb(k, w, index_1, index_2) = P(k, index1, index2)*PVb_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PVb_scalar_part(k, w).doit()
+
+
+class PbV_scalar_part(Function):
+    """
+    Scalar part of the propagator <bV>.
+    The function  PbV_scalar_part(k, w) is defined by the equality
+
+    PbV_scalar_part(k, w) = I * A * sc_prod(B, k) / xi_star(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    PbV_scalar_part(k, w) = complex_conjugate(PVb_scalar_part(k, w))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global A, B
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return I * A * sc_prod(B, k) / xi_star(k, w)
+
+
+class PbV(Function):
+    """
+    Propagator <bV>.
+    The function  PbV(k, w, index_1, index_2) is defined by the equality
+
+    PbV(k, w, index_1, index_2) = P(k, index1, index2)*PbV_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+
+    PROPERTIES:
+
+    PbV(k, w, index_1, index_2) = complex_conjugate(PVb(k, w, index_1, index_2))
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PbV_scalar_part(k, w).doit()
+
+
+class PBv_scalar_part(Function):
+    """
+    Scalar part of the propagator <Bv>.
+    The function  PBv_scalar_part(k, w) is defined by the equality
+
+    PBv_scalar_part(k, w) = -I * A * sc_prod(B, k) / xi(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    PBv_scalar_part(k, w) = PVb_scalar_part(k, w)
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global A, B
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return -I * A * sc_prod(B, k) / xi(k, w)
+
+
+class PBv(Function):
+    """
+    Propagator <Bv>.
+    The function  PBv(k, w, index_1, index_2) is defined by the equality
+
+    PBv(k, w, index_1, index_2) = P(k, index1, index2)*PBv_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+
+    PROPERTIES:
+
+    PBv(k, w, index_1, index_2) = PVb(k, w, index_1, index_2)
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PBv_scalar_part(k, w).doit()
+
+
+class PvB_scalar_part(Function):
+    """
+    Scalar part of the propagator <vB>.
+    The function  PvB_scalar_part(k, w) is defined by the equality
+
+    PvB_scalar_part(k, w) = I * A * sc_prod(B, k) / xi_star(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency
+
+    PROPERTIES:
+
+    PvB_scalar_part(k, w) = complex_conjugate(PBv_scalar_part(k, w))
+
+    PvB_scalar_part(k, w) = PbV_scalar_part(k, w)
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w = self.args
+
+        global A, B
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+
+        return I * A * sc_prod(B, k) / xi_star(k, w)
+
+
+class PvB(Function):
+    """
+    Propagator <vB>.
+    The function  PvB(k, w, index_1, index_2) is defined by the equality
+
+    PvB(k, w, index_1, index_2) = P(k, index1, index2)*PvB_scalar_part(k, w)
+
+    ARGUMENTS:
+    k -- momentum, w -- frequency, index_1, index_2 -- positive integers
+
+    PROPERTIES:
+
+    PvB(k, w, index_1, index_2) = complex_conjugate(PBv(k, w, index_1, index_2))
+
+    PvB(k, w, index_1, index_2) = PbV(k, w, index_1, index_2)
+    """
+
+    def doit(self, deep=True, **hints):
+        k, w, index1, index2 = self.args
+
+        if deep:
+            k = k.doit(deep=deep, **hints)
+            w = w.doit(deep=deep, **hints)
+            index1 = index1.doit(deep=deep, **hints)
+            index2 = index2.doit(deep=deep, **hints)
+
+        return P(k, index1, index2) * PvB_scalar_part(k, w).doit()

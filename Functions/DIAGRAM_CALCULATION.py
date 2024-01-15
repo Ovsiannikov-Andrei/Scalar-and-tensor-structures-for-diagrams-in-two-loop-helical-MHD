@@ -6,15 +6,14 @@ from Functions.computing_integrals_over_frequencies import *
 from Functions.computing_tensor_part import *
 from Functions.create_file_with_general_notation import *
 from Functions.preparing_for_numerical_integration import residues_sum_in_Wolfram_Mathematica_format
+from Functions.test_functions_for_UV_divergent_parts import *
 
 # ------------------------------------------------------------------------------------------------------------------#
 #                   Part 2. Diagram calculation (integrals over frequencies, tensor convolutions, etc.)
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def diagram_integrand_calculation(
-    diagram_data: DiagramData, dimensional_factor_for_test: Any, output_in_WfMath_format: str
-):
+def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_format: str):
     """
     This function calculates the integrand of the corresponding diagram in terms of tensor and scalar parts.
 
@@ -31,7 +30,7 @@ def diagram_integrand_calculation(
     """
 
     # start filling the results of calculation to file
-    Feynman_graph = open(f"Results/{diagram_data.output_file_name}", "a+")
+    Feynman_graph = open(f"Detailed Results/{diagram_data.output_file_name}", "a+")
 
     # starts filling the results of calculations (integrals over frequencies, tensor convolutions) to file
     Feynman_graph.write(f"\nDiagram integrand calculation start.\n")
@@ -40,7 +39,7 @@ def diagram_integrand_calculation(
     #                                        Сomputing integrals over frequencies
     # --------------------------------------------------------------------------------------------------------------#
 
-    Feynman_graph.write(f"\nCalculation F. \n")
+    Feynman_graph.write(f"\nCalculation of F. \n")
 
     print(f"\nComputing integrals over frequencies.")
 
@@ -64,89 +63,184 @@ def diagram_integrand_calculation(
             f"\n{residues_sum_in_WfMath_format} \n"
         )
 
-    print(f"\nReducing the obtained integrand scalar part to a common denominator.")
+    print(f"\nReducing the all obtained integrand scalar part to a common denominator.")
 
     # reduce to a common denominator the result obtained after calculating the integrals over frequencies
-    diagram_expression = reduction_to_common_denominator(
-        total_sum_of_residues_for_both_frequencies, diagram_data.expression_UV_convergence_criterion
+    diagram_expression = reduction_to_common_denominator(total_sum_of_residues_for_both_frequencies)
+
+    current_integrand = diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor
+
+    if diagram_data.expression_UV_convergence_criterion == False:
+        compare_answers_test = compare_UV_divergent_parts(diagram_data.nickel_index, current_integrand)
+        assert compare_answers_test, """The answer for the divergent part of the diagram does not match the result 
+obtained by direct integration in Wolfram Mathematica."""
+
+    Feynman_graph.write(f"\nThe expression for F after reduction to a common denominator: \n{current_integrand} \n")
+
+    # the common factor after the replacement k, q --> B*k/nuo, B*q/nuo is transformed into a part
+    # that depends only on k and q and the dimension factor depends on |B|, nuo, etc
+    common_factor = prefactor_simplification(diagram_expression.new_dim_factor_after_subs)
+
+    # dimension factor before the diagram to check the result
+    # (all diagrams must have the same dimension)
+    scalar_part_dimensional_factor_for_test = go**2 * nuo**11 * (B / nuo) ** (-2 * d - 4 * eps + 8) / B**10
+
+    # here we are testing that all diagrams must have the same dimension
+    assert (
+        common_factor.momentum_independ_factor.has(scalar_part_dimensional_factor_for_test) == True
+    ), "Incorrect dimension of the UV-finite scalar part of the diagram."
+
+    print(f"\nSimplifying the expression of the obtained scalar part F.")
+
+    # simplification of the expression for F (square roots cancellation somewhere, etc.)
+    particular_integrand_simplification = partial_simplification_of_diagram_expression(
+        diagram_expression.residues_sum_without_dim_factor_after_subs
     )
 
     Feynman_graph.write(
-        f"\nThe expression for F after reduction to a common denominator: "
-        f"\n{diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor} \n"
+        f"\nPreparation for numerical integration for the integrand's scalar part consists in carrying out a "
+        f"replacing of variables {k}, {q} --> {B*k/nuo}, {B*q/nuo}, after which UV-convergent part of the "
+        f"diagram is divided into a dimensional factor C_F and a function F1 depending only on {uo} and "
+        f"integration variables {k} and {q}: F = C_F*F1.\n"
+        f"\n1. In case of UV-convergent diagrams UV-convergent part is equal to F."
+        f"\n1. In case of UV-divergent diagrams UV-convergent part is equal to F - F({B} = 0) [1].\n"
     )
 
+    # preparing the UV-finine diagrams for numerical integration
     if diagram_data.expression_UV_convergence_criterion == True:
-        print(f"\nSimplifying the expression of the obtained scalar part F.")
+        UV_divergent_part_at_zero_B = 0
 
-        # simplification of the expression for F (square roots cancellation somewhere, etc.)
-        particular_integrand_simplification = partial_simplification_of_diagram_expression(
-            diagram_expression.residues_sum_without_dim_factor_after_subs
-        )
-
-        # the common factor after the replacement k, q --> B*k/nuo, B*q/nuo is transformed into a part
-        # that depends only on k and q and the dimension factor depends on |B|, nou, etc
-        dim_and_dimless_factor = prefactor_simplification(diagram_expression.new_dim_factor_after_subs)
-
-        # here we are testing that all diagrams must have the same dimension
-        assert (
-            dim_and_dimless_factor.dim_factor.has(dimensional_factor_for_test) == True
-        ), "Diagram dimension do not match"
+        integrand_scalar_part_depending_only_on_uo = particular_integrand_simplification.doit().doit().subs(b, 1).doit()
 
         # define F1 (see General_notation.txt) at the level of variables k and q
-        integrand_scalar_part_depending_only_on_uo = (
-            (dim_and_dimless_factor.dimensionless_factor * particular_integrand_simplification).doit().doit()
+        integrand_scalar_part_depending_only_on_uo_and_eps = (
+            common_factor.momentum_depend_factor.doit().doit().subs(b, 1) * integrand_scalar_part_depending_only_on_uo
         )
 
-        if integrand_scalar_part_depending_only_on_uo.has(go):
-            sys.exit("Error when getting integrand for numerical integration")
-        elif integrand_scalar_part_depending_only_on_uo.has(B):
-            sys.exit("Error when getting integrand for numerical integration")
-        elif integrand_scalar_part_depending_only_on_uo.has(nuo):
-            sys.exit("Error when getting integrand for numerical integration")
-
-        Feynman_graph.write(
-            f"\nPreparation for numerical integration consists in carrying out a replacing of variables "
-            f"k, q --> B*k/nuo, B*q/nuo, after which F is divided into a dimensional factor C_F and a function F1 "
-            f"depending only on uo and integration variables: F = C_F*F1.\n"
-        )
+        assert (
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(go) == False,
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(nuo) == False,
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False,
+        ), "Error when getting integrand scalar part."
 
         Feynman_graph.write(
             f"\nThe expression for F1 after momentums replacing: "
-            f"\n{integrand_scalar_part_depending_only_on_uo} \n"
-            f"\nThe expression for C_F after momentums replacing: "
-            f"\n{dim_and_dimless_factor.dim_factor} \n"
+            f"\n{integrand_scalar_part_depending_only_on_uo_and_eps} \n"
+            f"\nThe expression for common C_F after momentums replacing: "
+            f"\n{common_factor.momentum_independ_factor} \n"
+        )
+    # preparing the diagrams containind UV-infinine parts for numerical integration
+    else:
+        # using the auxiliary parameter b we set the field B here to 0
+        UV_divergent_part_at_zero_B = particular_integrand_simplification.subs(b, 0).doit().doit().doit()
+
+        # according to [1], all corrections to all propagators in their expansion in B are UV-finite.
+        # Accordingly, the divergent part of the diagram is concentrated in the function F(B = 0)
+        UV_convergent_part = (
+            particular_integrand_simplification.doit().doit().subs(b, 1).doit() - UV_divergent_part_at_zero_B
         )
 
-    else:
-        # TODO
-        integrand_scalar_part_depending_only_on_uo = None
+        # define F1 (see General_notation.txt) at the level of variables k and q
+        integrand_scalar_part_depending_only_on_uo_and_eps = (
+            common_factor.momentum_depend_factor.doit().doit() * UV_convergent_part
+        )
+
+        assert (
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(go) == False,
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(nuo) == False,
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False,
+        ), "Error when getting integrand scalar part."
+
+        Feynman_graph.write(
+            f"\nThe expression for F1 after momentums replacing: F1 = F1(B = 0) + (F1 - F1(B = 0))."
+            f"\nThe expression for F1 - F1(B = 0) (UV-convergent part):"
+            f"\n{integrand_scalar_part_depending_only_on_uo_and_eps} \n"
+            f"\nThe expression for F1(B = 0) (UV-divergent part):"
+            f"\n{common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B}\n"
+            f"\nThe expression for common C_F after momentums replacing: "
+            f"\n{common_factor.momentum_independ_factor} \n"
+        )
 
     # --------------------------------------------------------------------------------------------------------------#
     #                                        Сomputing diagram tensor structures
     # --------------------------------------------------------------------------------------------------------------#
 
-    Feynman_graph.write(f"\nCalculation T_ij. \n")
+    Feynman_graph.write(f"\nCalculation of T_ij. \n")
 
     print(f"\nComputing tensor convolutions. \n")
 
-    Tensor = computing_tensor_structures(diagram_data)
+    tensor_data = computing_tensor_structures(diagram_data, diagram_data.expression_UV_convergence_criterion)
 
-    Feynman_graph.write(f"\nThe expression for T_ij after computing tensor convolutions: \n{Tensor} \n")
+    Tensor_Lambda = tensor_data.lambda_proportional_term
+    Tensor_B = tensor_data.B_proportional_term
+
+    print(f"\nDiagram tensor structure after computing tensor convolutions: ")
+    print(f"\n1. Tensor structure without the presence of {B} field (Lambda part): \n{Tensor_Lambda}")
+    print(f"\n2. Tensor structure with the presence of {B} field (B part): \n{Tensor_B}\n")
 
     Feynman_graph.write(
-        f"\nPreparation for numerical integration consists in carrying out a replacing of variables "
-        f"k, q --> B*k/nuo, B*q/nuo, after which T_ij is divided into a dimensional factor C_T and a function T1_ij "
-        f"depending only on uo and integration variables: T_ij = C_T*T1_ij.\n"
+        f"\nFor UV-divergent diagrams, the expression for T_ij after calculating tensor convolutions "
+        f"is calculated both in the case of the presence of an external field B and for {B} = 0. "
+        f"For UV-finite diagrams, there is an expression for T_ij only in the external field. \n"
+        f"\n1. Tensor structure without the presence of B field (Lambda part): \n{Tensor_Lambda} \n"
+        f"\n2. Tensor structure with the presence of B field (B part): \n{Tensor_B}\n"
     )
 
-    separated_tensor_part = extract_B_and_nuo_depend_factor_from_tensor_part(Tensor)
+    if diagram_data.expression_UV_convergence_criterion == True:
+        Tensor_Lambda_at_zero_A = None
+        separated_tensor_Lambda_part = None
+    else:
+        Tensor_Lambda_at_zero_A = Tensor_Lambda.subs(A, 1)
+        separated_tensor_Lambda_part = extract_B_and_nuo_depend_factor_from_tensor_part(Tensor_Lambda)
+
+    Tensor_B_at_zero_A = Tensor_B.subs(A, 1)
+    separated_tensor_B_part = extract_B_and_nuo_depend_factor_from_tensor_part(Tensor_B)
 
     Feynman_graph.write(
-        f"\nThe expression for T1_ij after momentums replacing: "
-        f"\n{separated_tensor_part.dimensionless_factor} \n"
-        f"\nThe expression for C_T after momentums replacing: "
-        f"\n{separated_tensor_part.dim_factor} \n"
+        f"\nThe expression for T_ij in helical MHD ({A} = 1): \n"
+        f"\n1. Tensor structure without the presence of B field (Lambda part): \n{Tensor_Lambda_at_zero_A} \n"
+        f"\n2. Tensor structure with the presence of B field (B part): \n{Tensor_B_at_zero_A}\n"
+    )
+    Feynman_graph.write(
+        f"\nPreparation for numerical integration for the integrand's tensor part consists in carrying out a "
+        f"replacing of variables {k}, {q} --> {B*k/nuo}, {B*q/nuo}, after which T_ij is divided into a dimensional "
+        f"factor C_T and a function T1_ij depending only on uo and integration variables: T_ij = C_T*T1_ij. "
+        f"\nFor UV divergent diagrams, this procedure applies to both Lambda part of T_ij and to B part of T_ij.\n"
+    )
+
+    # in terms of dimension, the tensor part is proportional to the 4th degree of momentum
+    # (only the vertex factors contribute), one of which is external and does not participate
+    # in the procedure of replacing of variables
+    tensor_part_dimensional_factor_for_test = B**3 / nuo**3
+
+    # here we are testing that all diagrams must have the same dimension
+    if diagram_data.expression_UV_convergence_criterion == False:
+        assert (
+            separated_tensor_Lambda_part.momentum_independ_factor.has(tensor_part_dimensional_factor_for_test) == True
+        ), "Incorrect dimension of the tensor part of the diagram."
+
+    assert (
+        separated_tensor_B_part.momentum_independ_factor.has(tensor_part_dimensional_factor_for_test) == True
+    ), "Incorrect dimension of the tensor part of the diagram."
+
+    if diagram_data.expression_UV_convergence_criterion == False:
+        Lambda_part_momentum_depend_factor = separated_tensor_Lambda_part.momentum_depend_factor
+        Lambda_part_momentum_independ_factor = separated_tensor_Lambda_part.momentum_independ_factor
+        Feynman_graph.write(
+            f"\nThe expression for T1_lambda_ij (Lambda part of T_1_ij) after momentums replacing: "
+            f"\n{Lambda_part_momentum_depend_factor} \n"
+            f"\nThe expression for C_lambda_T after momentums replacing: "
+            f"\n{Lambda_part_momentum_independ_factor} \n"
+        )
+    else:
+        Lambda_part_momentum_depend_factor = None
+        Lambda_part_momentum_independ_factor = None
+
+    Feynman_graph.write(
+        f"\nThe expression for T1_B_ij (B part of T_1_ij) after momentums replacing: "
+        f"\n{separated_tensor_B_part.momentum_depend_factor} \n"
+        f"\nThe expression for C_B_T after momentums replacing: "
+        f"\n{separated_tensor_B_part.momentum_independ_factor} \n"
     )
 
     Feynman_graph.write(f"\nDiagram integrand calculation end.\n")
@@ -156,10 +250,13 @@ def diagram_integrand_calculation(
 
     diagram_integrand_data = IntegrandData(
         diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor,
-        integrand_scalar_part_depending_only_on_uo,
-        dim_and_dimless_factor.dim_factor,
-        separated_tensor_part.dimensionless_factor,
-        separated_tensor_part.dim_factor,
+        integrand_scalar_part_depending_only_on_uo_and_eps,
+        common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B,
+        common_factor.momentum_independ_factor,
+        Lambda_part_momentum_depend_factor,
+        Lambda_part_momentum_independ_factor,
+        separated_tensor_B_part.momentum_depend_factor,
+        separated_tensor_B_part.momentum_independ_factor,
     )
 
     return diagram_integrand_data
