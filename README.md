@@ -200,7 +200,7 @@ Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for G
 $$
 \Delta =
 \begin{bmatrix}
--\mathrm{K}_{12}^{-T} \mathrm{K}_{22}^{~} \mathrm{K}_{12}^{-1} & \mathrm{K}_{12}^{-T} \\
+-\mathrm{K}_{12}^{-T} \mathrm{K}_{22}^{~} \mathrm{K}_{12}^{-1} & \mathrm{K}_{12}^{-T}\\
 \mathrm{K}_{12}^{-1} & \mathbb{O}
 \end{bmatrix}
 ,
