@@ -206,7 +206,7 @@ $$
 ,
 $$
 
-where $\mathrm{K}_{12}^{-1}$ and $\mathrm{K}_{22}^{~}$ are given by the corresponding $2 \times 2$ blocks of the matrix $\mathrm{K}$. They have the following form
+where $\mathrm{K}_{12}$ and $\mathrm{K}_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $\mathrm{K}$. They have the following form
 
 $$
 \mathrm{K}_{12}^{-1} = A
