@@ -276,11 +276,11 @@ In the frequency–momentum representation, free propagators of the model with t
 
 $$
 \begin{align*}
-&\langle v_i v_j \rangle = \beta \beta^{*} D^v R_{ij} / \xi \xi^{*}, \\
-&\langle b_i b_j \rangle = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{*}} \hat D^v R_{ij}, \\
+&\langle v_i v_j \rangle = \frac{\beta \beta^{*}}{\xi \xi^{*}}d_F R_{ij}, \\
+&\langle b_i b_j \rangle = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{*}} d_F R_{ij}, \\
 &\langle v_i^{~} v_j' \rangle = \langle v_i' v_j \rangle^{*} = \frac{\beta^{*}}{\xi^{*}} P_{ij}, \\
 &\langle b_i^{~} b_j' \rangle = \langle b_i' b_j \rangle^{*} = \frac{\alpha^{*}}{\xi^{*}} P_{ij}, \\
-&\langle b_i v_j \rangle = \langle v_i b_j \rangle^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} D^v R_{ij}, \\
+&\langle b_i v_j \rangle = \langle v_i b_j \rangle^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} d_F R_{ij}, \\
 &\langle b_i^{~} v_j' \rangle = \langle b_i' v_j^{~} \rangle^{*} = \langle v_i^{~} b_j' \rangle = \\
 &\langle v_i' b_j^{~} \rangle^{*} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{*}} P_{i j}.
 \end{align*}
