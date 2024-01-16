@@ -192,7 +192,7 @@ $$
 \Delta =
 \begin{bmatrix}
 -\mathrm{K}_{1 2}^{-T} \mathrm{K}_{2 2} \mathrm{K}_{1 2}^{-1} & \mathrm{K}_{1 2}^{-T} \\
-\mathrm{K}_{1 2}^{-1} & \mathbb{O}
+\mathrm{K}_{1 2}^{-1} & 0
 \end{bmatrix}
 ,
 $$
@@ -216,8 +216,10 @@ $$
 -\mathrm{\hat D}^v & 0 \\
 0 & 0
 \end{bmatrix}
-, \quad \text{ and }
+, 
 $$
+
+and
 
 $$
 \text{det }\mathrm{K}_{12} = \left(-\partial_t - u_0\nu_0\boldsymbol{\nabla}^2\right)\left(-\partial_t - \nu_0\boldsymbol{\nabla}^2) - ({\bf B} \cdot \boldsymbol{\nabla}\right)^2.
