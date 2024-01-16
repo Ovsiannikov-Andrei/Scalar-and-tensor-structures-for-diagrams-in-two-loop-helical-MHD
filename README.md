@@ -275,11 +275,11 @@ Further details of the Nickel index algorithm and its generalizations can be fou
 In the frequency–momentum representation, free propagators of the model with the action $\mathcal{S}$ are
 
 $$
-\begin{align*}
+\begin{eqnarray*}
 
-&\langle v_i v_j \rangle &= \beta \beta^{*} \mathrm{\hat D}^v R_{ij}/\xi \xi^{*}, \\
+&&\langle v_i v_j \rangle &= \beta \beta^{*} \mathrm{\hat D}^v R_{ij}/\xi \xi^{*}, \\
 
-\end{align*}
+\end{eqnarray*}
 $$
 
 Here, the following abbreviations have been introduced 
