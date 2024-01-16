@@ -191,13 +191,13 @@ Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for G
 $$
 \Delta =
 \begin{bmatrix}
--\mathrm{K}_{1 2}^{-T} \mathrm{K}_{2 2} \mathrm{K}_{1 2}^{-1} & \mathrm{K}_{1 2}^{-T} \\
-\mathrm{K}_{1 2}^{-1} & 0
+- \mathrm{K}_{1 2}^{-T} \mathrm{K}_{2 2}^{~} \mathrm{K}_{1 2}^{-1} & \mathrm{K}_{1 2}^{-T} \\
+\mathrm{K}_{1 2}^{-1} & \mathbb{O}
 \end{bmatrix}
 ,
 $$
 
-where $\mathrm{K}_{1 2}^{-1}$ and $\mathrm{K}_{2 2}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
+where $\mathrm{K}_{1 2}^{-1}$ and $\mathrm{K}_{2 2}$ are given by the corresponding $2 \times 2$ blocks of the matrix $\mathrm{K}$. They have the following form
 
 $$
 \mathrm{K}_{12}^{-1} = A
