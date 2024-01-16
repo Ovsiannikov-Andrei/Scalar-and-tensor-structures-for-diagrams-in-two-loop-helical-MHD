@@ -209,7 +209,7 @@ $$
 where $K_{12}$ and $K_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
 
 $$
-K_{12}^{-1} = A
+K_{12}^{-1} = \frac{\mathrm{\hat P}}{\text{det }K_{12}}
 \begin{bmatrix}
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
@@ -231,7 +231,7 @@ $$
 and
 
 $$
-\text{det }\mathrm{K}_{12} = \left(-\partial_t - u_0\nu_0\boldsymbol{\nabla}^2\right)\left(-\partial_t - \nu_0\boldsymbol{\nabla}^2) - ({\bf B} \cdot \boldsymbol{\nabla}\right)^2.
+\text{det }K_{12} = \left(-\partial_t - u_0\nu_0\boldsymbol{\nabla}^2\right)\left(-\partial_t - \nu_0\boldsymbol{\nabla}^2) - ({\bf B} \cdot \boldsymbol{\nabla}\right)^2.
 $$
 
 #### **Nickel Index**
