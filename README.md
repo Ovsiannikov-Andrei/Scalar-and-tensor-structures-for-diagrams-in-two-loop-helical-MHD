@@ -189,7 +189,7 @@ $$
 \end{align*}
 $$
 
-Note that in our case of zero external momenta the procedure for reducing tensor integrals to scalar ones (Veltman-Passarino reduction) allows only tensor structures of the form of $\delta_{lj}$ and $\hat B_l \hat B_j$. In principle, a contribution of the form $\sim i (\boldsymbol{p} \cdot {\bf B})\epsilon_{i j k}B_k$ is still possible in $\Sigma_{ij}^{b' b}$, but it is equal to zero due to the assumption of transversality of ${\bf B }$.
+Note that in our case of zero external momenta the procedure for reducing tensor integrals to scalar ones (Veltman-Passarino reduction) allows only tensor structures of the form of $\delta_{lj}$ and $\hat B_l \hat B_j$. In principle, a contribution of the form $\sim i (\boldsymbol{p} \cdot {\bf B})\epsilon_{i j k}B_k$ is still possible in $\Sigma_{ij}^{b' b}$, but it is equal to zero due to the assumption of transversality of the magnetic field ${\bf B}$.
 
 Eventually, the instability can be eliminated by the appearance of a large-scale uniform field ${\bf B}$ the absolute value of which is given by the expression $|{\bf B}| = a\Lambda/b$.
 The last contribution in $T_{lj}$ does not generate the instability, but promotes the formation of 4specific long-lived pulses of the order of $\sim t \text{eхр}(— u_0{\nu}_0 k^2 t)$ Alfv\'en waves [[1]](#references).
@@ -206,7 +206,7 @@ $$
 ,
 $$
 
-where $\mathrm{K}_{12}$ and $\mathrm{K}_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $\mathrm{K}$. They have the following form
+where $K_{12}$ and $K_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
 
 $$
 \mathrm{K}_{12}^{-1} = A
@@ -277,6 +277,12 @@ In the frequency–momentum representation, free propagators of the model with t
 $$
 \begin{align*}
 &\langle v_i v_j \rangle = \beta \beta^{*} D^v R_{ij} / \xi \xi^{*}, \\
+&\langle b_i b_j \rangle = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{*}} \hat D^v R_{ij}, \\
+&\langle v_i^{~} v_j' \rangle = \langle v_i' v_j \rangle^{*} = \frac{\beta^{*}}{\xi^{*}} P_{ij}, \\
+&\langle b_i^{~} b_j' \rangle = \langle b_i' b_j \rangle^{*} = \frac{\alpha^{*}}{\xi^{*}} P_{ij}, \\
+&\langle b_i v_j \rangle = \langle v_i b_j \rangle^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} D^v R_{ij}, \\
+&\langle b_i^{~} v_j' \rangle = \langle b_i' v_j^{~} \rangle^{*} = \langle v_i^{~} b_j' \rangle = \\
+&\langle v_i' b_j^{~} \rangle^{*} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{*}} P_{i j}.
 \end{align*}
 $$
 
