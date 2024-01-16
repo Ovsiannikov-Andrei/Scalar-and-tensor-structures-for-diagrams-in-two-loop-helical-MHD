@@ -200,8 +200,8 @@ Action $\mathcal{S}$ corresponds to the standard Feynman diagram technique for G
 $$
 \Delta =
 \begin{bmatrix}
--\mathrm{K}_{12}^{-T} \mathrm{K}_{22}^{~} \mathrm{K}_{12}^{-1} & \mathrm{K}_{12}^{-T}\\
-\mathrm{K}_{12}^{-1} & \mathbb{O}
+-K_{12}^{-T} K_{22}^{~} K_{12}^{-1} & K_{12}^{-T}\\
+K_{12}^{-1} & \mathbb{O}
 \end{bmatrix}
 ,
 $$
@@ -209,7 +209,7 @@ $$
 where $K_{12}$ and $K_{22}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
 
 $$
-\mathrm{K}_{12}^{-1} = A
+K_{12}^{-1} = A
 \begin{bmatrix}
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
@@ -217,10 +217,10 @@ $$
 ,
 $$
 
-where $A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}$,
+where $A = \mathrm{\hat P}/\text{det }K_{12}$,
 
 $$
-\mathrm{K}_{22} =
+K_{22} =
 \begin{bmatrix}
 -\mathrm{\hat D}^v & 0 \\
 0 & 0
