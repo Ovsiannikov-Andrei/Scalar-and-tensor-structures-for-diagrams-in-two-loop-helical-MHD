@@ -277,7 +277,7 @@ In the frequency–momentum representation, free propagators of the model with t
 $$
 \begin{eqnarray*}
 
-&&\langle v_i v_j \rangle &= \beta \beta^{*} \mathrm{\hat D}^v R_{ij}/\xi \xi^{*}, \\
+&&\langle v_i v_j \rangle = \beta \beta^{*} \mathrm{\hat D}^v R_{ij}/\xi \xi^{*}, \\
 
 \end{eqnarray*}
 $$
