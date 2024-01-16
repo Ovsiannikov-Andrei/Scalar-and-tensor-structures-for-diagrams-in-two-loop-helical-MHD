@@ -118,7 +118,8 @@ where
 
 $$
 \begin{align*}
-&\langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{{(2 \pi)}^3} d_F(k) R_{i j}(\boldsymbol{k}) 
+&\langle F_i^v (\boldsymbol{x}, t) F_j^v (\boldsymbol{x}', t') \rangle = \\
+& \delta (t - t') \int \limits_{|\boldsymbol{k}| < \Lambda} \frac{d \boldsymbol{k}}{{(2 \pi)}^3} d_F(k) R_{i j}(\boldsymbol{k}) 
 e^{i \boldsymbol{k} \cdot (\boldsymbol{x} - \boldsymbol{x}')},
 \end{align*}
 $$
