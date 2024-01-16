@@ -278,16 +278,11 @@ $$
 \begin{align*}
 &\langle v_i v_j \rangle = \frac{\beta \beta^{\star}}{\xi \xi^{\star}}d_F R_{ij}, \\
 &\langle b_i b_j \rangle = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{\star}} d_F R_{ij}, 
-\end{align*}
-$$
-
-$$
-\begin{align*}
-&\langle v_i^{~} v_j' \rangle = \langle v_i' v_j \rangle^{*} = \frac{\beta^{*}}{\xi^{*}} P_{ij}, \\
-&\langle b_i^{~} b_j' \rangle = \langle b_i' b_j \rangle^{*} = \frac{\alpha^{*}}{\xi^{*}} P_{ij}, \\
-&\langle b_i v_j \rangle = \langle v_i b_j \rangle^{*} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{*}} d_F R_{ij}, \\
-&\langle b_i^{~} v_j' \rangle = \langle b_i' v_j^{~} \rangle^{*} = \langle v_i^{~} b_j' \rangle = \\
-&\langle v_i' b_j^{~} \rangle^{*} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{*}} P_{i j}.
+&\langle v_i^{~} v_j' \rangle = \langle v_i' v_j \rangle^{\star} = \frac{\beta^{\star}}{\xi^{\star}} P_{ij}, \\
+&\langle b_i^{~} b_j' \rangle = \langle b_i' b_j \rangle^{\star} = \frac{\alpha^{\star}}{\xi^{\star}} P_{ij}, \\
+&\langle b_i v_j \rangle = \langle v_i b_j \rangle^{\star} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{\star}} d_F R_{ij}, \\
+&\langle b_i^{~} v_j' \rangle = \langle b_i' v_j^{~} \rangle^{\star} = \langle v_i^{~} b_j' \rangle = \\
+&\langle v_i' b_j^{~} \rangle^{\star} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{\star}} P_{i j}.
 \end{align*}
 $$
 
