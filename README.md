@@ -196,6 +196,7 @@ $$
 \end{bmatrix}
 ,
 $$
+
 where $\mathrm{K}_{1 2}^{-1}$ and $\mathrm{K}_{2 2}$ are given by the corresponding $2 \times 2$ blocks of the matrix $K$. They have the following form
 
 $$
@@ -204,8 +205,10 @@ $$
 -\partial_t - u_0 \nu_0 \boldsymbol{\nabla}^2 & -({\bf B} \cdot \boldsymbol{\nabla})\\
 -({\bf B} \cdot \boldsymbol{\nabla}) & -\partial_t - \nu_0 \boldsymbol{\nabla}^2
 \end{bmatrix}
-,  \quad \text{ where } \quad A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}
+,
 $$
+
+where $A = \mathrm{\hat P}/\text{det }\mathrm{K}_{12}$,
 
 $$
 \mathrm{K}_{22} =
