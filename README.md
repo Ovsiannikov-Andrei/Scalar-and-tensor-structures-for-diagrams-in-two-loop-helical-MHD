@@ -277,16 +277,16 @@ In the frequency–momentum representation, free propagators of the model with t
 $$
 \begin{align*}
 &\langle v_i v_j \rangle = \frac{\beta \beta^{\star}}{\xi \xi^{\star}}d_F R_{ij}, \\
-&\langle b_i b_j \rangle = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{\star}} d_F R_{ij}, 
+&\langle b_i b_j \rangle = \frac{({\bf B} \cdot \boldsymbol{k})^2}{\xi \xi^{\star}} d_F R_{ij}, \\
 &\langle v_i^{~} v_j' \rangle = \langle v_i' v_j \rangle^{\star} = \frac{\beta^{\star}}{\xi^{\star}} P_{ij}, \\
 &\langle b_i^{~} b_j' \rangle = \langle b_i' b_j \rangle^{\star} = \frac{\alpha^{\star}}{\xi^{\star}} P_{ij}, \\
 &\langle b_i v_j \rangle = \langle v_i b_j \rangle^{\star} = i \frac{\beta ({\bf B} \cdot \boldsymbol{k})}{\xi \xi^{\star}} d_F R_{ij}, \\
 &\langle b_i^{~} v_j' \rangle = \langle b_i' v_j^{~} \rangle^{\star} = \langle v_i^{~} b_j' \rangle = \\
-&\langle v_i' b_j^{~} \rangle^{\star} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{\star}} P_{i j}.
+&\langle v_i' b_j^{~} \rangle^{\star} = i \frac{({\bf B} \cdot \boldsymbol{k})}{\xi^{\star}} P_{i j},
 \end{align*}
 $$
 
-Here, the following abbreviations have been introduced 
+where $\star$ denotes complex conjugation. Also, the following abbreviations have been introduced 
 
 $$
 \begin{align*}
