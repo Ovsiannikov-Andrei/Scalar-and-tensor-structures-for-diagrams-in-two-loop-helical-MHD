@@ -30,7 +30,7 @@ def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_fo
     """
 
     # start filling the results of calculation to file
-    Feynman_graph = open(f"Detailed Results/{diagram_data.output_file_name}", "a+")
+    Feynman_graph = open(f"Details about the diagrams/{diagram_data.output_file_name}", "a+")
 
     # starts filling the results of calculations (integrals over frequencies, tensor convolutions) to file
     Feynman_graph.write(f"\nDiagram integrand calculation start.\n")
@@ -137,7 +137,11 @@ obtained by direct integration in Wolfram Mathematica."""
         # according to [1], all corrections to all propagators in their expansion in B are UV-finite.
         # Accordingly, the divergent part of the diagram is concentrated in the function F(B = 0)
         UV_convergent_part = (
-            particular_integrand_simplification.doit().doit().subs(b, 1).doit() - UV_divergent_part_at_zero_B
+            together(particular_integrand_simplification.subs(b, 1) - particular_integrand_simplification.subs(b, 0))
+            .doit()
+            .doit()
+            .doit()
+            .subs(b, 1)
         )
 
         # define F1 (see General_notation.txt) at the level of variables k and q
@@ -151,14 +155,20 @@ obtained by direct integration in Wolfram Mathematica."""
             integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False,
         ), "Error when getting integrand scalar part."
 
+        # by dimension B ~ nuo* Cutoff
+        scalar_common_factor_lambda = common_factor.momentum_independ_factor.subs(B, Cutoff * nuo)
+        scalar_common_factor_B = common_factor.momentum_independ_factor
+
         Feynman_graph.write(
-            f"\nThe expression for F1 after momentums replacing: F1 = F1(B = 0) + (F1 - F1(B = 0))."
+            f"\nThe expression for F1 after momentums replacing: F1 ==> C_F_lambda*F1(B = 0) + C_F_B*(F1 - F1(B = 0))."
             f"\nThe expression for F1 - F1(B = 0) (UV-convergent part):"
             f"\n{integrand_scalar_part_depending_only_on_uo_and_eps} \n"
             f"\nThe expression for F1(B = 0) (UV-divergent part):"
             f"\n{common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B}\n"
-            f"\nThe expression for common C_F after momentums replacing: "
-            f"\n{common_factor.momentum_independ_factor} \n"
+            f"\nThe expression for common C_F_lambda after momentums replacing: "
+            f"\n{scalar_common_factor_lambda} \n"
+            f"\nThe expression for common C_F_B after momentums replacing: "
+            f"\n{scalar_common_factor_B} \n"
         )
 
     # --------------------------------------------------------------------------------------------------------------#
@@ -225,7 +235,10 @@ obtained by direct integration in Wolfram Mathematica."""
 
     if diagram_data.expression_UV_convergence_criterion == False:
         Lambda_part_momentum_depend_factor = separated_tensor_Lambda_part.momentum_depend_factor
-        Lambda_part_momentum_independ_factor = separated_tensor_Lambda_part.momentum_independ_factor
+        # by dimension B ~ nuo* Cutoff
+        Lambda_part_momentum_independ_factor = separated_tensor_Lambda_part.momentum_independ_factor.subs(
+            B, Cutoff * nuo
+        )
         Feynman_graph.write(
             f"\nThe expression for T1_lambda_ij (Lambda part of T_1_ij) after momentums replacing: "
             f"\n{Lambda_part_momentum_depend_factor} \n"
@@ -252,7 +265,8 @@ obtained by direct integration in Wolfram Mathematica."""
         diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor,
         integrand_scalar_part_depending_only_on_uo_and_eps,
         common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B,
-        common_factor.momentum_independ_factor,
+        scalar_common_factor_lambda,
+        scalar_common_factor_B,
         Lambda_part_momentum_depend_factor,
         Lambda_part_momentum_independ_factor,
         separated_tensor_B_part.momentum_depend_factor,

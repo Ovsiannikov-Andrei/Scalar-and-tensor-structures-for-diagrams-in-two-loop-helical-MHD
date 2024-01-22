@@ -34,7 +34,7 @@
 
 ## **The Repository**
 
-This repository is dedicated to working with two-loop diagrams of stochastic magnetohydrodynamics. 
+This repository is dedicated to working with two-loop self-energy diagrams of stochastic magnetohydrodynamics. 
 The final version of this source code will be available to everyone.
 
 
@@ -67,7 +67,7 @@ The final version of this source code will be available to everyone.
 
 <!-- ABOUT THE PROJECT -->
 ## **About The Project**
-This program aims to obtain and perform partial symbolic calculations to prepare integrands of the UV-finite two-loop Feynman self-energy contributions in stochastic gyrotropic magnetohydrodynamics (MHD) for subsequent numerical integration. The instability caused by the nonconservation of spatial parity in a turbulent system, also known as gyrotropy, can in principle be stabilized by the presence of a large-scale homogeneous magnetic field in the system, as has been shown in [[1]](#references). This proof is based on the one-loop calculations, while this program is designed to surpass the one-loop approximation.
+The instability caused by the nonconservation of spatial parity in a turbulent system, also known as gyrotropy, can in principle be stabilized by the presence of a large-scale homogeneous magnetic field in the system, as has been shown in [[1]](#references). This proof is based on the one-loop calculations, while this program is designed to surpass the one-loop approximation. This program aims to obtain and perform partial symbolic calculations to prepare integrands for the two-loop Feynman self-energy contributions in helical stochastic magnetohydrodynamics (MHD) for subsequent numerical integration.
 
 ### **Built With**
 
@@ -216,8 +216,6 @@ K_{12}^{-1} = \frac{\mathrm{\hat P}}{\text{det }K_{12}}
 \end{bmatrix}
 ,
 $$
-
-where $A = \mathrm{\hat P}/\text{det }K_{12}$,
 
 $$
 K_{22} =

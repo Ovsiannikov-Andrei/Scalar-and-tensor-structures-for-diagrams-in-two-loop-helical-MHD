@@ -58,7 +58,7 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     information_from_Nickel_index = get_information_from_Nickel_index(Nickel_index, counter)
 
     # creating a file with all output data for the corresponding diagram
-    Feynman_graph = open(f"Detailed Results/{information_from_Nickel_index.result_file_name}", "w")
+    Feynman_graph = open(f"Details about the diagrams/{information_from_Nickel_index.result_file_name}", "w")
 
     # display the Nickel index of the diagram
     print(f"\nNickel index of the Feynman diagram: {information_from_Nickel_index.nickel_index}")

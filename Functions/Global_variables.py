@@ -28,7 +28,7 @@ s reserved to denote the component of the external momentum p
 d the spatial dimension of the system, its physical value is equal to 3
 """
 
-[z, z_k, z_q, Lambda_cutoff, B, b] = symbols("z z_k z_q Lambda_cutoff B b", real=True)
+[z, z_k, z_q, Cutoff, B, b] = symbols("z z_k z_q Cutoff B b", real=True)
 """
 z = cos(angle between k and q) = dot_product(k, q)/ (abs(k) * abs(q))
 z_k = cos(angle between k and B) = dot_product(k, B)/ (abs(k) * abs(B))
@@ -42,7 +42,7 @@ Attention!
 Do not confuse the field B (in the notation [1] it is theta') and <B> is a 
 spontaneously arising constant magnetic field (in the notation [1] it is c)
 
-Lambda is a momentum dimension cutoff parameter
+Cutoff is a momentum dimension cutoff parameter (Lambda in notation [1])
 """
 
 [nuo, nu, mu, uo, u, rho] = symbols("nuo nu mu uo u rho", positive=True)

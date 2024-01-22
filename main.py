@@ -38,14 +38,18 @@ def main():
     calculated up to the level of taking integrals over frequencies and calculating tensor convolutions.
     """
 
-    # create the Detailed Results folder, if it doesn't already exist
-    if not os.path.isdir("Detailed Results"):
-        os.mkdir("Detailed Results")
+    # create folder with all info about structure of diagrams, if it doesn't already exist
+    if not os.path.isdir("Details about the diagrams"):
+        os.mkdir("Details about the diagrams")
 
     # create the Final Results folder for integrends for numerical calculations,
     # if it doesn't already exist
-    if not os.path.isdir("Final Results (just copy and integrate)"):
-        os.mkdir("Final Results (just copy and integrate)")
+    if not os.path.isdir("Final Results"):
+        os.mkdir("Final Results")
+    if not os.path.isdir("Final Results/UV-finite diagrams"):
+        os.mkdir("Final Results/UV-finite diagrams")
+    if not os.path.isdir("Final Results/UV-infinite diagrams"):
+        os.mkdir("Final Results/UV-infinite diagrams")
 
     # create a file with decoding of all notations and additional information
     create_file_with_info_and_supplementary_matherials()

@@ -48,16 +48,25 @@ class IntegrandData:
     to a common denominator and partially simplified,
     scalar_part_depending_only_on_uo -- here we save scalar part of the integrand
     depending only on uo (replacing  k, q -- > B*k/nuo, B*q/nuo),
-    field_and_nuo_factor -- here we save factor by which the scalar part of the
+    scalar_part_field_and_nuo_factor_lambda -- here we save factor by which the scalar part of the
+    integrand is multiplied (all dependence on Cutoff and nuo),
+    scalar_part_field_and_nuo_factor_B -- here we save factor by which the scalar part of the
     integrand is multiplied (all dependence on |B| and nuo),
-    tensor_convolution -- here we save computed tensor structure corresponding to
-    the rotor (and only) terms
+    tensor_convolution_lambda_momentum_depend_part -- here we save computed tensor structure
+    corresponding to the Cutoff part of the (divergent) integrand
+    tensor_convolution_lambda_field_and_nuo_factor -- here we save a common multiplier
+    (all dependence on Cutoff and nuo) which corresponds to the Cutoff integrand's part
+    tensor_convolution_B_momentum_depend_part -- here we save computed tensor structure
+    corresponding to the |B| part of the (convergent) integrand
+    tensor_convolution_B_field_and_nuo_factor -- here we save a common multiplier
+    (all dependence on |B| and nuo) which corresponds to the |B| integrand's part
     """
 
     scalar_part_without_replacement: Any
     convergent_scalar_part_depending_only_on_uo: Any
     divergent_scalar_part_depending_only_on_uo: Any
-    scalar_part_field_and_nuo_factor: Any
+    scalar_part_field_and_nuo_factor_lambda: Any
+    scalar_part_field_and_nuo_factor_B: Any
     tensor_convolution_lambda_momentum_depend_part: Any
     tensor_convolution_lambda_field_and_nuo_factor: Any
     tensor_convolution_B_momentum_depend_part: Any
