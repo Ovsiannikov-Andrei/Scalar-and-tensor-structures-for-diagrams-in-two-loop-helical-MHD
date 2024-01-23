@@ -1202,7 +1202,7 @@ class vertex_factor_Vvv(Function):
     The vertex_factor_Vvv(k, index_V, index1_v, index2_v) function determines the corresponding
     vertex multiplier (Vvv) of the diagram.
 
-    vertex_factor_Vvv(k, index_V, index1_v, index2_v) = -I * (mom(k, index1_v) * kd(index_V, index2_v) +
+    vertex_factor_Vvv(k, index_V, index1_v, index2_v) = I * (mom(k, index1_v) * kd(index_V, index2_v) +
     mom(k, index2_v) * kd(index_V, index1_v))
 
     ARGUMENTS:
@@ -1223,7 +1223,7 @@ class vertex_factor_Vvv(Function):
             index1_v = index1_v.doit(deep=deep, **hints)
             index2_v = index2_v.doit(deep=deep, **hints)
 
-        return -I * (mom(k, index1_v) * kd(index_V, index2_v) + mom(k, index2_v) * kd(index_V, index1_v))
+        return I * (mom(k, index1_v) * kd(index_V, index2_v) + mom(k, index2_v) * kd(index_V, index1_v))
 
 
 class vertex_factor_Vbb(Function):
@@ -1231,7 +1231,7 @@ class vertex_factor_Vbb(Function):
     The vertex_factor_Vbb(k, index_V, index1_b, index2_b) function determines the corresponding
     vertex multiplier (Vbb) of the diagram.
 
-    vertex_factor_Vbb(k, index_V, index1_b, index2_b) = I * (mom(k, index1_b) * kd(index_V, index2_b) +
+    vertex_factor_Vbb(k, index_V, index1_b, index2_b) = -I * (mom(k, index1_b) * kd(index_V, index2_b) +
     mom(k, index2_b) * kd(index_V, index1_b))
 
     ARGUMENTS:
@@ -1256,7 +1256,7 @@ class vertex_factor_Vbb(Function):
             index1_b = index1_b.doit(deep=deep, **hints)
             index2_b = index2_b.doit(deep=deep, **hints)
 
-        return I * (mom(k, index1_b) * kd(index_V, index2_b) + mom(k, index2_b) * kd(index_V, index1_b))
+        return -I * (mom(k, index1_b) * kd(index_V, index2_b) + mom(k, index2_b) * kd(index_V, index1_b))
 
 
 class P(Function):
