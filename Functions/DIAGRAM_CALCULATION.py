@@ -108,7 +108,7 @@ obtained by direct integration in Wolfram Mathematica."""
 
     # preparing the UV-finine diagrams for numerical integration
     if diagram_data.expression_UV_convergence_criterion == True:
-        UV_divergent_part_at_zero_B = 0
+        complete_UV_divergent_part_at_zero_B = None
 
         integrand_scalar_part_depending_only_on_uo = particular_integrand_simplification.doit().doit().subs(b, 1).doit()
 
@@ -123,11 +123,14 @@ obtained by direct integration in Wolfram Mathematica."""
             integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False,
         ), "Error when getting integrand scalar part."
 
+        scalar_common_factor_B = common_factor.momentum_independ_factor
+        scalar_common_factor_lambda = None
+
         Feynman_graph.write(
             f"\nThe expression for F1 after momentums replacing: "
             f"\n{integrand_scalar_part_depending_only_on_uo_and_eps} \n"
             f"\nThe expression for common C_F after momentums replacing: "
-            f"\n{common_factor.momentum_independ_factor} \n"
+            f"\n{scalar_common_factor_B} \n"
         )
     # preparing the diagrams containind UV-infinine parts for numerical integration
     else:
@@ -158,13 +161,14 @@ obtained by direct integration in Wolfram Mathematica."""
         # by dimension B ~ nuo* Cutoff
         scalar_common_factor_lambda = common_factor.momentum_independ_factor.subs(B, Cutoff * nuo)
         scalar_common_factor_B = common_factor.momentum_independ_factor
+        complete_UV_divergent_part_at_zero_B = common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B
 
         Feynman_graph.write(
             f"\nThe expression for F1 after momentums replacing: F1 ==> C_F_lambda*F1(B = 0) + C_F_B*(F1 - F1(B = 0))."
             f"\nThe expression for F1 - F1(B = 0) (UV-convergent part):"
             f"\n{integrand_scalar_part_depending_only_on_uo_and_eps} \n"
             f"\nThe expression for F1(B = 0) (UV-divergent part):"
-            f"\n{common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B}\n"
+            f"\n{complete_UV_divergent_part_at_zero_B}\n"
             f"\nThe expression for common C_F_lambda after momentums replacing: "
             f"\n{scalar_common_factor_lambda} \n"
             f"\nThe expression for common C_F_B after momentums replacing: "
@@ -264,7 +268,7 @@ obtained by direct integration in Wolfram Mathematica."""
     diagram_integrand_data = IntegrandData(
         diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor,
         integrand_scalar_part_depending_only_on_uo_and_eps,
-        common_factor.momentum_depend_factor * UV_divergent_part_at_zero_B,
+        complete_UV_divergent_part_at_zero_B,
         scalar_common_factor_lambda,
         scalar_common_factor_B,
         Lambda_part_momentum_depend_factor,

@@ -107,6 +107,7 @@ for uo values different from the default? (y/n) """
             diagram_integrand_data = diagram_integrand_calculation(diagram_data, output_in_WfMath_format)
 
             preparing_diagram_for_numerical_integration(
+                diagram_data.symmetry_factor,
                 diagram_data.output_file_name,
                 diagram_integrand_data,
                 eps_input,

@@ -53,9 +53,9 @@ Vertex factors:
 
 vertex_factor_Bbv(k, index_B, index_b, index_v) = I * (mom(k, index_v) * kd(index_B, index_b) -
     A * mom(k, index_b) * kd(index_B, index_v))
-vertex_factor_Vvv(k, index_V, index1_v, index2_v) = -I * (mom(k, index1_v) * kd(index_V, index2_v) +
+vertex_factor_Vvv(k, index_V, index1_v, index2_v) = I * (mom(k, index1_v) * kd(index_V, index2_v) +
     mom(k, index2_v) * kd(index_V, index1_v))
-vertex_factor_Vbb(k, index_V, index1_b, index2_b) = I * (mom(k, index1_b) * kd(index_V, index2_b) +
+vertex_factor_Vbb(k, index_V, index1_b, index2_b) = -I * (mom(k, index1_b) * kd(index_V, index2_b) +
     mom(k, index2_b) * kd(index_V, index1_b))
 
 Here arguments i, j, l are indices of corresonding fields in corresponding vertex.

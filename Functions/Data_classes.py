@@ -1,5 +1,6 @@
 from dataclasses import *
 from typing import Any
+from sympy import Rational
 
 
 @dataclass
@@ -9,6 +10,7 @@ class DiagramData:
 
     ARGUMENTS:
 
+    symmetry_factor -- here we save a symmetry multiplier from the line with the data
     nickel_index -- here we save a Nickel index from the line with the data,
     output_file_name -- the name of the file with results,
     momentums_at_vertices -- distribution of momentums at the vertices,
@@ -23,6 +25,7 @@ class DiagramData:
     expression_UV_convergence_criterion -- corresponding integral is convergent (True/False)
     """
 
+    symmetry_factor: Rational
     nickel_index: str
     output_file_name: str
     momentums_at_vertices: list
@@ -87,7 +90,7 @@ class NickelIndexInfo:
 
     result_file_name: str
     nickel_index: str
-    symmetry_factor: int
+    symmetry_factor: Rational
 
 
 @dataclass

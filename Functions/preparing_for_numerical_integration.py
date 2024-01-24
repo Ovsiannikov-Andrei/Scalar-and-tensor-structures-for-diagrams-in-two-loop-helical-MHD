@@ -119,6 +119,7 @@ def nintegrand_to_WfMath_format(integrand_str: str, replace_z: bool):
 
 
 def preparing_diagram_for_numerical_integration(
+    symmetry_multiplier: DiagramData,
     output_file_name: DiagramData,
     diagram_integrand_data: IntegrandData,
     eps_input: int,
@@ -134,7 +135,7 @@ def preparing_diagram_for_numerical_integration(
 
     ARGUMENTS:
 
-    output_file_name is given by get_info_about_diagram(),
+    output_file_name and symmetry_multiplier are given by get_info_about_diagram(),
     Tensor, field_and_nuo_depend_factor, and  integrand_scalar_part_depending_only_on_uo are given by
     diagram_integrand_calculation(), output_in_WfMath_format -- parameter for geting results in a
     format suitable for use in Wolfram Mathematica, UV_convergence_criterion is a parameter saying that
@@ -163,9 +164,11 @@ def preparing_diagram_for_numerical_integration(
         momentum_depend_scalar_part_B = diagram_integrand_data.convergent_scalar_part_depending_only_on_uo
 
         common_multiplier_from_tensor_part_B = diagram_integrand_data.tensor_convolution_B_field_and_nuo_factor
-        common_multiplier_from_scalar_part_B = diagram_integrand_data.scalar_part_field_and_nuo_factor
+        common_multiplier_from_scalar_part_B = diagram_integrand_data.scalar_part_field_and_nuo_factor_B
 
-        complete_common_factor = simplify(common_multiplier_from_scalar_part_B * common_multiplier_from_tensor_part_B)
+        complete_common_factor = simplify(
+            common_multiplier_from_scalar_part_B * common_multiplier_from_tensor_part_B * symmetry_multiplier
+        )
         convergent_integrand = momentum_depend_tensor_part_B * momentum_depend_scalar_part_B
 
         WF_complete_common_factor = (
@@ -177,13 +180,13 @@ def preparing_diagram_for_numerical_integration(
         Feynman_graph.write(f"\nF = C_int*F1*T1_ij, where C_int = C_F*C_T.")
 
         Feynman_graph.write(
-            f"\nDimensional multiplier before the integrand, i.e. C_int: \n{WF_complete_common_factor}\n"
+            f"\nDimensional multiplier before the integrand (with symmetric coefficient), i.e. C_int: \n{WF_complete_common_factor}\n"
             f"\nThe UV-convergent part of the integrand without C_int, i.e. F1*T1_ij: \n{convergent_integrand}\n"
         )
 
         Final_integrand_for_numeric_calc.write(
             f"The UV-convergent part of the integrand without C_int: \n{nintegrand_to_WfMath_format(str(convergent_integrand), True)}\n"
-            f"Dimensional multiplier before the integrand, i.e. C_int: \n{complete_common_factor}\n"
+            f"Dimensional multiplier before the integrand (with symmetric coefficient), i.e. C_int: \n{complete_common_factor}\n"
         )
 
         if output_in_WfMath_format == "y":
@@ -233,9 +236,11 @@ def preparing_diagram_for_numerical_integration(
         common_multiplier_from_scalar_part_B = diagram_integrand_data.scalar_part_field_and_nuo_factor_B
 
         complete_common_factor_lambda = simplify(
-            common_multiplier_from_scalar_part_lambda * common_multiplier_from_tensor_part_lambda
+            common_multiplier_from_scalar_part_lambda * common_multiplier_from_tensor_part_lambda * symmetry_multiplier
         )
-        complete_common_factor_B = simplify(common_multiplier_from_scalar_part_B * common_multiplier_from_tensor_part_B)
+        complete_common_factor_B = simplify(
+            common_multiplier_from_scalar_part_B * common_multiplier_from_tensor_part_B * symmetry_multiplier
+        )
 
         convergent_integrand = momentum_depend_tensor_part_B * momentum_depend_scalar_part_B
         divergent_integrand = momentum_depend_tensor_part_lambda * momentum_depend_scalar_part_lambda
@@ -264,8 +269,8 @@ def preparing_diagram_for_numerical_integration(
         )
 
         Feynman_graph.write(
-            f"\nDimensional multiplier before UV-divergent part of the integrand, i.e. C_int_lambda: \n{complete_common_factor_lambda}\n"
-            f"\nDimensional multiplier before UV-convergent part of the integrand, i.e. C_int_B: \n{complete_common_factor_B}\n"
+            f"\nDimensional multiplier before UV-divergent part of the integrand (with symmetric coefficient), i.e. C_int_lambda: \n{complete_common_factor_lambda}\n"
+            f"\nDimensional multiplier before UV-convergent part of the integrand (with symmetric coefficient), i.e. C_int_B: \n{complete_common_factor_B}\n"
             f"\nThe UV-divergent part of the integrand without C_int_lambda, i.e. F1(B = 0)*T1_lambda_ij: \n{divergent_integrand}\n"
             f"\nThe UV-convergent part of the integrand without C_int_B, i.e. (F1 - F1(B = 0))*T1_B_ij: \n{convergent_integrand}\n"
         )
@@ -273,8 +278,8 @@ def preparing_diagram_for_numerical_integration(
         Final_integrand_for_numeric_calc.write(
             f"The UV-divergent part of the integrand without C_int_lambda: \n{nintegrand_to_WfMath_format(str(divergent_integrand), False)}\n"
             f"The UV-convergent part of the integrand without C_int_B: \n{nintegrand_to_WfMath_format(str(convergent_integrand), True)}\n"
-            f"Dimensional multiplier before UV-divergent part of the integrand, i.e. C_int_lambda: \n{WF_complete_common_factor_lambda}\n"
-            f"Dimensional multiplier before UV-convergent part of the integrand, i.e. C_int_B: \n{WF_complete_common_factor_B}\n"
+            f"Dimensional multiplier before UV-divergent part of the integrand (with symmetric coefficient), i.e. C_int_lambda: \n{WF_complete_common_factor_lambda}\n"
+            f"Dimensional multiplier before UV-convergent part of the integrand (with symmetric coefficient), i.e. C_int_B: \n{WF_complete_common_factor_B}\n"
         )
 
         if output_in_WfMath_format == "y":

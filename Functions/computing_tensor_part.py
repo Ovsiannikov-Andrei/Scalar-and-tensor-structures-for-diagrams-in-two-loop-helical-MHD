@@ -724,7 +724,8 @@ def H_structure_calculation_part_2(
     keyword: str,
 ):
     """
-    calculate the structure where there are two external momentums: H(momentum, i, indexB)* p(i) mom( , indexb) and other combinations except H(momentum, indexB, indexb) mom(p, i) mom(k, i)
+    calculate the structure where there are two external momentums: H(momentum, i, indexB)* p(i) mom( , indexb)
+    and other combinations except H(momentum, indexB, indexb) mom(p, i) mom(k, i)
 
     ARGUMENTS:
 
@@ -865,37 +866,46 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
     # exit()
 
     # What I need from the Tenzor structure
-    Tenzor = rho * Tenzor.coeff(rho**stupen)
+    Tenzor = rho * Tenzor.coeff(rho**rho_degree)
     # print(Tenzor)
     Tenzor = expand(Tenzor.subs(I**5, I))  # calculate the imaginary unit
     # Tenzor = Tenzor.subs(A, 1)              # It depends on which part we want to calculate from the vertex Bbv
     # print(Tenzor)
     # We are interested in the leading (proportional to p) contribution to the diagram asymptotic, when p --> 0.
-    print(f"step 0: {round(time.time() - t, 1)} sec")
+    print(
+        f"Selecting the part proportional to rho "
+        f"(corresponds to the asymptotic of the diagram as p --> 0): \n{round(time.time() - t, 1)} sec"
+    )
 
     [Tenzor, P_structure] = kronecker_transver_operator(Tenzor, P_structure, kd_structure)
     [Tenzor, H_structure] = kronecker_helical_operator(Tenzor, H_structure, kd_structure)
 
-    print(f"step 1: {round(time.time() - t, 1)} sec")
+    print(
+        f"Computing tensor convolutions of the form "
+        f"P(k, i, j)*kd(i, l) = P(k, l, j) and H(k, i, j)*kd(i, l) = H(k, l, j): \n{round(time.time() - t, 1)} sec"
+    )
 
     [Tenzor, P_structure] = momenta_transver_operator(Tenzor, P_structure)
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
 
-    print(f"step 2: {round(time.time() - t, 1)} sec")
+    print(
+        f"Computing tensor convolutions of the form "
+        f"P(k, i, j)*mom(k, i) = 0 and H(k, i, j)*mom(k, i) = 0: \n{round(time.time() - t, 1)} sec"
+    )
 
     [Tenzor, H_structure] = transfer_helical_operator(Tenzor, P_structure, H_structure)
 
-    print(f"step 3: {round(time.time() - t, 1)} sec")
+    print(
+        f"Computing tensor convolutions of the form "
+        f"P(k, i, j)*H(k, i, l) = H(k, l, j): \n{round(time.time() - t, 1)} sec"
+    )
 
     [Tenzor, P_structure] = transver_transver_operator(Tenzor, P_structure)
 
-    print(f"step 4: {round(time.time() - t, 1)} sec")
-
-    for i in mom_structure:  # replace: mom(-k+q, i) = -mom(k, i) + mom(q, i)
-        k_c = i[0].coeff(k)
-        q_c = i[0].coeff(q)
-        if k_c != 0 or q_c != 0:
-            Tenzor = Tenzor.subs(mom(i[0], i[1]), (k_c * mom(k, i[1]) + q_c * mom(q, i[1])))
+    print(
+        f"Computing tensor convolutions of the form "
+        f"P(k, i, j)*P(k, i, l) = P(k, l, j): \n{round(time.time() - t, 1)} sec"
+    )
 
     Tenzor = expand(Tenzor)
     [Tenzor, P_structure] = momenta_transver_operator(Tenzor, P_structure)
@@ -914,21 +924,30 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         )
         kd_structure.append([i[1], i[2]])
 
-    print(f"step 5: {round(time.time() - t, 1)} sec")
+    print(
+        f"Definition of transversal projection operators "
+        f"P(k, i, j) = kd(i, j) - mom(k, i) mom(k, j)/||k||**2: \n{round(time.time() - t, 1)} sec"
+    )
 
     Tenzor = expand(Tenzor)
 
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
     [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
 
-    print(f"step 6: {round(time.time() - t, 1)} sec")
+    print(
+        f"Computing tensor convolutions of the form "
+        f"H(k, i, j)*mom(q, i)*mom(q, j) = 0 and H(k, i, j)*mom(k, i) = 0: \n{round(time.time() - t, 1)} sec"
+    )
 
     [Tenzor, kd_structure] = kronecker_momenta(Tenzor, kd_structure)
 
-    print(f"step 7: {round(time.time() - t, 1)} sec")
+    print(
+        f"Computing tensor convolutions of the form "
+        f"mom(k, i)*kd(i, j) = mom(k, j): \n{round(time.time() - t, 1)} sec"
+    )
 
-    Tenzor = Tenzor.subs(mom(q, indexb) * mom(q, indexB), 0)
     # delete zero values in the Tenzor: H( ,i,j) mom(p, i) mom( ,j) mom(k, indexB) mom(k, indexb) = 0
+    Tenzor = Tenzor.subs(mom(q, indexb) * mom(q, indexB), 0)
     Tenzor = Tenzor.subs(mom(k, indexb) * mom(k, indexB), 0)
 
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
@@ -940,9 +959,8 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         for y in kd_structure:
             if Tenzor.coeff(kd(y[0], y[1])) == 0:
                 kd_structure.remove(y)
-        if x == int(
-            len(moznost) / 3 - 1
-        ):  # Solve a problem: for example kd(indexb, indexB) -> len( kd_structure) > 1, I do not have a cycle
+        if x == int(len(moznost) / 3 - 1):
+            # Solve a problem: for example kd(indexb, indexB) -> len( kd_structure) > 1, I do not have a cycle
             break
         else:
             x += 1
@@ -950,7 +968,10 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
     [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
 
-    print(f"step 8: {round(time.time() - t, 1)} sec")
+    print(
+        f"Recomputation tensor convolutions with "
+        f"H(k, i, j), mom(k, j), and kd(i, j) from all past steps: \n{round(time.time() - t, 1)} sec"
+    )
 
     p_structure = list()  # list of indeces for momentum p in Tenzor
     k_structure = list()  # list of indeces for momentum k in Tenzor
@@ -974,7 +995,10 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         if Tenzor.coeff(mom(k, in1)) != 0:
             k_structure += [in1]
 
-    print(f"step 9: {round(time.time() - t, 1)} sec")
+    print(
+        f"Computing tensor convolutions of the form mom(k, i)**2 = k**2, "
+        f"mom(q, i)*mom(k, i) = k*q*z and mom(p, i)*mom(q, i)*mom(q, indexB) = 0: \n{round(time.time() - t, 1)} sec"
+    )
 
     if UV_convergence_criterion == False:
         Tenzor_Lambda = H_structure_calculation_part_1(
@@ -988,7 +1012,10 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
             Tenzor, H_structure, indexB, indexb, p_structure, k_structure, q_structure, "Bfield"
         )
 
-    print(f"step 10: {round(time.time() - t, 1)} sec")
+    print(
+        f"Tensor reduction (Passarino-Veltman procedure) of the structures "
+        f"with four momentums: \n{round(time.time() - t, 1)} sec"
+    )
 
     if UV_convergence_criterion == False:
         Tenzor_Lambda = H_structure_calculation_part_2(
@@ -1002,8 +1029,6 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
         Tenzor_B = simplify(Tenzor_B)
 
-        print(f"step 11: {round(time.time() - t, 1)} sec")
-
         Tensor_data = IntegrandTensorStructure(Tenzor_Lambda, Tenzor_B)
     else:
         Tenzor_B = H_structure_calculation_part_2(Tenzor_B, H_structure, indexB, indexb, p_structure, "Bfield")
@@ -1011,8 +1036,11 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
         Tenzor_B = simplify(Tenzor_B)
 
-        print(f"step 11: {round(time.time() - t, 1)} sec")
-
         Tensor_data = IntegrandTensorStructure(None, Tenzor_B)
+
+    print(
+        f"Tensor reduction (Passarino-Veltman procedure) of the structures "
+        f"with two momentums: \n{round(time.time() - t, 1)} sec"
+    )
 
     return Tensor_data

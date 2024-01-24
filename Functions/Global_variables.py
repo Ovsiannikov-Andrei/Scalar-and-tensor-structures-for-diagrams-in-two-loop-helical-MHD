@@ -101,7 +101,7 @@ number_int_vert = 4
 """ 
 Parameter number_int_vert is a total number of internal (three-point) vertecies in diagram
 """
-stupen = 1
+rho_degree = 1
 """ 
-Parameter stupen denotes the desired degree of rho.  
+Parameter rho_degree denotes the desired degree of rho.  
 """

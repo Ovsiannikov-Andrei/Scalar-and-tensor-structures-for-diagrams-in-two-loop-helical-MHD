@@ -1,4 +1,5 @@
 from Functions.Data_classes import *
+from sympy import Rational
 
 # ------------------------------------------------------------------------------------------------------------------#
 #                      We create a file and start write the information about diagram into it
@@ -38,7 +39,7 @@ def get_information_from_Nickel_index(line_with_info: str, diagram_number: int):
     nickel_index_info = NickelIndexInfo(
         f"{diagram_number}.Diagram__{nickel_topology.strip()}__{nickel_lines.strip()}.txt",
         nickel_index.strip(),
-        str(symmetry_factor.strip()),
+        Rational(symmetry_factor.strip()),
     )
 
     return nickel_index_info

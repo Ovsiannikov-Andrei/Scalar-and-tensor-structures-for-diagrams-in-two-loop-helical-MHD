@@ -104,10 +104,10 @@ Calculation of the final expression for the integrand.
 F ==> C_int_lambda*F1(B = 0)*T1_lambda_ij + C_int_B*(F1 - F1(B = 0))*T1_B_ij, 
 where C_int_lambda = C_F_lambda*C_lambda_T and C_int_B = C_F_B*C_B_T.
 
-Dimensional multiplier before UV-divergent part of the integrand, i.e. C_int_lambda: 
+Dimensional multiplier before UV-divergent part of the integrand (with symmetric coefficient), i.e. C_int_lambda: 
 4*I*pi**2*Cutoff**(-2*d - 4*eps + 1)*go**2*nuo*rho*lcs(s, 0, 3)*mom(p, s)
 
-Dimensional multiplier before UV-convergent part of the integrand, i.e. C_int_B: 
+Dimensional multiplier before UV-convergent part of the integrand (with symmetric coefficient), i.e. C_int_B: 
 4*I*pi**2*B**(-2*d - 4*eps + 1)*go**2*nuo**(2*d + 4*eps)*rho*lcs(s, 0, 3)*mom(p, s)
 
 The UV-divergent part of the integrand without C_int_lambda, i.e. F1(B = 0)*T1_lambda_ij: 

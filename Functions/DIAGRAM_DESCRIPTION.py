@@ -259,6 +259,7 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     Feynman_graph.close()
 
     diagram_data = DiagramData(
+        information_from_Nickel_index.symmetry_factor,
         information_from_Nickel_index.nickel_index,
         information_from_Nickel_index.result_file_name,
         distribution_of_diagram_parameters_over_vertices.momentums_at_vertices,
