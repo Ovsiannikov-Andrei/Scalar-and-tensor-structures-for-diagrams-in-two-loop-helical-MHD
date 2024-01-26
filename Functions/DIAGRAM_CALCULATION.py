@@ -13,7 +13,7 @@ from Functions.test_functions_for_UV_divergent_parts import *
 # ------------------------------------------------------------------------------------------------------------------#
 
 
-def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_format: str):
+def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_format: str, quick_diagrams: str):
     """
     This function calculates the integrand of the corresponding diagram in terms of tensor and scalar parts.
 
@@ -22,7 +22,9 @@ def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_fo
     diagram_data is given by get_info_about_diagram(),
     dimensional_factor_for_test -- diagram dimension for tests,
     output_in_WfMath_format -- parameter for geting results in a
-    format suitable for use in Wolfram Mathematica.
+    format suitable for use in Wolfram Mathematica
+    quick_diagrams -- an external parameter characterizing the user’s desire to calculate only those diagrams
+    (tensor structures) that are calculated relatively quickly.
 
     OUTPUT DATA EXAMPLE:
 
@@ -30,7 +32,12 @@ def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_fo
     """
 
     # start filling the results of calculation to file
-    Feynman_graph = open(f"Details about the diagrams/{diagram_data.output_file_name}", "a+")
+    if diagram_data.nickel_topology == "e12_e3_33_":
+        Feynman_graph = open(f"Details about the diagrams/Double loops/{diagram_data.output_file_name}", "a+")
+    elif diagram_data.nickel_topology == "e12_23_3_e":
+        Feynman_graph = open(f"Details about the diagrams/Cross loops/{diagram_data.output_file_name}", "a+")
+    else:
+        Feynman_graph = open(f"Details about the diagrams/{diagram_data.output_file_name}", "a+")
 
     # starts filling the results of calculations (integrals over frequencies, tensor convolutions) to file
     Feynman_graph.write(f"\nDiagram integrand calculation start.\n")
@@ -118,9 +125,13 @@ obtained by direct integration in Wolfram Mathematica."""
         )
 
         assert (
-            integrand_scalar_part_depending_only_on_uo_and_eps.has(go) == False,
-            integrand_scalar_part_depending_only_on_uo_and_eps.has(nuo) == False,
-            integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False,
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(go) == False
+        ), "Error when getting integrand scalar part."
+        assert (
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(nuo) == False
+        ), "Error when getting integrand scalar part."
+        assert (
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False
         ), "Error when getting integrand scalar part."
 
         scalar_common_factor_B = common_factor.momentum_independ_factor
@@ -153,9 +164,13 @@ obtained by direct integration in Wolfram Mathematica."""
         )
 
         assert (
-            integrand_scalar_part_depending_only_on_uo_and_eps.has(go) == False,
-            integrand_scalar_part_depending_only_on_uo_and_eps.has(nuo) == False,
-            integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False,
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(go) == False
+        ), "Error when getting integrand scalar part."
+        assert (
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(nuo) == False
+        ), "Error when getting integrand scalar part."
+        assert (
+            integrand_scalar_part_depending_only_on_uo_and_eps.has(B) == False
         ), "Error when getting integrand scalar part."
 
         # by dimension B ~ nuo* Cutoff
@@ -183,10 +198,33 @@ obtained by direct integration in Wolfram Mathematica."""
 
     print(f"\nComputing tensor convolutions. \n")
 
-    tensor_data = computing_tensor_structures(diagram_data, diagram_data.expression_UV_convergence_criterion)
+    tensor_data = computing_tensor_structures(
+        diagram_data, diagram_data.expression_UV_convergence_criterion, quick_diagrams
+    )
 
     Tensor_Lambda = tensor_data.lambda_proportional_term
     Tensor_B = tensor_data.B_proportional_term
+
+    if Tensor_Lambda == None and Tensor_B == None:
+        tensor_structure_done = False
+        print(f"Aborting the calculation. Computing the diagram tensor structure takes too long.")
+
+        diagram_integrand_data = IntegrandData(
+            diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor,
+            integrand_scalar_part_depending_only_on_uo_and_eps,
+            complete_UV_divergent_part_at_zero_B,
+            scalar_common_factor_lambda,
+            scalar_common_factor_B,
+            None,
+            None,
+            None,
+            None,
+            tensor_structure_done,
+        )
+        return diagram_integrand_data
+
+    else:
+        tensor_structure_done = True
 
     print(f"\nDiagram tensor structure after computing tensor convolutions: ")
     print(f"\n1. Tensor structure without the presence of {B} field (Lambda part): \n{Tensor_Lambda}")
@@ -275,6 +313,7 @@ obtained by direct integration in Wolfram Mathematica."""
         Lambda_part_momentum_independ_factor,
         separated_tensor_B_part.momentum_depend_factor,
         separated_tensor_B_part.momentum_independ_factor,
+        tensor_structure_done,
     )
 
     return diagram_integrand_data

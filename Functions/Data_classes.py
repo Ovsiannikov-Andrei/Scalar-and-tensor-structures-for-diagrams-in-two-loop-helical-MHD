@@ -10,6 +10,7 @@ class DiagramData:
 
     ARGUMENTS:
 
+    nickel_topology -- here we save a topological part of the Nickel index,
     symmetry_factor -- here we save a symmetry multiplier from the line with the data
     nickel_index -- here we save a Nickel index from the line with the data,
     output_file_name -- the name of the file with results,
@@ -25,6 +26,7 @@ class DiagramData:
     expression_UV_convergence_criterion -- corresponding integral is convergent (True/False)
     """
 
+    nickel_topology: str
     symmetry_factor: Rational
     nickel_index: str
     output_file_name: str
@@ -63,6 +65,8 @@ class IntegrandData:
     corresponding to the |B| part of the (convergent) integrand
     tensor_convolution_B_field_and_nuo_factor -- here we save a common multiplier
     (all dependence on |B| and nuo) which corresponds to the |B| integrand's part
+    tensor_structure_done -- a parameter that indicates that the tensor structure
+    is calculated/not calculated
     """
 
     scalar_part_without_replacement: Any
@@ -74,6 +78,7 @@ class IntegrandData:
     tensor_convolution_lambda_field_and_nuo_factor: Any
     tensor_convolution_B_momentum_depend_part: Any
     tensor_convolution_B_field_and_nuo_factor: Any
+    tensor_structure_done: bool
 
 
 @dataclass
@@ -83,11 +88,13 @@ class NickelIndexInfo:
 
     ARGUMENTS:
 
+    nickel_topology -- topological part of the Nickel index,
     result_file_name -- here we save a name of the file with results,
-    nickel_index -- here we save a Nickel index from the line with the data,
+    nickel_index -- here we save the Nickel index from the line with the data,
     symmetry_factor -- here we save a symmetry factor from the line with the data
     """
 
+    nickel_topology: str
     result_file_name: str
     nickel_index: str
     symmetry_factor: Rational

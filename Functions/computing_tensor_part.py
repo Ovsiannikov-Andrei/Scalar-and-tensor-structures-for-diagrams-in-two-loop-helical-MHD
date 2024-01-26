@@ -835,7 +835,7 @@ def H_structure_calculation_part_2(
     return Tenzor
 
 
-def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criterion: bool):
+def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criterion: bool, quick_diagrams: str):
     """
     The function replace the Kronecker's delta function and transverse projector by the transverse projector.
     For example: P(k, i, j) * kd(i, l) = P(k, l, j)
@@ -853,7 +853,6 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
     P_structure = diagram_data.P_structure
     H_structure = diagram_data.H_structure
     kd_structure = diagram_data.kd_structure
-    mom_structure = diagram_data.momentum_structure
     Tenzor = diagram_data.integrand_tensor_part
 
     t = time.time()
@@ -933,6 +932,13 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
 
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
     [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
+
+    # experience shows that if this step takes more than 30-40 seconds,
+    # then the remaining calculation time increases sharply
+    if quick_diagrams == "y":
+        if round(time.time() - t) > 40:
+            Tensor_data = IntegrandTensorStructure(None, None)
+            return Tensor_data
 
     print(
         f"Computing tensor convolutions of the form "

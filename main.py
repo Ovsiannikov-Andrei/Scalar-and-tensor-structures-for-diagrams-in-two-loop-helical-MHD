@@ -41,6 +41,10 @@ def main():
     # create folder with all info about structure of diagrams, if it doesn't already exist
     if not os.path.isdir("Details about the diagrams"):
         os.mkdir("Details about the diagrams")
+    if not os.path.isdir("Details about the diagrams/Cross loops"):
+        os.mkdir("Details about the diagrams/Cross loops")
+    if not os.path.isdir("Details about the diagrams/Double loops"):
+        os.mkdir("Details about the diagrams/Double loops")
 
     # create the Final Results folder for integrends for numerical calculations,
     # if it doesn't already exist
@@ -80,6 +84,11 @@ regularization parameter epsilon = {eps_default}, and model type A = {A_MHD} (MH
 for uo values different from the default? (y/n) """
     )
 
+    quick_diagrams = input(
+        f"""\nWould you like to calculate only those diagrams from the file "Two-loop MHD self-energy diagrams.txt"
+that are calculated quickly? (y/n) """
+    )
+
     list_with_uo_values = []
 
     if model_parameters == "y":
@@ -104,11 +113,12 @@ for uo values different from the default? (y/n) """
 
             diagram_data = get_info_about_diagram(Nickel_index, output_in_WfMath_format, number_of_counted_diagrams + 1)
 
-            diagram_integrand_data = diagram_integrand_calculation(diagram_data, output_in_WfMath_format)
+            diagram_integrand_data = diagram_integrand_calculation(
+                diagram_data, output_in_WfMath_format, quick_diagrams
+            )
 
             preparing_diagram_for_numerical_integration(
-                diagram_data.symmetry_factor,
-                diagram_data.output_file_name,
+                diagram_data,
                 diagram_integrand_data,
                 eps_input,
                 d_input,
@@ -116,7 +126,6 @@ for uo values different from the default? (y/n) """
                 uo_default,
                 list_with_uo_values,
                 output_in_WfMath_format,
-                diagram_data.expression_UV_convergence_criterion,
             )
 
             print(f"\nCALCULATION {number_of_counted_diagrams + 1} END \n")

@@ -57,8 +57,18 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     # select nickel index and symmetry factor
     information_from_Nickel_index = get_information_from_Nickel_index(Nickel_index, counter)
 
-    # creating a file with all output data for the corresponding diagram
-    Feynman_graph = open(f"Details about the diagrams/{information_from_Nickel_index.result_file_name}", "w")
+    # creating a file with all output data for the corresponding diagram and sorting it
+    # according to the diagram's topology
+    if information_from_Nickel_index.nickel_topology == "e12_e3_33_":
+        Feynman_graph = open(
+            f"Details about the diagrams/Double loops/{information_from_Nickel_index.result_file_name}", "w"
+        )
+    elif information_from_Nickel_index.nickel_topology == "e12_23_3_e":
+        Feynman_graph = open(
+            f"Details about the diagrams/Cross loops/{information_from_Nickel_index.result_file_name}", "w"
+        )
+    else:
+        Feynman_graph = open(f"Details about the diagrams/{information_from_Nickel_index.result_file_name}", "w")
 
     # display the Nickel index of the diagram
     print(f"\nNickel index of the Feynman diagram: {information_from_Nickel_index.nickel_index}")
@@ -259,6 +269,7 @@ def get_info_about_diagram(Nickel_index: str, output_in_WfMath_format: str, coun
     Feynman_graph.close()
 
     diagram_data = DiagramData(
+        information_from_Nickel_index.nickel_topology,
         information_from_Nickel_index.symmetry_factor,
         information_from_Nickel_index.nickel_index,
         information_from_Nickel_index.result_file_name,
