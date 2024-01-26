@@ -156,7 +156,13 @@ def preparing_diagram_for_numerical_integration(
         symmetry_multiplier = diagram_data.symmetry_factor
         UV_convergence_criterion = diagram_data.expression_UV_convergence_criterion
 
-        Feynman_graph = open(f"Details about the diagrams/{output_file_name}", "a+")
+        if diagram_data.nickel_topology == "e12_e3_33_":
+            Feynman_graph = open(f"Details about the diagrams/Double loops/{output_file_name}", "a+")
+        elif diagram_data.nickel_topology == "e12_23_3_e":
+            Feynman_graph = open(f"Details about the diagrams/Cross loops/{output_file_name}", "a+")
+        else:
+            Feynman_graph = open(f"Details about the diagrams/{output_file_name}", "a+")
+
         Feynman_graph.write(f"\nCalculation of the final expression for the integrand. \n")
 
         if UV_convergence_criterion == True:
