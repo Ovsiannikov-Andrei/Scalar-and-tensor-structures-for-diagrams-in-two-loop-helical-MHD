@@ -78,9 +78,14 @@ def diagram_integrand_calculation(diagram_data: DiagramData, output_in_WfMath_fo
     current_integrand = diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor
 
     if diagram_data.expression_UV_convergence_criterion == False:
+        print(
+            f"\nThe diagram contains the UV divergent part. "
+            f"Comparison of this part with unstable MHD diagrams (without B field shift)."
+        )
         compare_answers_test = compare_UV_divergent_parts(diagram_data.nickel_index, current_integrand)
         assert compare_answers_test, """The answer for the divergent part of the diagram does not match the result 
 obtained by direct integration in Wolfram Mathematica."""
+        print(f"The comparison was completed successfully.")
 
     Feynman_graph.write(f"\nThe expression for F after reduction to a common denominator: \n{current_integrand} \n")
 

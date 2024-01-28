@@ -32,7 +32,7 @@ def get_information_from_Nickel_index(line_with_info: str, diagram_number: int):
 
     # topological part of the Nickel index
     nickel_topology = "_".join(line_with_info.split(sep="SC = ")[0].rstrip().split(sep=":")[0].split(sep="|"))[:-1]
-    print(nickel_topology)
+
     # line structure in the diagram corresponding to Nickel_topology
     nickel_lines = "__".join(line_with_info.split(sep="SC = ")[0].rstrip().split(sep=":")[1].split(sep="|"))[:-1]
 

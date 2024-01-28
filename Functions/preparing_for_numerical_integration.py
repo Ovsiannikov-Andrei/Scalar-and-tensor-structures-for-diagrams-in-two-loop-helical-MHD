@@ -195,7 +195,7 @@ def preparing_diagram_for_numerical_integration(
             Final_integrand_for_numeric_calc.write(
                 f"Nickel index of the Feynman diagram: \n{diagram_data.nickel_index} \n"
                 f"The UV-convergent part of the integrand without C_int: \n{nintegrand_to_WfMath_format(str(convergent_integrand), True)}\n"
-                f"Dimensional multiplier before the integrand (with symmetric coefficient), i.e. C_int: \n{complete_common_factor}\n"
+                f"Dimensional multiplier before the integrand (with symmetric coefficient), i.e. C_int: \n{WF_complete_common_factor}\n"
             )
 
             if output_in_WfMath_format == "y":
