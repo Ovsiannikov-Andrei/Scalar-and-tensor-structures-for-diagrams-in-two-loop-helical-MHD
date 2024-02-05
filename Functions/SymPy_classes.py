@@ -767,13 +767,9 @@ class D(Function):
             visc = visc.doit(deep=deep, **hints)
 
             if mom == mom1 + mom2:
-                return (
-                    -4 * A * sc_prod(field, mom) ** 2 + k_plus_q_square_square(mom1, mom2) * visc**2 * (uo - 1) ** 2
-                )
+                return -4 * A * sc_prod(field, mom) ** 2 + k_plus_q_square_square(mom1, mom2) * visc**2 * (uo - 1) ** 2
             elif mom == mom1 - mom2 or mom == -mom1 + mom2:
-                return (
-                    -4 * A * sc_prod(field, mom) ** 2 + k_minus_q_square_square(mom1, mom2) * visc**2 * (uo - 1) ** 2
-                )
+                return -4 * A * sc_prod(field, mom) ** 2 + k_minus_q_square_square(mom1, mom2) * visc**2 * (uo - 1) ** 2
             else:
                 return -4 * A * sc_prod(field, mom) ** 2 + mom**4 * visc**2 * (uo - 1) ** 2
 
