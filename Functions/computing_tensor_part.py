@@ -1,4 +1,5 @@
 import time
+import sys
 import sympy as sym
 
 from sympy import *
@@ -835,6 +836,22 @@ def H_structure_calculation_part_2(
     return Tenzor
 
 
+def process_tensor(Tenzor, index1, index2):
+    kd_index = kd(index1, index2)
+
+    if Tenzor.has(kd_index):
+        coeff_value = Tenzor.coeff(kd_index)
+
+        if coeff_value == 0:
+            Tenzor = simplify(Tenzor.subs(kd_index, 0))
+
+            return Tenzor
+        else:
+            sys.exit("The asymptotics includes a nonzero tensor contribution linear in p that cannot exist")
+    else:
+        return Tenzor
+
+
 def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criterion: bool, quick_diagrams: str):
     """
     The function replace the Kronecker's delta function and transverse projector by the transverse projector.
@@ -909,6 +926,7 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
     Tenzor = expand(Tenzor)
     [Tenzor, P_structure] = momenta_transver_operator(Tenzor, P_structure)
     [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
+    [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
 
     kd_structure = list()
     for i in P_structure:  # Define transverse projection operator P(k,i,j) = kd(i,j) - mom(k,i)*mom(k,j)/k^2
@@ -962,6 +980,8 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
     x = 0
     while len(kd_structure) > 0:
         [Tenzor, H_structure] = kronecker_helical_operator(Tenzor, H_structure, kd_structure)
+        [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
+        [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
         for y in kd_structure:
             if Tenzor.coeff(kd(y[0], y[1])) == 0:
                 kd_structure.remove(y)
@@ -971,8 +991,8 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         else:
             x += 1
 
-    [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
-    [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
+    # [Tenzor, H_structure] = momenta_helical_operator(Tenzor, H_structure)
+    # [Tenzor, H_structure] = momenta_momenta_helical_operator(Tenzor, H_structure)
 
     print(
         f"Recomputation tensor convolutions with "
@@ -1035,12 +1055,24 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
         Tenzor_B = simplify(Tenzor_B)
 
+        # Process Tenzor_B
+        Tenzor_B = process_tensor(Tenzor_B, indexb, indexB)
+        Tenzor_B = process_tensor(Tenzor_B, indexB, indexb)
+
+        # Process Tenzor_Lambda
+        Tenzor_Lambda = process_tensor(Tenzor_Lambda, indexb, indexB)
+        Tenzor_Lambda = process_tensor(Tenzor_Lambda, indexB, indexb)
+
         Tensor_data = IntegrandTensorStructure(Tenzor_Lambda, Tenzor_B)
     else:
         Tenzor_B = H_structure_calculation_part_2(Tenzor_B, H_structure, indexB, indexb, p_structure, "Bfield")
         # lcs( i, j, l) - Levi-Civita symbol
         Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
         Tenzor_B = simplify(Tenzor_B)
+
+        # Process Tenzor_B
+        Tenzor_B = process_tensor(Tenzor_B, indexb, indexB)
+        Tenzor_B = process_tensor(Tenzor_B, indexB, indexb)
 
         Tensor_data = IntegrandTensorStructure(None, Tenzor_B)
 
