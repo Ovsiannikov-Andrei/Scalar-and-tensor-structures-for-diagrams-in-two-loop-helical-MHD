@@ -59,7 +59,7 @@ def main():
     create_file_with_info_and_supplementary_matherials()
 
     # counter to count already processed diagrams
-    number_of_counted_diagrams = 256
+    number_of_counted_diagrams = 0
 
     print(f"PROGRAM START")
 

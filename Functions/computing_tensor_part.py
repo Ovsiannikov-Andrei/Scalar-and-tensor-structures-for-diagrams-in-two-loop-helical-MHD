@@ -1051,9 +1051,9 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
 
         # lcs( i, j, l) - Levi-Civita symbol
         Tenzor_Lambda = Tenzor_Lambda.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
-        Tenzor_Lambda = simplify(Tenzor_Lambda)
+        Tenzor_Lambda = simplify(expand(Tenzor_Lambda))
         Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
-        Tenzor_B = simplify(Tenzor_B)
+        Tenzor_B = simplify(expand(Tenzor_B))
 
         # Process Tenzor_B
         Tenzor_B = process_tensor(Tenzor_B, indexb, indexB)
@@ -1068,7 +1068,7 @@ def computing_tensor_structures(diagram_data: DiagramData, UV_convergence_criter
         Tenzor_B = H_structure_calculation_part_2(Tenzor_B, H_structure, indexB, indexb, p_structure, "Bfield")
         # lcs( i, j, l) - Levi-Civita symbol
         Tenzor_B = Tenzor_B.subs(lcs(s, indexb, indexB), -lcs(s, indexB, indexb))
-        Tenzor_B = simplify(Tenzor_B)
+        Tenzor_B = simplify(expand(Tenzor_B))
 
         # Process Tenzor_B
         Tenzor_B = process_tensor(Tenzor_B, indexb, indexB)
