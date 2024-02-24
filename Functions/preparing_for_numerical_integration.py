@@ -232,6 +232,7 @@ def preparing_diagram_for_numerical_integration(
         else:
             Final_integrand_for_numeric_calc = open(f"Final Results/UV-infinite diagrams/{output_file_name}", "w")
 
+            complete_diagram_expr = diagram_integrand_data.complete_diagram_expr
             momentum_depend_tensor_part_lambda = diagram_integrand_data.tensor_convolution_lambda_momentum_depend_part
             momentum_depend_scalar_part_lambda = diagram_integrand_data.divergent_scalar_part_depending_only_on_uo
             momentum_depend_tensor_part_B = diagram_integrand_data.tensor_convolution_B_momentum_depend_part
@@ -253,6 +254,7 @@ def preparing_diagram_for_numerical_integration(
                 common_multiplier_from_scalar_part_B * common_multiplier_from_tensor_part_B * symmetry_multiplier
             )
 
+            integrand = momentum_depend_tensor_part_B * complete_diagram_expr
             convergent_integrand = momentum_depend_tensor_part_B * momentum_depend_scalar_part_B
             divergent_integrand = momentum_depend_tensor_part_lambda * momentum_depend_scalar_part_lambda
 
@@ -282,12 +284,14 @@ def preparing_diagram_for_numerical_integration(
             Feynman_graph.write(
                 f"\nDimensional multiplier before UV-divergent part of the integrand (with symmetric coefficient), i.e. C_int_lambda: \n{complete_common_factor_lambda}\n"
                 f"\nDimensional multiplier before UV-convergent part of the integrand (with symmetric coefficient), i.e. C_int_B: \n{complete_common_factor_B}\n"
+                f"\nThe complete integrand without C_int_B, i.e. F1*T1_B_ij: \n{integrand}\n"
                 f"\nThe UV-divergent part of the integrand without C_int_lambda, i.e. F1(B = 0)*T1_lambda_ij: \n{divergent_integrand}\n"
                 f"\nThe UV-convergent part of the integrand without C_int_B, i.e. (F1 - F1(B = 0))*T1_B_ij: \n{convergent_integrand}\n"
             )
 
             Final_integrand_for_numeric_calc.write(
                 f"Nickel index of the Feynman diagram: \n{diagram_data.nickel_index} \n"
+                f"The complete integrand without C_int_B, i.e. F1*T1_B_ij: \n{nintegrand_to_WfMath_format(str(integrand), True)}\n"
                 f"The UV-divergent part of the integrand without C_int_lambda: \n{nintegrand_to_WfMath_format(str(divergent_integrand), False)}\n"
                 f"The UV-convergent part of the integrand without C_int_B: \n{nintegrand_to_WfMath_format(str(convergent_integrand), True)}\n"
                 f"Dimensional multiplier before UV-divergent part of the integrand (with symmetric coefficient), i.e. C_int_lambda: \n{WF_complete_common_factor_lambda}\n"
@@ -297,16 +301,19 @@ def preparing_diagram_for_numerical_integration(
             if output_in_WfMath_format == "y":
                 print(f"\nConverting the result to Wolfram Mathematica format.")
 
+                WF_integrand_without_parameters = nintegrand_to_WfMath_format(str(integrand), True)
                 WF_divergent_integrand_without_parameters = nintegrand_to_WfMath_format(str(divergent_integrand), False)
                 WF_convergent_integrand_without_parameters = nintegrand_to_WfMath_format(
                     str(convergent_integrand), True
                 )
 
                 Feynman_graph.write(
+                    f"\nExpression for F1*T1_B_ij in Wolfram Mathematica format: \n{WF_integrand_without_parameters}\n"
                     f"\nExpression for F1(B = 0)*T1_lambda_ij in Wolfram Mathematica format: \n{WF_divergent_integrand_without_parameters}\n"
                     f"\nExpression for (F1 - F1(B = 0))*T1_B_ij with input parameter values in Wolfram Mathematica format: \n{WF_convergent_integrand_without_parameters}\n"
                 )
 
+            integrand_for_numerical_calc = integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
             divergent_integrand_for_numerical_calc = (
                 divergent_integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
             )
@@ -314,6 +321,7 @@ def preparing_diagram_for_numerical_integration(
                 convergent_integrand.subs(d, d_input).subs(eps, eps_input).subs(A, A_input)
             )
 
+            list_with_integrands = list()
             list_with_divergent_integrands = list()
             list_with_convergent_integrands = list()
 
@@ -325,10 +333,14 @@ def preparing_diagram_for_numerical_integration(
 
             for i in range(len(list_with_uo_values)):
                 uo_value = list_with_uo_values[i]
+                list_with_integrands.append(integrand_for_numerical_calc.subs(uo, uo_value))
                 list_with_divergent_integrands.append(divergent_integrand_for_numerical_calc.subs(uo, uo_value))
                 list_with_convergent_integrands.append(convergent_integrand_for_numerical_calc.subs(uo, uo_value))
+                integrand = list_with_integrands[i]
                 divergent_integrand = list_with_divergent_integrands[i]
                 convergent_integrand = list_with_convergent_integrands[i]
+
+                Feynman_graph.write(f"\nDiagram integrand for {uo} = {uo_value}: \n{integrand} \n")
                 Feynman_graph.write(
                     f"\nDiagram integrand's divergent part for {uo} = {uo_value}: \n{divergent_integrand} \n"
                 )
@@ -336,11 +348,14 @@ def preparing_diagram_for_numerical_integration(
                     f"\nDiagram integrand's convergent part for {uo} = {uo_value}: \n{convergent_integrand} \n"
                 )
                 if output_in_WfMath_format == "y":
+                    integrand_in_Wolfram_format = nintegrand_to_WfMath_format(str(integrand), True)
                     divergent_integrand_in_Wolfram_format = nintegrand_to_WfMath_format(str(divergent_integrand), False)
                     convergent_integrand_in_Wolfram_format = nintegrand_to_WfMath_format(
                         str(convergent_integrand), True
                     )
                     Feynman_graph.write(
+                        f"\nDiagram integrand for {uo} = {uo_value} in Wolfram Mathematica format: "
+                        f"\n{integrand_in_Wolfram_format} \n"
                         f"\nDiagram integrand's divergent part for {uo} = {uo_value} in Wolfram Mathematica format: "
                         f"\n{divergent_integrand_in_Wolfram_format} \n"
                         f"\nDiagram integrand's convergent part for {uo} = {uo_value} in Wolfram Mathematica format: "

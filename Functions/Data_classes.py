@@ -11,18 +11,31 @@ class DiagramData:
     ARGUMENTS:
 
     nickel_topology -- here we save a topological part of the Nickel index,
+
     symmetry_factor -- here we save a symmetry multiplier from the line with the data
+
     nickel_index -- here we save a Nickel index from the line with the data,
+
     output_file_name -- the name of the file with results,
+
     momentums_at_vertices -- distribution of momentums at the vertices,
+
     indexb -- index of the inflowing field,
+
     indexB -- index of the outflowing field,
+
     P_structure -- here we save the Projector operator arguments,
+
     H_structure -- here we save the Kronecker delta arguments,
+
     kd_structure -- here we save the Kronecker delta arguments,
+
     momentum_structure -- here we save all momentums and their components,
+
     integrand_tensor_part -- here we save the tensor structure (product of the tensor operators),
+
     integrand_scalar_part -- here we save the scalar function,
+
     expression_UV_convergence_criterion -- corresponding integral is convergent (True/False)
     """
 
@@ -49,27 +62,43 @@ class IntegrandData:
 
     ARGUMENTS:
 
-    scalar_part_without_repl -- here we save scalar part of the integrand reduced
+    scalar_part_without_replacement -- here we save scalar part of the integrand reduced
     to a common denominator and partially simplified,
-    scalar_part_depending_only_on_uo -- here we save scalar part of the integrand
-    depending only on uo (replacing  k, q -- > B*k/nuo, B*q/nuo),
+
+    complete_diagram_expr --  here we save complete scalar part of the integrand
+    depending only on uo (replacing  k, q -- > B*k/nuo, B*q/nuo) (include UV-divergent and UV-
+    convergent cases)
+
+    convergent_scalar_part_depending_only_on_uo -- here we save convergent scalar part of the integrand
+    depending only on uo (replacing  k, q -- > B*k/nuo, B*q/nuo)
+
+    divergent_scalar_part_depending_only_on_uo -- here we save divergent scalar part of the integrand
+    depending only on uo (replacing  k, q -- > B*k/nuo, B*q/nuo)
+
     scalar_part_field_and_nuo_factor_lambda -- here we save factor by which the scalar part of the
     integrand is multiplied (all dependence on Cutoff and nuo),
+
     scalar_part_field_and_nuo_factor_B -- here we save factor by which the scalar part of the
     integrand is multiplied (all dependence on |B| and nuo),
+
     tensor_convolution_lambda_momentum_depend_part -- here we save computed tensor structure
     corresponding to the Cutoff part of the (divergent) integrand
+
     tensor_convolution_lambda_field_and_nuo_factor -- here we save a common multiplier
     (all dependence on Cutoff and nuo) which corresponds to the Cutoff integrand's part
+
     tensor_convolution_B_momentum_depend_part -- here we save computed tensor structure
     corresponding to the |B| part of the (convergent) integrand
+
     tensor_convolution_B_field_and_nuo_factor -- here we save a common multiplier
     (all dependence on |B| and nuo) which corresponds to the |B| integrand's part
+
     tensor_structure_done -- a parameter that indicates that the tensor structure
     is calculated/not calculated
     """
 
     scalar_part_without_replacement: Any
+    complete_diagram_expr: Any
     convergent_scalar_part_depending_only_on_uo: Any
     divergent_scalar_part_depending_only_on_uo: Any
     scalar_part_field_and_nuo_factor_lambda: Any

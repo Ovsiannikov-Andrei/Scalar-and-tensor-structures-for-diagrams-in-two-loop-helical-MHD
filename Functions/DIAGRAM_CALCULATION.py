@@ -151,6 +151,7 @@ obtained by direct integration in Wolfram Mathematica."""
     # preparing the diagrams containind UV-infinine parts for numerical integration
     else:
         # using the auxiliary parameter b we set the field B here to 0
+        complete_diagram_expr = particular_integrand_simplification.subs(b, 1).doit().doit().doit().subs(b, 1)
         UV_divergent_part_at_zero_B = particular_integrand_simplification.subs(b, 0).doit().doit().doit()
 
         # according to [1], all corrections to all propagators in their expansion in B are UV-finite.
@@ -164,6 +165,7 @@ obtained by direct integration in Wolfram Mathematica."""
         )
 
         # define F1 (see General_notation.txt) at the level of variables k and q
+        complete_diagram_expr = common_factor.momentum_depend_factor.doit().doit() * complete_diagram_expr
         integrand_scalar_part_depending_only_on_uo_and_eps = (
             common_factor.momentum_depend_factor.doit().doit() * UV_convergent_part
         )
@@ -185,6 +187,8 @@ obtained by direct integration in Wolfram Mathematica."""
 
         Feynman_graph.write(
             f"\nThe expression for F1 after momentums replacing: F1 ==> C_F_lambda*F1(B = 0) + C_F_B*(F1 - F1(B = 0))."
+            f"\nThe expression for F1:"
+            f"\n{complete_diagram_expr} \n"
             f"\nThe expression for F1 - F1(B = 0) (UV-convergent part):"
             f"\n{integrand_scalar_part_depending_only_on_uo_and_eps} \n"
             f"\nThe expression for F1(B = 0) (UV-divergent part):"
@@ -310,6 +314,7 @@ obtained by direct integration in Wolfram Mathematica."""
 
     diagram_integrand_data = IntegrandData(
         diagram_expression.common_factor * diagram_expression.residues_sum_without_common_factor,
+        complete_diagram_expr,
         integrand_scalar_part_depending_only_on_uo_and_eps,
         complete_UV_divergent_part_at_zero_B,
         scalar_common_factor_lambda,
