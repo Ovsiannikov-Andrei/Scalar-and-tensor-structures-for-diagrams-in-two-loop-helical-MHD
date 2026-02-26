@@ -25,10 +25,10 @@
 
 
 <!-- PROJECT LOGO -->
-<br />
+<!-- <br />
 <div align="center">
   <img src="images/Earth_final.jpg" alt="" width="400" height="400">
-</div>
+</div> -->
 
 
 
